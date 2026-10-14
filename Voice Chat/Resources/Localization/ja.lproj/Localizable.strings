@@ -14,6 +14,7 @@
 "Add image" = "画像を追加";
 "Add preset" = "プリセットを追加";
 "Add prompt preset" = "プロンプトプリセットを追加";
+"Advanced" = "詳細";
 "Advanced Options" = "詳細オプション";
 "All day" = "終日";
 "All reminders" = "すべてのリマインダー";
@@ -139,7 +140,6 @@
 "Description" = "説明";
 "Details" = "詳細";
 "Detected API Format: %@" = "検出された API 形式: %@";
-"Developer" = "開発者";
 "Developer Defaults" = "開発者向け初期設定";
 "Developer Mode" = "開発者モード";
 "Developer Prompt Characters" = "開発者プロンプトの文字数";

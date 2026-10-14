@@ -14,6 +14,7 @@
 "Add image" = "添加图片";
 "Add preset" = "添加预设";
 "Add prompt preset" = "添加提示词预设";
+"Advanced" = "高级";
 "Advanced Options" = "高级选项";
 "All day" = "全天";
 "All reminders" = "全部提醒事项";
@@ -139,7 +140,6 @@
 "Description" = "描述";
 "Details" = "详细信息";
 "Detected API Format: %@" = "检测到的 API 格式：%@";
-"Developer" = "开发者";
 "Developer Defaults" = "开发者默认设置";
 "Developer Mode" = "开发者模式";
 "Developer Prompt Characters" = "开发者提示词字符数";

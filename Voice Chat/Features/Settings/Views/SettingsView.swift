@@ -290,7 +290,7 @@ struct SettingsView: View {
     private var macDeveloperTab: some View {
         macDeveloperSettingsPage
         .tabItem {
-            Label("Developer", systemImage: "ladybug")
+            Label("Advanced", systemImage: "wrench.and.screwdriver")
         }
     }
 
@@ -521,7 +521,7 @@ struct SettingsView: View {
             if hideHeader {
                 EmptyView()
             } else {
-                sectionHeader("Developer")
+                sectionHeader("Advanced")
             }
         }
 

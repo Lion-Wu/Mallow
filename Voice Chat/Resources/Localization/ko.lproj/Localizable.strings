@@ -14,6 +14,7 @@
 "Add image" = "이미지 추가";
 "Add preset" = "프리셋 추가";
 "Add prompt preset" = "프롬프트 프리셋 추가";
+"Advanced" = "고급";
 "Advanced Options" = "고급 옵션";
 "All day" = "하루 종일";
 "All reminders" = "모든 미리 알림";
@@ -139,7 +140,6 @@
 "Description" = "설명";
 "Details" = "세부 정보";
 "Detected API Format: %@" = "감지된 API 형식: %@";
-"Developer" = "개발자";
 "Developer Defaults" = "개발자 기본값";
 "Developer Mode" = "개발자 모드";
 "Developer Prompt Characters" = "개발자 프롬프트 문자 수";

@@ -14,6 +14,7 @@
 "Add image" = "إضافة صورة";
 "Add preset" = "إضافة إعداد مسبق";
 "Add prompt preset" = "إضافة إعداد مسبق للموجّه";
+"Advanced" = "متقدم";
 "Advanced Options" = "الخيارات المتقدمة";
 "All day" = "طوال اليوم";
 "All reminders" = "كل التذكيرات";
@@ -139,7 +140,6 @@
 "Description" = "الوصف";
 "Details" = "التفاصيل";
 "Detected API Format: %@" = "تنسيق API المكتشف: %@";
-"Developer" = "المطور";
 "Developer Defaults" = "إعدادات المطور الافتراضية";
 "Developer Mode" = "وضع المطور";
 "Developer Prompt Characters" = "عدد أحرف مطالبة المطور";

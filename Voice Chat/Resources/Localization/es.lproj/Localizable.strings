@@ -14,6 +14,7 @@
 "Add image" = "Agregar imagen";
 "Add preset" = "Agregar preajuste";
 "Add prompt preset" = "Agregar preajuste de prompt";
+"Advanced" = "Avanzado";
 "Advanced Options" = "Opciones avanzadas";
 "All day" = "Todo el día";
 "All reminders" = "Todos los recordatorios";
@@ -139,7 +140,6 @@
 "Description" = "Descripción";
 "Details" = "Detalles";
 "Detected API Format: %@" = "Formato de API detectado: %@";
-"Developer" = "Desarrollador";
 "Developer Defaults" = "Valores de desarrollador";
 "Developer Mode" = "Modo desarrollador";
 "Developer Prompt Characters" = "Caracteres del prompt de desarrollador";
