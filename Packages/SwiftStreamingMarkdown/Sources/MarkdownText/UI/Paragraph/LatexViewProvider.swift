@@ -5,6 +5,7 @@
 
 import Foundation
 import SwiftUI
+import UniformTypeIdentifiers
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -47,9 +48,21 @@ extension LatexAttachmentData {
 
 // MARK: - Latex View Provider
 
-/// TextKit invokes attachment view providers from its main-thread layout pass,
-/// but its Objective-C override surface is not actor annotated in the SDK.
+/// Layout that can load attachment views must run on the main actor. TextKit's
+/// Objective-C override surface does not enforce that requirement in the SDK.
 final class LatexViewProvider: NSTextAttachmentViewProvider {
+  @MainActor
+  static func register() {
+    if NSTextAttachment.textAttachmentViewProviderClass(
+      forFileType: UTType.markdownLatex.identifier
+    ) == nil {
+      NSTextAttachment.registerViewProviderClass(
+        LatexViewProvider.self,
+        forFileType: UTType.markdownLatex.identifier
+      )
+    }
+  }
+
   private let latex: String
   private let fontSize: CGFloat
   private let textColor: MDColor
@@ -145,4 +158,48 @@ private struct MathViewReference: @unchecked Sendable {
   init(_ value: MarkdownAttachmentMathView) {
     self.value = value
   }
+}
+
+// TextKit 1 consumes attachment images and bounds rather than view providers.
+// Use the same formula view for both paths so measurement and drawing agree.
+@MainActor
+func markdownTextLayoutContents(_ contents: NSAttributedString) -> NSAttributedString {
+  #if os(visionOS)
+  return contents
+  #else
+  var result: NSMutableAttributedString?
+  contents.enumerateAttribute(.attachment, in: NSRange(location: 0, length: contents.length)) { value, range, _ in
+    guard let attachment = value as? LatexTextAttachment, attachment.contents != nil else { return }
+    if result == nil { result = NSMutableAttributedString(attributedString: contents) }
+    let attributes = contents.attributes(at: range.location, effectiveRange: nil)
+    let fontXHeight = (attributes[.font] as? MDFont)?.xHeight
+    if let cached = attachment.textLayoutAttachment, cached.fontXHeight == fontXHeight {
+      result?.addAttribute(.attachment, value: cached.attachment, range: range)
+      return
+    }
+    // The drawing attachment is image-backed. Keeping the formula UTI here
+    // would select its view provider after setting image has cleared contents.
+    let prepared = NSTextAttachment(data: nil, ofType: nil)
+    let location = NSTextContentStorage().documentRange.location
+    let provider = LatexViewProvider(textAttachment: attachment, parentView: nil, textLayoutManager: nil, location: location)
+    provider.loadView()
+    guard let mathView = provider.view as? MarkdownAttachmentMathView else { return }
+    let bounds = provider.attachmentBounds(for: attributes, location: location, textContainer: nil,
+                                         proposedLineFragment: .zero, position: .zero)
+    if bounds.width > 0, bounds.height > 0 {
+      #if canImport(AppKit)
+      mathView.frame = CGRect(origin: .zero, size: bounds.size)
+      prepared.image = NSImage(data: mathView.dataWithPDF(inside: mathView.bounds))
+      #else
+      prepared.image = UIGraphicsImageRenderer(size: bounds.size).image { _ in
+        mathView.draw(CGRect(origin: .zero, size: bounds.size))
+      }
+      #endif
+    }
+    prepared.bounds = bounds
+    attachment.textLayoutAttachment = (fontXHeight, prepared)
+    result?.addAttribute(.attachment, value: prepared, range: range)
+  }
+  return result ?? contents
+  #endif
 }

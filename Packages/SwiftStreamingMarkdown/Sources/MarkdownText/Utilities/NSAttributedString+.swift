@@ -122,3 +122,26 @@ extension AttributedString {
     return result
   }
 }
+
+
+extension NSMutableAttributedString {
+  /// Markdown can revise the final line while a stream grows. Preserve every
+  /// unchanged character and attribute run, including when this is not an append.
+  @discardableResult
+  func replaceContentsPreservingPrefix(with contents: NSAttributedString) -> Int {
+    let commonLength = string.commonPrefix(with: contents.string, options: .literal).utf16.count
+    var prefixLength = 0
+    while prefixLength < commonLength {
+      var oldRange = NSRange(), newRange = NSRange()
+      let oldAttributes = attributes(at: prefixLength, effectiveRange: &oldRange)
+      let newAttributes = contents.attributes(at: prefixLength, effectiveRange: &newRange)
+      guard NSDictionary(dictionary: oldAttributes).isEqual(to: newAttributes) else { break }
+      prefixLength = min(commonLength, NSMaxRange(oldRange), NSMaxRange(newRange))
+    }
+    let replacedRange = NSRange(location: prefixLength, length: length - prefixLength)
+    let suffixRange = NSRange(location: prefixLength, length: contents.length - prefixLength)
+    guard replacedRange.length > 0 || suffixRange.length > 0 else { return commonLength }
+    replaceCharacters(in: replacedRange, with: contents.attributedSubstring(from: suffixRange))
+    return commonLength
+  }
+}

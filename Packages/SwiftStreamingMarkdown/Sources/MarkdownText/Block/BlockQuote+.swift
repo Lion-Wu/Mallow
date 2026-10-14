@@ -32,3 +32,17 @@ extension BlockQuote: BlockConvertible {
 struct BlockQuoteRenderable: Equatable {
   let quoteType: BlockQuoteType
 }
+
+indirect enum BlockQuoteType: Equatable, Hashable {
+  case text(String)
+  case nested([BlockQuoteType])
+
+  var isNested: Bool {
+    switch self {
+    case .text:
+      false
+    case .nested:
+      true
+    }
+  }
+}

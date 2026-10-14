@@ -7,6 +7,78 @@
 
 import SwiftUI
 
+// Keep an outgoing status in layout until its measured height has collapsed.
+// SwiftUI transitions otherwise remove its layout space before the visual fade ends.
+struct ChatAnimatedStatus<Content: View>: View {
+    let isPresented: Bool
+    @ViewBuilder let content: () -> Content
+    @State private var isMounted = false
+    @State private var isExpanded = false
+
+    var body: some View {
+        Group {
+            if isMounted {
+                content()
+                    .modifier(ChatStatusHeight(fraction: isExpanded ? 1 : 0))
+                    .opacity(isExpanded ? 1 : 0)
+                    .offset(y: isExpanded ? 0 : ChatScrollContentMotion.hiddenOffset * 0.5)
+                    .scaleEffect(isExpanded ? 1 : 0.99, anchor: .bottom)
+                    .allowsHitTesting(isPresented)
+                    .accessibilityHidden(!isPresented)
+                    .transition(ChatScrollContentMotion.transition)
+            }
+        }
+        .onChange(of: isPresented, initial: true) { _, presented in
+            if presented {
+                if isMounted {
+                    withAnimation(ChatScrollContentMotion.animation) { isExpanded = true }
+                } else {
+                    isExpanded = true
+                    isMounted = true
+                }
+            } else if isMounted {
+                withAnimation(ChatScrollContentMotion.animation, completionCriteria: .removed) {
+                    isExpanded = false
+                } completion: {
+                    if !isExpanded { isMounted = false }
+                }
+            }
+        }
+    }
+}
+
+nonisolated private struct ChatStatusHeight: ViewModifier, Animatable {
+    var fraction: CGFloat
+
+    var animatableData: CGFloat {
+        get { fraction }
+        set { fraction = newValue }
+    }
+
+    @MainActor
+    func body(content: Content) -> some View {
+        ChatStatusHeightLayout(fraction: fraction) { content }
+    }
+}
+
+private struct ChatStatusHeightLayout: Layout {
+    let fraction: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let content = subviews.first else { return .zero }
+        let size = content.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil))
+        return CGSize(width: size.width, height: size.height * max(0, fraction))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(
+            at: bounds.origin,
+            anchor: .topLeading,
+            proposal: ProposedViewSize(width: bounds.width, height: nil)
+        )
+    }
+}
+
 struct LoadingIndicatorView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var tint: Color = .secondary

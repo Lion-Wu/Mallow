@@ -103,7 +103,7 @@ struct ChatComposerPanel: View {
         HStack(alignment: .center, spacing: InputMetrics.composerRowSpacing) {
             AutoSizingTextEditor(
                 text: $userMessage,
-                height: $textFieldHeight,
+                height: $textFieldHeight.animation(userMessage.isEmpty ? ChatScrollContentMotion.animation : nil),
                 externalTextRevision: externalTextRevision,
                 placeholder: NSLocalizedString("Type your message...", comment: "Chat composer placeholder"),
                 maxLines: platformMaxLines(),

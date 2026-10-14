@@ -124,9 +124,13 @@ final class ChatViewModel: ObservableObject {
     }
 
     private let realtimeNarrationCoordinator: ChatRealtimeNarrationCoordinator
-    private var streamingAssistantMessageID: UUID? {
+    private(set) var streamingAssistantMessageID: UUID? {
         get { textRequestRuntime.streamingAssistantMessageID }
-        set { textRequestRuntime.streamingAssistantMessageID = newValue }
+        set {
+            guard textRequestRuntime.streamingAssistantMessageID != newValue else { return }
+            objectWillChange.send()
+            textRequestRuntime.streamingAssistantMessageID = newValue
+        }
     }
     private var streamingAssistantFingerprint: ContentFingerprint? {
         get { textRequestRuntime.streamingAssistantFingerprint }
@@ -467,6 +471,7 @@ final class ChatViewModel: ObservableObject {
             captureStreamAttemptRetryCheckpoint()
         }
         let fingerprint = ContentFingerprint.make(message.renderFingerprintSource)
+        chatSession.refreshSidebarPreviewIfLatest(message)
         publishMessageContentChange(for: message, fingerprint: fingerprint)
     }
 
@@ -557,6 +562,7 @@ final class ChatViewModel: ObservableObject {
         if streamingAssistantMessageID == message.id {
             streamingAssistantFingerprint = fingerprint
         }
+        chatSession.refreshSidebarPreviewIfLatest(message)
         publishMessageContentChange(for: message, fingerprint: fingerprint)
         persistSession(reason: .immediate)
     }
@@ -590,6 +596,7 @@ final class ChatViewModel: ObservableObject {
         for messageID in changedMessageIDs {
             guard let message = lookup[messageID] else { continue }
             let fingerprint = ContentFingerprint.make(message.renderFingerprintSource)
+            chatSession.refreshSidebarPreviewIfLatest(message)
             publishMessageContentChange(for: message, fingerprint: fingerprint)
         }
         return true
@@ -722,7 +729,6 @@ final class ChatViewModel: ObservableObject {
         for message: ChatMessage,
         fingerprint: ContentFingerprint
     ) {
-        chatSession.refreshSidebarPreviewIfLatest(message)
         messageContentDidChange.send(.init(messageID: message.id, fingerprint: fingerprint))
     }
     private func invalidateBranchMessagesCache() { sessionMutationController.invalidateBranchMessagesCache() }
@@ -1109,7 +1115,9 @@ final class ChatViewModel: ObservableObject {
 
     private func handleAssistantDelta(_ piece: String) {
         guard canAcceptAssistantDelta else { return }
-        longWaitNotice = nil
+        if longWaitNotice != nil {
+            longWaitNotice = nil
+        }
         if isToolContinuationLoading {
             isToolContinuationLoading = false
         }
@@ -1168,7 +1176,9 @@ final class ChatViewModel: ObservableObject {
 
     private func handleAssistantStreamSegment(_ segment: AssistantStreamSegment) {
         guard canAcceptAssistantDelta else { return }
-        longWaitNotice = nil
+        if longWaitNotice != nil {
+            longWaitNotice = nil
+        }
         if isToolContinuationLoading {
             isToolContinuationLoading = false
         }

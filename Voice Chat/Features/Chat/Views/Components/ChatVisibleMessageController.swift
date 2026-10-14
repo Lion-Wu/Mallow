@@ -9,23 +9,24 @@ import Combine
 import Foundation
 
 @MainActor
-final class ChatVisibleMessageController: ObservableObject {
+final class ChatVisibleMessageController {
     typealias FingerprintBuilder = @Sendable (
         [(UUID, String)]
     ) async -> [UUID: ContentFingerprint]
 
-    @Published private var publishedState = PublishedState()
+    let presentation = ChatMessageListPresentation()
+    private var contentStates: [UUID: ChatMessageContentState] = [:]
 
     var visibleMessages: [ChatMessage] {
-        publishedState.visibleMessages
+        presentation.visibleMessages
     }
 
     var fingerprintCache: [UUID: ContentFingerprint] {
-        publishedState.fingerprintCache
+        state.fingerprintCache
     }
 
     var isHydratingSession: Bool {
-        publishedState.isHydratingSession
+        presentation.isHydratingSession
     }
 
     private var state = ChatVisibleMessageHydrationState()
@@ -36,7 +37,13 @@ final class ChatVisibleMessageController: ObservableObject {
     init(fingerprintBuilder: FingerprintBuilder? = nil) {
         self.fingerprintBuilder = fingerprintBuilder ?? { snapshots in
             await Task.detached(priority: .userInitiated) {
-                Self.buildFingerprints(from: snapshots)
+                let fingerprints = Self.buildFingerprints(from: snapshots)
+                let renderSnapshots = snapshots.compactMap { entry -> (UUID, String, ContentFingerprint)? in
+                    guard let fingerprint = fingerprints[entry.0] else { return nil }
+                    return (entry.0, entry.1, fingerprint)
+                }
+                MessageRenderCache.shared.prewarmThinkParts(renderSnapshots)
+                return fingerprints
             }.value
         }
     }
@@ -86,8 +93,16 @@ final class ChatVisibleMessageController: ObservableObject {
     }
 
     func applyContentFingerprintUpdate(messageID: UUID, fingerprint: ContentFingerprint) {
+        guard state.fingerprintCache[messageID] != fingerprint else { return }
         state.applyContentFingerprintUpdate(messageID: messageID, fingerprint: fingerprint)
-        publishStateSnapshot()
+        contentStates[messageID]?.update(fingerprint)
+    }
+
+    func contentState(for messageID: UUID) -> ChatMessageContentState {
+        if let existing = contentStates[messageID] { return existing }
+        let content = ChatMessageContentState(fingerprint: state.fingerprintCache[messageID])
+        contentStates[messageID] = content
+        return content
     }
 
     func cancelHydration() {
@@ -121,36 +136,18 @@ final class ChatVisibleMessageController: ObservableObject {
             await buildFingerprints(snapshots)
         }
 
-        state.hydrationTask = Task { @MainActor [weak self, target, snapshots, fingerprintTask, token] in
+        state.hydrationTask = Task { @MainActor [weak self, target, fingerprintTask, token] in
             guard let self else { return }
-            let chunkSize = 48
-            var idx = 0
-
-            while idx < target.count {
-                if Task.isCancelled || !state.shouldApply(token: token) { break }
-                let upper = min(idx + chunkSize, target.count)
-                let slice = target[idx..<upper]
-                state.appendHydratedMessages(slice)
-                publishStateSnapshot()
-                idx = upper
-                if target.count > chunkSize {
-                    await Task.yield()
-                }
-            }
-
-            guard !Task.isCancelled, state.shouldApply(token: token) else {
-                fingerprintTask.cancel()
-                return
-            }
-
             let fingerprints = await fingerprintTask.value
             guard !Task.isCancelled,
                   state.shouldApply(token: token) else {
                 return
             }
+            // Publish one complete ordering. Progressive prefixes repeatedly
+            // rebuild layout and are not viewport-based loading.
+            state.appendHydratedMessages(target)
             state.applyHydratedFingerprints(fingerprints)
             finalizeVisibleState(targetCount: target.count, sessionID: sessionID, onVisibleCountChange: onVisibleCountChange)
-            prewarmThinkParts(for: snapshots)
 
             guard state.finishHydration(token: token) else { return }
             onHydrationStateChange(false)
@@ -228,26 +225,32 @@ final class ChatVisibleMessageController: ObservableObject {
         }
     }
 
-    private func prewarmThinkParts(for snapshots: [(UUID, String)]) {
-        let enriched = snapshots.compactMap { entry -> (UUID, String, ContentFingerprint)? in
-            guard let fp = state.fingerprintCache[entry.0] else { return nil }
-            return (entry.0, entry.1, fp)
-        }
-        guard !enriched.isEmpty else { return }
-
-        Task.detached(priority: .utility) {
-            MessageRenderCache.shared.prewarmThinkParts(enriched)
-        }
-    }
-
     private func publishStateSnapshot() {
+        let previousStartID = presentation.publishedState.firstRenderedMessageID
+        let startID: UUID?
+        if let previousStartID, state.visibleMessages.contains(where: { $0.id == previousStartID }) {
+            startID = previousStartID
+        } else if let previousStartID,
+                  let previousIndex = presentation.visibleMessages.firstIndex(where: { $0.id == previousStartID }),
+                  !state.visibleMessages.isEmpty {
+            // A branch can replace the first rendered message. Preserve the
+            // expanded history boundary instead of collapsing back to the tail.
+            startID = state.visibleMessages[min(previousIndex, state.visibleMessages.count - 1)].id
+        } else {
+            startID = state.visibleMessages.last(where: \.isUser)?.id ?? state.visibleMessages.last?.id
+        }
         let next = PublishedState(
             visibleMessages: state.visibleMessages,
-            fingerprintCache: state.fingerprintCache,
+            firstRenderedMessageID: startID,
             isHydratingSession: state.isHydratingSession
         )
-        guard !publishedState.isEquivalent(to: next) else { return }
-        publishedState = next
+        for (id, content) in contentStates {
+            content.update(state.fingerprintCache[id])
+        }
+        guard !presentation.publishedState.isEquivalent(to: next) else { return }
+        let ids = Set(state.visibleMessages.map(\.id))
+        contentStates = contentStates.filter { ids.contains($0.key) }
+        presentation.publishedState = next
     }
 
     nonisolated private static func buildFingerprints(from snapshots: [(UUID, String)]) -> [UUID: ContentFingerprint] {
@@ -260,14 +263,60 @@ final class ChatVisibleMessageController: ObservableObject {
     }
 }
 
-private struct PublishedState {
+@MainActor
+final class ChatMessageContentState: ObservableObject {
+    @Published private(set) var fingerprint: ContentFingerprint?
+
+    init(fingerprint: ContentFingerprint?) {
+        self.fingerprint = fingerprint
+    }
+
+    func update(_ fingerprint: ContentFingerprint?) {
+        guard self.fingerprint != fingerprint else { return }
+        self.fingerprint = fingerprint
+    }
+}
+
+@MainActor
+final class ChatMessageListPresentation: ObservableObject {
+    @Published fileprivate var publishedState = PublishedState()
+
+    var visibleMessages: [ChatMessage] { publishedState.visibleMessages }
+    var isHydratingSession: Bool { publishedState.isHydratingSession }
+    var renderedMessages: ArraySlice<ChatMessage> { visibleMessages[firstRenderedIndex...] }
+
+    private var firstRenderedIndex: Int {
+        visibleMessages.firstIndex { $0.id == publishedState.firstRenderedMessageID } ?? 0
+    }
+
+    @discardableResult
+    func revealMessage(_ id: UUID) -> Bool {
+        guard let index = visibleMessages.firstIndex(where: { $0.id == id }),
+              index < firstRenderedIndex else { return false }
+        publishedState.firstRenderedMessageID = id
+        return true
+    }
+
+    @discardableResult
+    func revealOlderMessages(viewportHeight: CGFloat, contentHeight: CGFloat) -> Bool {
+        let start = firstRenderedIndex
+        guard start > 0, viewportHeight > 0, contentHeight > 0 else { return false }
+        let averageHeight = contentHeight / CGFloat(visibleMessages.count - start)
+        let requiredHeight = max(viewportHeight, 2 * viewportHeight - contentHeight)
+        let count = max(1, Int(ceil(requiredHeight / max(averageHeight, 1))))
+        publishedState.firstRenderedMessageID = visibleMessages[max(0, start - count)].id
+        return true
+    }
+}
+
+fileprivate struct PublishedState {
     var visibleMessages: [ChatMessage] = []
-    var fingerprintCache: [UUID: ContentFingerprint] = [:]
+    var firstRenderedMessageID: UUID?
     var isHydratingSession = false
 
     func isEquivalent(to other: PublishedState) -> Bool {
         guard isHydratingSession == other.isHydratingSession,
-              fingerprintCache == other.fingerprintCache,
+              firstRenderedMessageID == other.firstRenderedMessageID,
               visibleMessages.count == other.visibleMessages.count else {
             return false
         }

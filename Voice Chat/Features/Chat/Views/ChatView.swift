@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftStreamingMarkdown
 import Foundation
 import SwiftData
 
@@ -29,19 +30,22 @@ struct ChatView: View {
     // derived visibility boolean below participates in SwiftUI observation.
     @State var scrollStateStorage = ChatScrollStateStorage()
     @State var showScrollToBottomButton: Bool = false
-    @State var scrollProxy: ScrollViewProxy?
+    // Track offsets and edges; message ID tracking is only needed for an explicit search jump.
+    @State var scrollPosition = ScrollPosition(edge: .bottom)
+    @State var isExpandingHistory = false
+    @State var historyAnchorMessageID: UUID?
     @State var branchRenderEpoch: Int = 0
     @State var scrollInteractionState = ChatScrollInteractionState()
     @State var activeAlert: ChatAlert?
     @State var expectAssistantResponseHaptics: Bool = false
     @State var didTriggerResponseStartHaptic: Bool = false
-    // The message list observes this controller directly. Keeping ownership here
-    // without observing it prevents streamed fingerprints from invalidating the
-    // composer and the rest of the chat chrome.
+    // The list observes structural presentation state; each row observes only its
+    // own content state. The composer does not observe streamed fingerprints.
     @State var visibleMessageController = ChatVisibleMessageController()
     @State var visibleMessageCount: Int = 0
     @State var isHydratingSession: Bool = false
-    @StateObject var initialRenderCoordinator = ChatInitialRenderCoordinator()
+    @State var initialRenderCoordinator = ChatInitialRenderCoordinator()
+    @State var markdownViewportCoordinator = MarkdownViewportCoordinator()
 #if os(iOS) || os(macOS) || os(visionOS)
     @StateObject var imageImportDriver = ChatImageAttachmentImportDriver()
 #endif

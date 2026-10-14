@@ -7,6 +7,7 @@
 
 import SwiftStreamingMarkdown
 import SwiftUI
+import Observation
 
 struct RichMarkdownView: View {
     let markdown: String
@@ -40,6 +41,16 @@ struct RichMarkdownView: View {
                 .id(generation)
             }
         }
+        .preference(
+            key: ChatInitialRenderSourcesKey.self,
+            value: presentationGeneration.map {
+                ChatInitialRenderSources(
+                    generation: $0,
+                    renderers: [ObjectIdentifier(source)],
+                    rendered: hasRenderedFirstSnapshot ? [ObjectIdentifier(source)] : []
+                )
+            }
+        )
         .onAppear {
             registerForCurrentPresentation()
         }
@@ -250,30 +261,55 @@ struct RichMarkdownView: View {
 }
 
 @MainActor
-final class ChatInitialRenderCoordinator: ObservableObject {
-    @Published private(set) var isReady = false
-    @Published private(set) var generation: UInt64 = 0
+@Observable
+final class ChatInitialRenderCoordinator {
+    private(set) var isReady = false
+    private(set) var generation: UInt64 = 0
+    private(set) var layoutGeneration: UInt64?
 
     // Collection starts with the coordinator's lifetime, before SwiftUI is free
     // to run the hydration task or child onAppear callbacks in either order.
-    private var isCollecting = true
-    private var renderers: Set<ObjectIdentifier> = []
-    private var rendered: Set<ObjectIdentifier> = []
-    private var laidOut: Set<ObjectIdentifier> = []
+    @ObservationIgnored private var pendingHosts: Set<ObjectIdentifier> = []
+    @ObservationIgnored private var isCollecting = true
+    @ObservationIgnored private var renderers: Set<ObjectIdentifier> = []
+    @ObservationIgnored private var rendered: Set<ObjectIdentifier> = []
+    @ObservationIgnored private var laidOut: Set<ObjectIdentifier> = []
 
     func begin() {
         generation &+= 1
         isCollecting = true
+        pendingHosts.removeAll(keepingCapacity: true)
         renderers.removeAll(keepingCapacity: true)
         rendered.removeAll(keepingCapacity: true)
         laidOut.removeAll(keepingCapacity: true)
         isReady = false
+        layoutGeneration = nil
+    }
+
+    func beginCollecting() {
+        guard !isReady else { return }
+        isCollecting = true
+        layoutGeneration = nil
+    }
+
+    func beginHosting(_ host: AnyObject, generation: UInt64) {
+        guard generation == self.generation, !isReady else { return }
+        pendingHosts.insert(ObjectIdentifier(host))
+        layoutGeneration = nil
+    }
+
+    func finishHosting(_ host: AnyObject, sources: ChatInitialRenderSources) {
+        guard sources.generation == generation, !isReady else { return }
+        renderers.formUnion(sources.renderers)
+        pendingHosts.remove(ObjectIdentifier(host))
+        resolveIfReady()
     }
 
     @discardableResult
     func register(_ renderer: AnyObject, generation: UInt64) -> Bool {
         guard generation == self.generation, !isReady else { return false }
         renderers.insert(ObjectIdentifier(renderer))
+        layoutGeneration = nil
         return true
     }
 
@@ -312,11 +348,16 @@ final class ChatInitialRenderCoordinator: ObservableObject {
     }
 
     private func resolveIfReady() {
-        guard !isCollecting,
+        guard !isCollecting, pendingHosts.isEmpty,
               rendered.isSuperset(of: renderers),
               laidOut.isSuperset(of: renderers) else {
             return
         }
+        layoutGeneration = generation
+    }
+
+    func markTranscriptLaidOut(generation: UInt64) {
+        guard !isReady, layoutGeneration == generation, self.generation == generation else { return }
         complete()
     }
 
@@ -325,6 +366,28 @@ final class ChatInitialRenderCoordinator: ObservableObject {
         renderers.removeAll(keepingCapacity: true)
         rendered.removeAll(keepingCapacity: true)
         laidOut.removeAll(keepingCapacity: true)
+    }
+}
+
+struct ChatInitialRenderSources: Equatable {
+    let generation: UInt64
+    var renderers: Set<ObjectIdentifier> = []
+    var rendered: Set<ObjectIdentifier> = []
+    var size: CGSize?
+}
+
+struct ChatInitialRenderSourcesKey: PreferenceKey {
+    static var defaultValue: ChatInitialRenderSources? { nil }
+
+    static func reduce(value: inout ChatInitialRenderSources?, nextValue: () -> ChatInitialRenderSources?) {
+        guard let next = nextValue() else { return }
+        if value?.generation == next.generation {
+            value?.renderers.formUnion(next.renderers)
+            value?.rendered.formUnion(next.rendered)
+            if let size = next.size { value?.size = size }
+        } else {
+            value = next
+        }
     }
 }
 

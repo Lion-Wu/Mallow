@@ -37,6 +37,7 @@ extension ChatView {
     }
 
     func handleBranchTransition() {
+        resetHistoryScrollAnchor()
         // Branch snapshots are replaced atomically by the visible-message
         // controller. Keep the current snapshot on screen while any missing
         // fingerprints are prepared instead of restarting the initial
@@ -45,41 +46,33 @@ extension ChatView {
     }
 
     func handleVisibleMessageCountChange() {
+        guard initialRenderCoordinator.isReady else { return }
         if consumeScrollToBottomAfterSendIfNeeded() {
             return
         }
         if attemptSearchTargetScroll() {
             return
         }
-        if !scrollInteractionState.hasSearchInterruption(
-            currentTarget: currentSearchNavigationTarget()
-        ), !showScrollToBottomButton {
-            scrollToBottom(animated: initialRenderCoordinator.isReady)
-        }
+        // Message counts arrive before the new rows have been laid out.
+        // Geometry owns bottom following once those rows have their actual size.
     }
 
     func handleInitialContentReady() {
         guard initialRenderCoordinator.isReady else { return }
-        if attemptSearchTargetScroll(animated: false) {
-            return
-        }
-        if !scrollInteractionState.hasSearchInterruption(
-            currentTarget: currentSearchNavigationTarget()
-        ) {
-            scrollToBottom(animated: false)
-        }
+        // Geometry owns size-change anchoring. An explicit bottom command here
+        // can resolve against a page's placeholder height and later overwrite
+        // the offset for its fully rendered content.
+        revealOlderMessagesIfNeeded()
+        _ = attemptSearchTargetScroll(animated: false)
     }
 
-    func handleScrollProxyReady(_ proxy: ScrollViewProxy, availableWidth: CGFloat) {
-        updateAvailableMessageWidth(availableWidth)
-        scrollProxy = proxy
+    func handleScrollViewAppear() {
         DispatchQueue.main.async {
             if !attemptSearchTargetScroll(),
                !scrollInteractionState.hasSearchInterruption(
                    currentTarget: currentSearchNavigationTarget()
                ) {
                 if !initialRenderCoordinator.isReady {
-                    scrollToBottom(animated: false)
                     return
                 }
                 if consumeScrollToBottomAfterSendIfNeeded(animated: false) {

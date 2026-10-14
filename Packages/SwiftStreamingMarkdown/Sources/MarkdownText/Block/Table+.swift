@@ -31,13 +31,10 @@ extension Markdown.Table: BlockConvertible {
         let cells = row.children.compactMap { $0 as? Cell }
         return cells.map { $0.convert(attributeContainer: bodyContainer, config: config) }
       }
-    // swift-markdown's MarkupFormatter.visitTable crashes with an array index
-    // out of bounds when any body row has fewer columns than the header
-    // (https://github.com/swiftlang/swift-markdown/issues/238).
-    // Guard against this by only calling format() when the table is well-formed.
-    let headerColumnCount = self.head.childCount
-    let isWellFormed = self.body.children.allSatisfy { $0.childCount == headerColumnCount }
-    let rawMarkdown = isWellFormed ? self.format() : ""
-    return .table(id: self.id, headers: headerCells, rows: rows, rawMarkdown: rawMarkdown)
+    let styledHeaders = headerCells.map { markdownTableCellContent($0, isHeader: true, config: config) }
+    let styledRows = rows.map { row in row.map { markdownTableCellContent($0, isHeader: false, config: config) } }
+    let layout = MarkdownTableLayout(precomputing: [styledHeaders] + styledRows,
+                                     columnMaxWidths: Array(repeating: 200, count: styledHeaders.count))
+    return .table(id: self.id, headers: styledHeaders, rows: styledRows, layout: layout)
   }
 }

@@ -120,7 +120,10 @@ extension ChatSession {
 
     func refreshSidebarPreviewIfLatest(_ message: ChatMessage) {
         guard lastMessageID == message.id else { return }
-        sidebarPreviewText = Self.sidebarPreviewText(for: message)
+        let preview = Self.sidebarPreviewText(for: message)
+        if sidebarPreviewText != preview {
+            sidebarPreviewText = preview
+        }
     }
 
     static func sidebarPreviewText(for message: ChatMessage?) -> String {
@@ -133,6 +136,6 @@ extension ChatSession {
 
         // Preserve the existing sidebar presentation contract exactly.
         let snippet = bodyText.prefix(60)
-        return bodyText.count > 60 ? "\(snippet)…" : String(snippet)
+        return snippet.endIndex != bodyText.endIndex ? "\(snippet)…" : String(snippet)
     }
 }

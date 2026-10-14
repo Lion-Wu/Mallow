@@ -418,47 +418,18 @@ struct SidebarView: View {
         return result
     }
 
-    @ViewBuilder
+    #if os(macOS)
     private var macSidebar: some View {
-        List(selection: $sidebarSelectionID) {
-            Section {
-                macDraftRow
-                    .tag(chatSessionsViewModel.draftSession.id)
+        let rows = measuredSidebarRows
+        return GeometryReader { geometry in
+            NativeSidebarList(
+                rows: rows,
+                selection: $sidebarSelectionID,
+                contentInsets: geometry.safeAreaInsets
+            ) { sessionID in
+                requestDelete(for: [sessionID])
             }
-            if shouldShowInitialSessionLoading || sidebarGroups.isEmpty {
-                Section(header: Text("Chats")) {
-                    if shouldShowInitialSessionLoading {
-                        sidebarInitialLoadingRow
-                    } else if visibleSearchKeyword.isEmpty {
-                        Text("No chats yet")
-                            .foregroundStyle(.secondary)
-                    } else if shouldShowSidebarSearchLoading {
-                        sidebarSearchLoadingRow
-                    } else {
-                        Text(String(format: NSLocalizedString("No chats match \"%@\"", comment: ""), visibleSearchKeyword))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            } else {
-                ForEach(sidebarGroups) { group in
-                    Section(header: group.section.title) {
-                        ForEach(group.sessions) { session in
-                            macSessionRow(session)
-                                .tag(session.id)
-                                .contextMenu {
-                                    Button("Rename") { renameSession(session) }
-                                    Button("Delete", role: .destructive) {
-                                        requestDelete(for: session)
-                                    }
-                                }
-                        }
-                        .onDelete { offsets in
-                            handleSwipeDelete(at: offsets, within: group.sessions)
-                        }
-                    }
-                }
-                sidebarSearchLoadingSection
-            }
+            .ignoresSafeArea()
         }
         .onChange(of: sidebarSelectionID) { _, sessionID in
             selectMacSession(with: sessionID)
@@ -466,14 +437,53 @@ struct SidebarView: View {
         .onChange(of: chatSessionsViewModel.selectedSessionID, initial: true) { _, sessionID in
             synchronizeSidebarSelection(with: sessionID)
         }
-        .listStyle(.sidebar)
         .searchable(text: $searchText, placement: .sidebar, prompt: Text("Search Chats"))
-        #if os(macOS)
         .safeAreaInset(edge: .bottom) {
             SidebarSettingsFooter(style: .mac, onOpenSettings: onOpenSettings)
         }
-        #endif
     }
+
+    private var measuredSidebarRows: [NativeSidebarRow] {
+        let draft = chatSessionsViewModel.draftSession
+        var rows = [NativeSidebarRow(id: draft.id, selectionID: draft.id, isGroup: false,
+            key: .init(title: "draft"), content: AnyView(macDraftRow))]
+        if shouldShowInitialSessionLoading || sidebarGroups.isEmpty {
+            rows.append(NativeSidebarRow(id: "chats-header", selectionID: nil, isGroup: true,
+                key: .init(title: "chats"), content: AnyView(Text("Chats").font(.caption).foregroundStyle(.secondary))))
+            let content: AnyView
+            let key: String
+            if shouldShowInitialSessionLoading {
+                content = AnyView(sidebarInitialLoadingRow); key = "loading"
+            } else if visibleSearchKeyword.isEmpty {
+                content = AnyView(Text("No chats yet").foregroundStyle(.secondary)); key = "empty"
+            } else if shouldShowSidebarSearchLoading {
+                content = AnyView(sidebarSearchLoadingRow); key = "searching"
+            } else {
+                content = AnyView(Text(String(format: NSLocalizedString("No chats match \"%@\"", comment: ""), visibleSearchKeyword))); key = visibleSearchKeyword
+            }
+            rows.append(NativeSidebarRow(id: "status", selectionID: nil, isGroup: false,
+                key: .init(title: key), content: content))
+        } else {
+            for group in sidebarGroups {
+                rows.append(NativeSidebarRow(id: group.id, selectionID: nil, isGroup: true,
+                    key: .init(title: String(describing: group.id), calendarDay: Calendar.autoupdatingCurrent.startOfDay(for: Date())), content: AnyView(group.section.title.font(.caption).foregroundStyle(.secondary))))
+                for session in group.sessions {
+                    rows.append(NativeSidebarRow(id: session.id, selectionID: session.id, isGroup: false,
+                        key: .init(title: session.title, preview: sidebarPreview(for: session), isRenaming: renamingSession?.id == session.id),
+                        content: AnyView(macSessionRow(session).contextMenu {
+                            Button("Rename") { renameSession(session) }
+                            Button("Delete", role: .destructive) { requestDelete(for: session) }
+                        }), measurementContent: AnyView(macSessionRowContent(session)), canDelete: true))
+                }
+            }
+            if shouldShowSidebarSearchLoading {
+                rows.append(NativeSidebarRow(id: "status", selectionID: nil, isGroup: false,
+                    key: .init(title: "searching"), content: AnyView(sidebarSearchLoadingRow)))
+            }
+        }
+        return rows
+    }
+    #endif
 
     @ViewBuilder
     private var iosSidebarList: some View {
@@ -694,6 +704,13 @@ struct SidebarView: View {
     }
 
     private func macSessionRow(_ session: ChatSession) -> some View {
+        macSessionRowContent(session)
+            .popover(isPresented: renamePopoverBinding(for: session), arrowEdge: .trailing) {
+                renameSheetView()
+            }
+    }
+
+    private func macSessionRowContent(_ session: ChatSession) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.title)
@@ -708,9 +725,6 @@ struct SidebarView: View {
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
-        .popover(isPresented: renamePopoverBinding(for: session), arrowEdge: .trailing) {
-            renameSheetView()
-        }
     }
 
     private var iosDraftRow: some View {
@@ -781,3 +795,325 @@ struct SidebarView: View {
     .modelContainer(container)
     .environmentObject(chatSessions)
 }
+#if os(macOS)
+import AppKit
+
+private struct NativeSidebarRow {
+    struct Key: Equatable {
+        let title: String
+        var preview: SidebarSessionPreview? = nil
+        var isRenaming = false
+        var calendarDay: Date? = nil
+    }
+    let id: AnyHashable
+    let selectionID: UUID?
+    let isGroup: Bool
+    let key: Key
+    let content: AnyView
+    var measurementContent: AnyView? = nil
+    var canDelete = false
+}
+
+private struct NativeSidebarList: NSViewRepresentable {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.locale) private var locale
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.layoutDirection) private var layoutDirection
+    let rows: [NativeSidebarRow]
+    @Binding var selection: UUID?
+    let contentInsets: EdgeInsets
+    let onDelete: (UUID) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(selection: $selection) }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NativeSidebarScrollView, context: Context) -> CGSize? {
+        // The parent owns the viewport size; the table's document height must
+        // not feed back into the scroll view's fitting size during layout.
+        guard let width = proposal.width, let height = proposal.height,
+              width.isFinite, height.isFinite else { return nil }
+        return CGSize(width: width, height: height)
+    }
+
+    func makeNSView(context: Context) -> NativeSidebarScrollView {
+        let scroll = NativeSidebarScrollView()
+        let table = NativeSidebarTableView()
+        table.onDelete = { [weak coordinator = context.coordinator] in
+            coordinator?.deleteSelection()
+        }
+        table.headerView = nil
+        table.style = .sourceList
+        table.floatsGroupRows = false
+        table.usesAutomaticRowHeights = false
+        table.rowSizeStyle = .custom
+        table.intercellSpacing = .zero
+        table.allowsMultipleSelection = false
+        table.allowsEmptySelection = false
+        table.columnAutoresizingStyle = .uniformColumnAutoresizingStyle
+        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("sidebar"))
+        column.minWidth = 0
+        table.addTableColumn(column)
+        table.delegate = context.coordinator
+        table.dataSource = context.coordinator
+        table.autoresizingMask = [.width]
+        scroll.drawsBackground = false
+        scroll.automaticallyAdjustsContentInsets = false
+        scroll.hasVerticalScroller = true
+        scroll.autohidesScrollers = true
+        scroll.documentView = table
+        context.coordinator.table = table
+        scroll.onWidthChange = { [weak coordinator = context.coordinator] width in
+            coordinator?.apply(width: width)
+        }
+        return scroll
+    }
+
+    func updateNSView(_ scroll: NativeSidebarScrollView, context: Context) {
+        // SwiftUI owns the search, toolbar, and footer safe area. The native
+        // scroll view fills that area and receives its insets exactly once.
+        scroll.contentInsets = NSEdgeInsets(
+            top: contentInsets.top,
+            left: layoutDirection == .leftToRight ? contentInsets.leading : contentInsets.trailing,
+            bottom: contentInsets.bottom,
+            right: layoutDirection == .leftToRight ? contentInsets.trailing : contentInsets.leading
+        )
+        let coordinator = context.coordinator
+        coordinator.selection = $selection
+        coordinator.onDelete = onDelete
+        coordinator.pendingRows = rows
+        coordinator.environment = RowEnvironment(
+            colorScheme: colorScheme, locale: locale,
+            dynamicTypeSize: dynamicTypeSize, layoutDirection: layoutDirection
+        )
+        coordinator.apply(width: scroll.contentSize.width)
+    }
+
+    static func dismantleNSView(_ scroll: NativeSidebarScrollView, coordinator: Coordinator) {
+        scroll.onWidthChange = nil
+        coordinator.table?.delegate = nil
+        coordinator.table?.dataSource = nil
+    }
+
+    struct RowEnvironment: Equatable {
+        var colorScheme = ColorScheme.light
+        var locale = Locale.current
+        var dynamicTypeSize = DynamicTypeSize.large
+        var layoutDirection = LayoutDirection.leftToRight
+        var groupInset: CGFloat = 0
+
+        func content(for row: NativeSidebarRow, measuring: Bool = false) -> AnyView {
+            AnyView((measuring ? row.measurementContent ?? row.content : row.content)
+                .padding(.horizontal, row.isGroup ? groupInset : 0)
+                .padding(.vertical, row.isGroup ? 2 : 3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .environment(\.colorScheme, colorScheme)
+                .environment(\.locale, locale)
+                .environment(\.dynamicTypeSize, dynamicTypeSize)
+                .environment(\.layoutDirection, layoutDirection))
+        }
+    }
+
+    @MainActor
+    final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
+        struct LayoutRow {
+            let row: NativeSidebarRow
+            let height: CGFloat
+        }
+        struct Measurement {
+            let key: NativeSidebarRow.Key
+            let width: CGFloat
+            let environment: RowEnvironment
+            let height: CGFloat
+        }
+        var selection: Binding<UUID?>
+        var onDelete: ((UUID) -> Void)?
+        weak var table: NSTableView?
+        var pendingRows: [NativeSidebarRow] = []
+        var environment = RowEnvironment()
+        private var appliedEnvironment = RowEnvironment()
+        private var displayed: [LayoutRow] = []
+        private var measurements: [AnyHashable: Measurement] = [:]
+        private var width: CGFloat = 0
+        private var isApplying = false
+        private var lastSelectionID: UUID?
+        private let measurer = NSHostingController(rootView: AnyView(EmptyView()))
+
+        init(selection: Binding<UUID?>) {
+            self.selection = selection
+            super.init()
+            measurer.sizingOptions = []
+        }
+
+        func apply(width proposedWidth: CGFloat) {
+            guard let table, proposedWidth > 0, !isApplying else { return }
+            isApplying = true
+            defer { isApplying = false }
+            // AppKit owns the source-list margins. A column is narrower than
+            // the clip view; assigning the clip width makes the table overflow.
+            table.sizeLastColumnToFit()
+            let nextWidth = table.tableColumns[0].width
+            environment.groupInset = table.rect(ofColumn: 0).minX
+            let environmentChanged = appliedEnvironment != environment
+            let widthChanged = width != nextWidth
+            let idsChanged = displayed.map { $0.row.id } != pendingRows.map(\.id)
+            if !environmentChanged, !widthChanged, !idsChanged,
+               zip(displayed, pendingRows).allSatisfy({ $0.row.key == $1.key }) {
+                synchronizeSelection()
+                return
+            }
+            // Retain a row identity and its viewport position across actual
+            // height/order changes; estimates never own this table's geometry.
+            let scroll = table.enclosingScrollView
+            let visibleTop = (scroll?.contentView.bounds.minY ?? 0) + (scroll?.contentInsets.top ?? 0)
+            let visibleRow = table.row(at: NSPoint(x: table.bounds.midX, y: visibleTop))
+            let wasEmpty = displayed.isEmpty
+            let anchor: (id: AnyHashable, offset: CGFloat)? = displayed.indices.contains(visibleRow)
+                ? (displayed[visibleRow].row.id, visibleTop - table.rect(ofRow: visibleRow).minY)
+                : nil
+            var changed = IndexSet()
+            var changedHeights = IndexSet()
+            let previous = Dictionary(uniqueKeysWithValues: displayed.map { ($0.row.id, $0) })
+            let next = pendingRows.enumerated().map { index, row -> LayoutRow in
+                let height: CGFloat
+                if let measured = measurements[row.id], measured.key == row.key,
+                   measured.width == nextWidth, measured.environment == environment {
+                    height = measured.height
+                } else {
+                    measurer.rootView = environment.content(for: row, measuring: true)
+                    height = ceil(measurer.sizeThatFits(in: CGSize(width: nextWidth, height: .greatestFiniteMagnitude)).height)
+                    measurements[row.id] = Measurement(key: row.key, width: nextWidth, environment: environment, height: height)
+                }
+                if previous[row.id]?.height != height { changedHeights.insert(index) }
+                if environmentChanged || widthChanged || previous[row.id]?.row.key != row.key {
+                    changed.insert(index)
+                }
+                return LayoutRow(row: row, height: height)
+            }
+            displayed = next
+            let retainedIDs = Set(pendingRows.map(\.id))
+            measurements = measurements.filter { retainedIDs.contains($0.key) }
+            width = nextWidth
+            appliedEnvironment = environment
+            if idsChanged {
+                table.reloadData()
+            } else if !changed.isEmpty {
+                if !changedHeights.isEmpty {
+                    table.noteHeightOfRows(withIndexesChanged: changedHeights)
+                }
+                for index in changed {
+                    if let cell = table.view(atColumn: 0, row: index, makeIfNecessary: false) as? NativeSidebarCell {
+                        cell.host.rootView = environment.content(for: displayed[index].row)
+                    }
+                }
+            }
+            if idsChanged || !changedHeights.isEmpty,
+               let anchor, let index = displayed.firstIndex(where: { $0.row.id == anchor.id }),
+               let scroll = table.enclosingScrollView {
+                table.layoutSubtreeIfNeeded()
+                let desiredY = table.rect(ofRow: index).minY + anchor.offset - scroll.contentInsets.top
+                let minY = -scroll.contentInsets.top
+                let maxY = max(minY, table.bounds.height - scroll.contentView.bounds.height + scroll.contentInsets.bottom)
+                let point = NSPoint(x: scroll.contentView.bounds.minX, y: min(max(minY, desiredY), maxY))
+                scroll.contentView.scroll(to: point)
+                scroll.reflectScrolledClipView(scroll.contentView)
+            } else if wasEmpty, let scroll {
+                scroll.contentView.scroll(to: NSPoint(x: 0, y: -scroll.contentInsets.top))
+                scroll.reflectScrolledClipView(scroll.contentView)
+            }
+            synchronizeSelection()
+        }
+
+        private func synchronizeSelection() {
+            guard let table else { return }
+            let selectionChanged = lastSelectionID != selection.wrappedValue
+            lastSelectionID = selection.wrappedValue
+            let selectedRow = displayed.firstIndex { $0.row.selectionID == selection.wrappedValue && $0.row.selectionID != nil }
+            if let selectedRow, table.selectedRow != selectedRow {
+                table.selectRowIndexes(IndexSet(integer: selectedRow), byExtendingSelection: false)
+                if selectionChanged { table.scrollRowToVisible(selectedRow) }
+            }
+        }
+
+        func deleteSelection() {
+            guard let table else { return }
+            deleteRow(table.selectedRow)
+        }
+
+        private func deleteRow(_ index: Int) {
+            guard displayed.indices.contains(index), displayed[index].row.canDelete,
+                  let id = displayed[index].row.selectionID else { return }
+            onDelete?(id)
+        }
+
+        func tableView(_ tableView: NSTableView, rowActionsForRow row: Int, edge: NSTableView.RowActionEdge) -> [NSTableViewRowAction] {
+            guard edge == .trailing, displayed[row].row.canDelete else { return [] }
+            return [NSTableViewRowAction(style: .destructive, title: NSLocalizedString("Delete", comment: "")) { [weak self] _, index in
+                self?.deleteRow(index)
+            }]
+        }
+
+        func tableView(_ tableView: NSTableView, typeSelectStringFor tableColumn: NSTableColumn?, row: Int) -> String? {
+            displayed[row].row.selectionID == nil ? nil : displayed[row].row.key.title
+        }
+
+        func numberOfRows(in tableView: NSTableView) -> Int { displayed.count }
+        func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat { displayed[row].height }
+        func tableView(_ tableView: NSTableView, isGroupRow row: Int) -> Bool { displayed[row].row.isGroup }
+        func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool { displayed[row].row.selectionID != nil }
+        func tableViewSelectionDidChange(_ notification: Notification) {
+            guard !isApplying, let table, displayed.indices.contains(table.selectedRow) else { return }
+            lastSelectionID = displayed[table.selectedRow].row.selectionID
+            selection.wrappedValue = lastSelectionID
+        }
+        func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+            let identifier = NSUserInterfaceItemIdentifier("sidebar-row")
+            let cell = tableView.makeView(withIdentifier: identifier, owner: nil) as? NativeSidebarCell ?? NativeSidebarCell()
+            cell.identifier = identifier
+            cell.host.rootView = environment.content(for: displayed[row].row)
+            return cell
+        }
+    }
+}
+
+private final class NativeSidebarTableView: NSTableView {
+    var onDelete: (() -> Void)?
+    override func keyDown(with event: NSEvent) {
+        if (event.keyCode == 51 || event.keyCode == 117), event.modifierFlags.intersection(.deviceIndependentFlagsMask).isEmpty {
+            onDelete?()
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+}
+
+private final class NativeSidebarScrollView: NSScrollView {
+    var onWidthChange: ((CGFloat) -> Void)?
+    override func layout() {
+        super.layout()
+        onWidthChange?(contentSize.width)
+    }
+}
+
+private final class NativeSidebarCell: NSTableCellView {
+    let host = NSHostingView(rootView: AnyView(EmptyView()))
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        configureHost()
+    }
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        configureHost()
+    }
+    private func configureHost() {
+        host.sizingOptions = []
+        host.safeAreaRegions = []
+        host.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(host)
+        NSLayoutConstraint.activate([
+            host.leadingAnchor.constraint(equalTo: leadingAnchor),
+            host.trailingAnchor.constraint(equalTo: trailingAnchor),
+            host.topAnchor.constraint(equalTo: topAnchor),
+            host.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+    }
+}
+#endif

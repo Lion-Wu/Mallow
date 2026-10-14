@@ -117,6 +117,12 @@ final class AppErrorCenter: ObservableObject, AppNoticePublishing {
 
         if let idx = notices.firstIndex(where: { $0.category == category }) {
             let existing = notices[idx]
+            if existing.title == resolvedTitle,
+               existing.message == trimmedMessage,
+               existing.severity == severity {
+                scheduleAutoDismiss(for: existing.id, after: autoDismiss)
+                return
+            }
             notice = AppErrorNotice(
                 id: existing.id,
                 title: resolvedTitle,
@@ -153,12 +159,16 @@ final class AppErrorCenter: ObservableObject, AppNoticePublishing {
             removedIDs = notices
                 .filter { $0.category == category }
                 .map(\.id)
-            notices.removeAll { $0.category == category }
-            dismissedCategories.remove(category)
+            if !removedIDs.isEmpty {
+                notices.removeAll { $0.category == category }
+            }
+            if dismissedCategories.contains(category) {
+                dismissedCategories.remove(category)
+            }
         } else {
             removedIDs = notices.map(\.id)
-            notices.removeAll()
-            dismissedCategories.removeAll()
+            if !notices.isEmpty { notices.removeAll() }
+            if !dismissedCategories.isEmpty { dismissedCategories.removeAll() }
         }
         for id in removedIDs {
             dismissTasks[id]?.cancel()

@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import OSLog
 import Markdown
 import SwiftUI
 #if canImport(UIKit)
@@ -18,14 +19,6 @@ import AppKit
 public struct RenderableDocument: Equatable, Sendable {
   let renderables: [MarkdownRenderable]
 
-  var containsCodeBlock: Bool {
-    return renderables.contains(where: { $0.isCodeBlock })
-  }
-
-  var containsBlockQuote: Bool {
-    return renderables.contains(where: { $0.isBlockQuote })
-  }
-
   var isEmpty: Bool {
     return renderables.isEmpty
   }
@@ -35,7 +28,7 @@ public struct RenderableDocument: Equatable, Sendable {
   ///   - document: The parsed markdown tree.
   ///   - config: Styling and behavior used during conversion.
   public init(document: Markdown.Document, config: MarkdownRenderConfig) async {
-    self.renderables = document.convert(with: config)
+    self.renderables = await document.convert(with: config).preparingCodeHighlights(config: config)
   }
 
   /// Construct a renderable wrapping a single plain-text paragraph styled
@@ -90,7 +83,7 @@ extension MarkdownRenderable {
       return items.plainText(separator: "\n")
     case .unorderedList(_, let items, _):
       return items.plainText(separator: "\n")
-    case .codeBlock(_, _, let code):
+    case .codeBlock(_, _, let code, _):
       return code
     case .table(_, let headers, let rows, _):
       let headerLine = headers.map { $0.string }.joined(separator: "\t")
@@ -146,5 +139,56 @@ extension MarkdownRenderable {
 extension MarkdownListItem {
   func attributedStrings() -> [NSAttributedString] {
     return self.children.flatMap { $0.extractAttributedStrings() }
+  }
+}
+
+
+extension Array where Element == MarkdownRenderable {
+  func preparingCodeHighlights(config: MarkdownRenderConfig) async -> [MarkdownRenderable] {
+    var prepared: [MarkdownRenderable] = []
+    prepared.reserveCapacity(count)
+    for block in self {
+      guard !Task.isCancelled else { return [] }
+      prepared.append(await block.preparingCodeHighlights(config: config))
+    }
+    return prepared
+  }
+}
+
+extension MarkdownRenderable {
+  func preparingCodeHighlights(config: MarkdownRenderConfig) async -> MarkdownRenderable {
+    switch self {
+    case .codeBlock(let id, let language, let code, _):
+      do {
+        let highlight = try await HighlightTaskManager.shared.highlightRanges(
+          code: code, language: language ?? "",
+          colors: config.codeBlockConfig.theme.highlightColors(for: config.colorScheme))
+        return .codeBlock(id: id, language: language, code: code, highlight: highlight)
+      } catch is CancellationError {
+        return self
+      } catch {
+        // Preserve the source on a highlighter failure, but never hide the error.
+        Logger(subsystem: "MarkdownText", category: "SyntaxHighlighting")
+          .error("Code highlighting failed: \(String(describing: error), privacy: .public)")
+        return self
+      }
+    case .orderedList(let id, let items):
+      return .orderedList(id: id, items: await prepare(items, config: config))
+    case .unorderedList(let id, let items, let level):
+      return .unorderedList(id: id, items: await prepare(items, config: config), nestedLevel: level)
+    default:
+      return self
+    }
+  }
+
+  private func prepare(_ items: [MarkdownListItem], config: MarkdownRenderConfig) async -> [MarkdownListItem] {
+    var prepared: [MarkdownListItem] = []
+    prepared.reserveCapacity(items.count)
+    for item in items {
+      let children = await item.children.preparingCodeHighlights(config: config)
+      prepared.append(MarkdownListItem(children: children, startsWithBold: item.startsWithBold,
+                                       checkbox: item.checkbox))
+    }
+    return prepared
   }
 }

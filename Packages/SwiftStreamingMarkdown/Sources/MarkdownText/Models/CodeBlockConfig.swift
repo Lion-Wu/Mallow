@@ -101,7 +101,7 @@ extension CodeBlockConfig.Theme {
   /// Resolve the highlight.js colors to use for the given color scheme.
   ///
   /// Only `colors.css` affects the rendered `AttributedString`; the code-block
-  /// chrome background is owned by `CodeBlockView`, so the theme background hex
+  /// chrome background is owned by `MarkdownNativeCodeBlock`, so the theme background hex
   /// is intentionally ignored here.
   func highlightColors(for colorScheme: ColorScheme) -> HighlightColors {
     switch self {

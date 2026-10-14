@@ -8,6 +8,26 @@
 import CoreGraphics
 import Foundation
 
+/// A single scroll-layout snapshot keeps content size and offset in sync.
+struct ChatScrollViewportMetrics: Equatable {
+    let contentHeight: CGFloat
+    let viewportHeight: CGFloat
+    let bottomAnchorMaxY: CGFloat
+    let historyAnchor: ChatHistoryAnchor?
+    var searchTarget: ChatSearchTargetGeometry? = nil
+    var initialRenderGeneration: UInt64? = nil
+}
+
+struct ChatSearchTargetGeometry: Equatable {
+    let messageID: UUID
+    let frame: CGRect
+}
+
+struct ChatHistoryAnchor: Equatable {
+    let messageID: UUID
+    let positionY: CGFloat
+}
+
 struct ChatScrollMetrics: Equatable, Sendable {
     let contentHeight: CGFloat
     let viewportHeight: CGFloat
@@ -176,14 +196,14 @@ struct ChatScrollState: Equatable, Sendable {
     mutating func consumeOverflowTransitionScrollToBottomIfReady(
         metrics: ChatScrollMetrics,
         hasSearchInterruption: Bool,
-        scrollProxyAvailable: Bool
+        hasViewport: Bool
     ) -> ChatScrollOverflowDecision {
         guard pendingComposerOverflowScrollToBottom else { return .none }
         guard metrics.shouldTriggerComposerOverflowScroll else {
             cancelOverflowTransitionScroll()
             return .cancelled
         }
-        guard metrics.shouldShowScrollToBottomButton, scrollProxyAvailable else { return .waiting }
+        guard metrics.shouldShowScrollToBottomButton, hasViewport else { return .waiting }
         guard !hasSearchInterruption else {
             cancelOverflowTransitionScroll()
             return .cancelled
@@ -206,7 +226,7 @@ struct ChatScrollState: Equatable, Sendable {
     mutating func consumeScrollToBottomAfterSendIfReady(
         visibleCount: Int,
         bottomMessageID: UUID?,
-        scrollProxyAvailable: Bool
+        hasViewport: Bool
     ) -> Bool {
         guard scrollToBottomAfterSend.isRequested else { return false }
         if let baseline = scrollToBottomAfterSend.baselineVisibleCount,
@@ -214,7 +234,7 @@ struct ChatScrollState: Equatable, Sendable {
            bottomMessageID == scrollToBottomAfterSend.baselineBottomMessageID {
             return false
         }
-        guard scrollProxyAvailable else { return false }
+        guard hasViewport else { return false }
 
         cancelScrollToBottomAfterSend()
         return true
@@ -224,4 +244,13 @@ struct ChatScrollState: Equatable, Sendable {
 @MainActor
 final class ChatScrollStateStorage {
     var value = ChatScrollState()
+    var hasUserScrolled = false
+    var isFollowingBottom = true
+    var isUserScrollActive = false
+    var measuredHistoryAnchor: ChatHistoryAnchor?
+    var retainedHistoryAnchor: ChatHistoryAnchor?
+    var searchScrollDecision: ChatSearchScrollDecision?
+    var animateSearchScroll = false
+    var lastSearchScrollOffset: CGFloat?
+    var latestViewportMetrics: ChatScrollViewportMetrics?
 }

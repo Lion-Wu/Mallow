@@ -25,7 +25,6 @@ struct VoiceMessageView: View {
 
     let isStreamingAssistant: Bool
     let showActionButtons: Bool
-    let branchControlsEnabled: Bool
     let developerModeEnabled: Bool
     let maxBubbleWidth: CGFloat?
     let contentFingerprint: ContentFingerprint
@@ -52,7 +51,6 @@ struct VoiceMessageView: View {
         message: ChatMessage,
         isStreamingAssistant: Bool = false,
         showActionButtons: Bool,
-        branchControlsEnabled: Bool,
         developerModeEnabled: Bool,
         maxBubbleWidth: CGFloat? = nil,
         contentFingerprint: ContentFingerprint,
@@ -75,7 +73,6 @@ struct VoiceMessageView: View {
         self.message = message
         self.isStreamingAssistant = isStreamingAssistant
         self.showActionButtons = showActionButtons
-        self.branchControlsEnabled = branchControlsEnabled
         self.developerModeEnabled = developerModeEnabled
         self.maxBubbleWidth = maxBubbleWidth
         self.contentFingerprint = contentFingerprint
@@ -290,14 +287,14 @@ struct VoiceMessageView: View {
             .frame(maxWidth: contentMaxWidthForAssistant(availableWidth: maxBubbleWidth), alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .center)
             .transition(ChatScrollContentMotion.transition)
-        } else if inlineLoading {
+        }
+        ChatAnimatedStatus(isPresented: inlineLoading && inlineRetryAttempt == nil && inlineLongWaitNotice == nil) {
             HStack {
                 AssistantLoadingBubbleContent()
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: contentMaxWidthForAssistant(availableWidth: maxBubbleWidth), alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .center)
-            .transition(ChatScrollContentMotion.transition)
         }
     }
 
@@ -471,7 +468,6 @@ struct VoiceMessageView: View {
             MessageBranchControls(
                 currentIndex: idx + 1,
                 totalCount: versions.count,
-                isEnabled: branchControlsEnabled,
                 canGoPrevious: idx > 0,
                 canGoNext: idx < (versions.count - 1),
                 onPrevious: {

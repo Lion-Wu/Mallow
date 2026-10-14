@@ -18,6 +18,22 @@ private struct CachedParagraphUIViewSize {
   let targetWidth: CGFloat
 }
 
+#if os(iOS)
+private final class ParagraphTextContainer: NSTextContainer {
+  override var size: CGSize {
+    get { super.size }
+    set {
+      // A non-scrolling UITextView also writes its fitted height independently of
+      // heightTracksTextView. This paragraph is constrained only by width; zero
+      // denotes unlimited height and keeps view growth from invalidating layout.
+      let layoutSize = CGSize(width: newValue.width, height: 0)
+      guard super.size != layoutSize else { return }
+      super.size = layoutSize
+    }
+  }
+}
+#endif
+
 class ParagraphUIView: UITextView {
   private static let jsonEncoder = JSONEncoder()
   static let animationDuration: CFTimeInterval = ParagraphAnimationConstants.fadeInDuration
@@ -27,12 +43,31 @@ class ParagraphUIView: UITextView {
   private var activeAnimations: [FadeAnimationData] = []
   private var fadeAnimationDisplayLink: CADisplayLink?
   private var cachedSize: CachedParagraphUIViewSize?
+  private var layoutWidth: CGFloat = 0
+  #if os(iOS)
+  private let measuringTextStorage = NSTextStorage()
+  private let measuringLayoutManager = NSLayoutManager()
+  private let measuringContainer = NSTextContainer(size: .zero)
+  #endif
 
   var textContextMenu: TextContextMenu?
   var markdownController: MarkdownController?
 
-  // To override the behaviour of this property, do so on ParagraphView's SwiftUI wrapper.
   var onUrlTap: (URL) -> Void = { UIApplication.shared.open($0) }
+
+  #if os(iOS)
+  convenience init() {
+    let storage = NSTextStorage()
+    let drawingLayoutManager = ParagraphFadeLayoutManager()
+    // Match the exact full-paragraph geometry used by the outer scroll view.
+    drawingLayoutManager.allowsNonContiguousLayout = false
+    storage.addLayoutManager(drawingLayoutManager)
+    let container = ParagraphTextContainer(size: .zero)
+    drawingLayoutManager.addTextContainer(container)
+    self.init(frame: .zero, textContainer: container)
+    drawingLayoutManager.animations = { [weak self] in self?.activeAnimations ?? [] }
+  }
+  #endif
 
   override init(frame: CGRect, textContainer: NSTextContainer?) {
     super.init(frame: frame, textContainer: textContainer)
@@ -101,11 +136,24 @@ class ParagraphUIView: UITextView {
 
   override func layoutSubviews() {
     super.layoutSubviews()
-    if bounds.width != cachedSize?.targetWidth {
+    if bounds.width != layoutWidth {
+      layoutWidth = bounds.width
       invalidateCachedSize()
+      invalidateIntrinsicContentSize()
     }
-    invalidateIntrinsicContentSize()
   }
+
+  #if os(iOS)
+  func measureSize(fittingWidth width: CGFloat) -> CGSize {
+    guard measuringTextStorage.length > 0, width > 0, width.isFinite else { return .zero }
+    if measuringContainer.size.width != width {
+      measuringContainer.size = CGSize(width: width, height: CGFloat.greatestFiniteMagnitude)
+    }
+    measuringLayoutManager.ensureLayout(for: measuringContainer)
+    let rect = measuringLayoutManager.usedRect(for: measuringContainer)
+    return CGSize(width: width, height: rect.height.rounded(.up))
+  }
+  #endif
 
   func setParagraphContents(_ newContents: NSMutableAttributedString, lineSpacing: CGFloat? = nil, animatedByWord: Bool) {
     // Keep the cached interface style up to date for citation preview rendering.
@@ -119,35 +167,51 @@ class ParagraphUIView: UITextView {
     self.lineSpacing = lineSpacing
 
     let oldAttributedString: NSAttributedString = attributedText
-    let finalString: NSMutableAttributedString
+    let oldLength = oldAttributedString.length
+    let layoutContents = markdownTextLayoutContents(newContents)
+    let finalString: NSAttributedString
     if lineSpacing != nil {
-      finalString = applyLineSpacing(to: newContents, lineSpacing: lineSpacing)
+      finalString = applyLineSpacing(to: layoutContents, lineSpacing: lineSpacing)
     } else {
-      finalString = newContents
+      finalString = layoutContents
     }
 
     guard finalString != oldAttributedString else {
       return
     }
 
-    // Stop display link update before updating the attributed string
-    tearDownDisplayLink()
     invalidateCachedSize()
+    if let textLayoutManager, let contentManager = textLayoutManager.textContentManager {
+      textLayoutManager.removeRenderingAttribute(.foregroundColor, for: contentManager.documentRange)
+    }
+    #if os(iOS)
+    let commonLength = textStorage.replaceContentsPreservingPrefix(with: finalString)
+    measuringTextStorage.replaceContentsPreservingPrefix(with: finalString)
+    #else
+    let commonLength = oldAttributedString.string.commonPrefix(with: finalString.string, options: .literal).utf16.count
     attributedText = finalString
+    #endif
 
     configureAccessibility(for: finalString)
 
     invalidateIntrinsicContentSize()
 
-    let newContentLength = attributedText.length - oldAttributedString.length
+    let newContentLength = finalString.length - commonLength
 
-    if animatedByWord,
-       newContentLength > 0 {
-      // Animate word by word
-      let newContentRange = NSRange(location: oldAttributedString.length, length: newContentLength)
+    if animatedByWord {
+      // Attribute changes preserve the timeline of unchanged characters.
+      if commonLength < oldLength {
+        updateTextViewWithCurrentAnimations()
+        activeAnimations = activeAnimations.compactMap { animation in
+          let range = NSIntersectionRange(animation.range, NSRange(location: 0, length: commonLength))
+          guard range.length > 0 else { return nil }
+          return FadeAnimationData(startTime: animation.startTime, duration: animation.duration, range: range)
+        }
+      }
+      let newContentRange = NSRange(location: commonLength, length: newContentLength)
       let wordRanges = attributedText.splitIntoWords(withIn: newContentRange)
       let wordCount = wordRanges.count
-      let delayBetweenWords: Double = ParagraphAnimationConstants.delayBetweenWordsRatio / Double(wordCount)
+      let delayBetweenWords: Double = ParagraphAnimationConstants.delayBetweenWordsRatio / Double(max(wordCount, 1))
       let baseStartTime = CACurrentMediaTime()
       for (index, wordRange) in wordRanges.enumerated() {
         let animationData = FadeAnimationData(
@@ -160,16 +224,21 @@ class ParagraphUIView: UITextView {
 
       updateTextViewWithCurrentAnimations()
 
-      if fadeAnimationDisplayLink == nil {
+      if !activeAnimations.isEmpty, fadeAnimationDisplayLink == nil {
         setUpDisplayLink()
       }
     } else {
-      // If no animation needed anymore, clean up all existings animations if any.
+      #if os(iOS)
+      // Prefix-preserving edits leave earlier drawing tiles intact. Invalidate
+      // the fading range when its opacity stops being owned by the animation.
+      updateTextViewWithCurrentAnimations()
+      #endif
       activeAnimations.removeAll()
+      tearDownDisplayLink()
     }
   }
 
-  private func applyLineSpacing(to attributedString: NSMutableAttributedString, lineSpacing: CGFloat?) -> NSMutableAttributedString {
+  private func applyLineSpacing(to attributedString: NSAttributedString, lineSpacing: CGFloat?) -> NSMutableAttributedString {
     let result = NSMutableAttributedString(attributedString: attributedString)
     if let lineSpacing {
       result.setLineSpacing(lineSpacing)
@@ -178,17 +247,17 @@ class ParagraphUIView: UITextView {
   }
 
   private func setupView() {
-    // Only register if not already registered to prevent conflicts
-    if NSTextAttachment.textAttachmentViewProviderClass(
-      forFileType: UTType.markdownLatex.identifier
-    ) == nil {
-      NSTextAttachment.registerViewProviderClass(
-        LatexViewProvider.self,
-        forFileType: UTType.markdownLatex.identifier
-      )
-    }
+    #if os(iOS)
+    measuringContainer.lineFragmentPadding = 0
+    measuringContainer.lineBreakMode = .byWordWrapping
+    measuringLayoutManager.addTextContainer(measuringContainer)
+    measuringTextStorage.addLayoutManager(measuringLayoutManager)
+    #endif
+    LatexViewProvider.register()
 
     isEditable = false
+    spellCheckingType = .no
+    autocorrectionType = .no
     isSelectable = true
     isScrollEnabled = false
     textAlignment = .left
@@ -215,7 +284,12 @@ class ParagraphUIView: UITextView {
     textContainerInset = .zero
     textContainer.lineFragmentPadding = 0
     textContainer.widthTracksTextView = true
+    #if os(iOS)
+    // The paragraph grows to its measured height; that height is not a layout constraint.
+    textContainer.heightTracksTextView = false
+    #else
     textContainer.heightTracksTextView = true
+    #endif
     textContainer.maximumNumberOfLines = 0
     textContainer.lineBreakMode = .byWordWrapping
 
@@ -286,20 +360,11 @@ class ParagraphUIView: UITextView {
 
   @objc private func updateFadeAnimation() {
     let currentTime = CACurrentMediaTime()
-    var completedAnimations: [UUID] = []
-
     updateTextViewWithCurrentAnimations()
 
-    // Remove completed animations
-    for animation in activeAnimations {
-      let elapsed = currentTime - animation.startTime
-      let progress = elapsed / animation.duration
-
-      if progress >= 1.0 {
-        completedAnimations.append(animation.id)
-      }
-    }
-    activeAnimations.removeAll { completedAnimations.contains($0.id) }
+    // Expiration is local to each animation; an ID lookup per element makes
+    // cleanup quadratic when a large streamed chunk introduces many words.
+    activeAnimations.removeAll { currentTime - $0.startTime >= $0.duration }
 
     if activeAnimations.isEmpty {
       tearDownDisplayLink()
@@ -307,16 +372,30 @@ class ParagraphUIView: UITextView {
   }
 
   private func updateTextViewWithCurrentAnimations() {
+    #if os(iOS)
+    guard let first = activeAnimations.first, let last = activeAnimations.last else { return }
+    let range = NSIntersectionRange(
+      NSRange(location: first.range.location, length: NSMaxRange(last.range) - first.range.location),
+      NSRange(location: 0, length: textStorage.length)
+    )
+    layoutManager.invalidateDisplay(forCharacterRange: range)
+    #else
+    guard let textLayoutManager,
+          let contentManager = textLayoutManager.textContentManager else { return }
     let currentTime = CACurrentMediaTime()
-
-    textStorage.beginEditing()
-    defer { textStorage.endEditing() }
 
     for animation in activeAnimations {
       guard animation.range.location + animation.range.length <= textStorage.length else {
         continue
       }
+      guard let start = contentManager.location(contentManager.documentRange.location, offsetBy: animation.range.location),
+            let end = contentManager.location(start, offsetBy: animation.range.length),
+            let textRange = NSTextRange(location: start, end: end) else { continue }
       let elapsed = currentTime - animation.startTime
+      if elapsed >= animation.duration {
+        textLayoutManager.removeRenderingAttribute(.foregroundColor, for: textRange)
+        continue
+      }
       let animatedAlpha: CGFloat
 
       if elapsed < 0 {
@@ -333,9 +412,18 @@ class ParagraphUIView: UITextView {
       let defaultColor = UIColor(Color.Theme.Foreground.Primary.Primary750)
       textStorage.enumerateAttribute(.foregroundColor, in: animation.range, options: []) { value, range, _ in
         let baseColor = (value as? UIColor) ?? defaultColor
-        textStorage.addAttribute(.foregroundColor, value: baseColor.withAlphaComponent(animatedAlpha), range: range)
+        guard let start = contentManager.location(contentManager.documentRange.location, offsetBy: range.location),
+              let end = contentManager.location(start, offsetBy: range.length),
+              let textRange = NSTextRange(location: start, end: end) else { return }
+        // Rendering attributes preserve the document while fading its glyphs.
+        textLayoutManager.addRenderingAttribute(
+          .foregroundColor,
+          value: baseColor.withAlphaComponent(baseColor.cgColor.alpha * animatedAlpha),
+          for: textRange
+        )
       }
     }
+    #endif
   }
 
   private func setUpDisplayLink() {
@@ -345,7 +433,7 @@ class ParagraphUIView: UITextView {
   }
 
   private func tearDownDisplayLink() {
-    fadeAnimationDisplayLink?.remove(from: .main, forMode: .common)
+    fadeAnimationDisplayLink?.invalidate()
     fadeAnimationDisplayLink = nil
   }
 

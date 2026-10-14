@@ -8,8 +8,8 @@
 import SwiftUI
 
 #Preview {
+    let session = ChatSession(title: "Preview")
     let message: ChatMessage = {
-        let session = ChatSession(title: "Preview")
         let message = ChatMessage(
             content: "<think>\nReasoning preview...\n</think>\nHello from the assistant!",
             isUser: false,
@@ -27,7 +27,6 @@ import SwiftUI
     VoiceMessageView(
         message: message,
         showActionButtons: true,
-        branchControlsEnabled: true,
         developerModeEnabled: true,
         contentFingerprint: ContentFingerprint.make(message.content),
         onSelectText: { _ in },
@@ -37,6 +36,12 @@ import SwiftUI
         onRetry: { _ in }
     )
     .environmentObject(audio)
+    .environmentObject(ChatViewModel(
+        chatSession: session,
+        settingsManager: .shared,
+        reachability: .shared,
+        audioManager: audio
+    ))
     .modelContainer(for: [ChatSession.self, ChatMessage.self, ChatRequestContextMetadata.self, AppSettings.self], inMemory: true)
     .padding()
     .background(AppBackgroundView())

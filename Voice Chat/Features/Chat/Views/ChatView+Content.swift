@@ -159,20 +159,22 @@ extension ChatView {
     var mainChatLayout: some View {
         ChatConversationLayout(
             audioManager: audioManager,
+            scrollPosition: $scrollPosition,
             navigationTitle: viewModel.chatSession.title,
             isInitialContentReady: initialRenderCoordinator.isReady,
             isVoiceOverlayPresented: voiceOverlayVM.isPresented,
             shouldDisplayAudioPlayer: shouldDisplayAudioPlayer,
-            messageList: { chatMessageList(scrollTargetsEnabled: true) },
+            messageList: { chatMessageList() },
             hydrationMask: { hydrationMaskView },
-            onContentHeightChange: updateContentHeightIfNeeded(_:),
-            onViewportHeightChange: updateViewportHeightIfNeeded(_:),
-            onBottomAnchorChange: updateBottomAnchorIfNeeded(_:),
+            onScrollMetricsChange: updateScrollMetrics(_:),
+            onScrollPhaseChange: handleScrollPhaseChange(_:),
+            onAccessibilityScroll: handleAccessibilityScroll(_:),
             onDismissKeyboard: { isInputFocused = false },
             onWidthChange: updateAvailableMessageWidth(_:),
-            onScrollProxyReady: handleScrollProxyReady(_:availableWidth:)
+            onScrollViewAppear: handleScrollViewAppear
         )
         .environment(\.chatInitialRenderCoordinator, initialRenderCoordinator)
+        .environment(\.markdownViewportCoordinator, markdownViewportCoordinator)
         .task(id: isHydratingSession) {
             let presentationGeneration = initialRenderCoordinator.generation
             guard !isHydratingSession else { return }
@@ -221,11 +223,14 @@ extension ChatView {
         }
     }
 
-    func chatMessageList(scrollTargetsEnabled: Bool) -> some View {
+    func chatMessageList() -> some View {
         ChatMessageList(
             visibleMessageController: visibleMessageController,
+            presentation: visibleMessageController.presentation,
+            historyAnchorMessageID: historyAnchorMessageID,
             branchRenderEpoch: branchRenderEpoch,
             isLoading: viewModel.isLoading,
+            streamingAssistantMessageID: viewModel.streamingAssistantMessageID,
             isPriming: viewModel.isPriming,
             isToolContinuationLoading: viewModel.isToolContinuationLoading,
             isRetrying: viewModel.isRetrying,
@@ -234,14 +239,12 @@ extension ChatView {
             longWaitNotice: viewModel.longWaitNotice,
             messageToolActivities: viewModel.messageToolActivities,
             messageToolActivityPlacements: viewModel.messageToolActivityPlacements,
-            branchControlsEnabled: !(viewModel.isLoading || viewModel.isPriming || viewModel.isToolContinuationLoading || viewModel.isEditing),
             developerModeEnabled: settingsManager.developerModeEnabled,
             activeSearchHighlightTargetID: scrollInteractionState.activeSearchHighlightTargetID,
             availableMessageWidth: availableMessageWidth,
             messageListBottomInset: layoutMetrics.messageListBottomInset,
             horizontalPadding: layoutMetrics.messageListHorizontalPadding,
             topPadding: layoutMetrics.messageListTopPadding,
-            scrollTargetsEnabled: scrollTargetsEnabled,
             isInitialContentReady: initialRenderCoordinator.isReady,
             searchHighlightQuery: searchHighlightQuery(for:),
             onSelectText: showSelectTextSheet(with:),
@@ -266,6 +269,8 @@ extension ChatView {
                 viewModel.resolveToolAuthorization(requestID: requestID, allowed: allowed)
             }
         )
+        .equatable()
+        .environmentObject(viewModel)
     }
 
     func handleOverflowChange(_ overflow: Bool) {

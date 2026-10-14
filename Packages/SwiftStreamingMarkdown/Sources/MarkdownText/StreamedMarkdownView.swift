@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import Markdown
 import SwiftUI
 import Equatable
 
@@ -71,7 +72,6 @@ final class StreamedMarkdownController: ObservableObject {
   let listener: MarkdownListener?
 
   private let source: StreamedMarkdownSource
-  private let parser = MarkdownParserImpl()
   private let onFirstRender: @MainActor () -> Void
   private var hasRenderedFirstSnapshot = false
 
@@ -86,6 +86,7 @@ final class StreamedMarkdownController: ObservableObject {
   }
 
   func render(config: MarkdownRenderConfig) async {
+    let parser = StreamingMarkdownParser()
     for await text in source.text {
       guard !Task.isCancelled else { return }
       let renderable = await parser.parse(text: text, config: config)
@@ -112,6 +113,7 @@ private struct MarkdownConversionKey: Hashable {
   let citationConfig: MarkdownRenderConfig.CitationConfig
   let searchHighlightQuery: String?
   let imageConfig: ImageConfig
+  let codeBlockConfig: CodeBlockConfig
 }
 
 private extension MarkdownRenderConfig {
@@ -126,7 +128,40 @@ private extension MarkdownRenderConfig {
       inlineStyle: inlineStyle,
       citationConfig: citationConfig,
       searchHighlightQuery: searchHighlightQuery,
-      imageConfig: imageConfig
+      imageConfig: imageConfig,
+      codeBlockConfig: codeBlockConfig
     )
+  }
+}
+
+private actor StreamingMarkdownParser {
+  private var previousBlocks: [any Markup] = []
+  private var previousRenderables: [MarkdownRenderable] = []
+
+  func parse(text: String, config: MarkdownRenderConfig) async -> RenderableDocument {
+    // Parse the complete source so later reference definitions can update earlier
+    // links. Reuse conversion only when the resolved block is unchanged.
+    let result = await MarkdownParserImpl().parse(
+      text: text,
+      option: .init(speculativeRewrite: false, imageSupport: config.imageConfig.enabled)
+    )
+    var blocks: [any Markup] = []
+    var renderables: [MarkdownRenderable] = []
+    for block in result.document.children {
+      guard let convertible = block as? any BlockConvertible else { continue }
+      let index = blocks.count
+      if previousBlocks.indices.contains(index),
+         previousBlocks[index].id == block.id,
+         previousBlocks[index].hasSameStructure(as: block) {
+        renderables.append(previousRenderables[index])
+      } else {
+        let converted = convertible.convert(attributeContainer: NSAttributeContainer(), config: config)
+        renderables.append(await converted.preparingCodeHighlights(config: config))
+      }
+      blocks.append(block)
+    }
+    previousBlocks = blocks
+    previousRenderables = renderables
+    return RenderableDocument(renderables: renderables)
   }
 }

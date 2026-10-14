@@ -9,11 +9,6 @@ import QuartzCore
 import SwiftUI
 import UniformTypeIdentifiers
 
-private struct CachedParagraphNSViewSize {
-  let size: CGSize
-  let targetWidth: CGFloat
-}
-
 class ParagraphNSView: NSTextView {
   private static let jsonEncoder = JSONEncoder()
   static let animationDuration: CFTimeInterval = ParagraphAnimationConstants.fadeInDuration
@@ -22,7 +17,10 @@ class ParagraphNSView: NSTextView {
   private(set) var lineSpacing: CGFloat?
   private var activeAnimations: [FadeAnimationData] = []
   private var fadeAnimationDisplayLink: CADisplayLink?
-  private var cachedSize: CachedParagraphNSViewSize?
+  private var isApplyingFrameSize = false
+  private let measuringTextStorage = NSTextStorage()
+  private let measuringLayoutManager = NSLayoutManager()
+  private let measuringContainer = NSTextContainer(size: .zero)
 
   var textContextMenu: TextContextMenu?
   var markdownController: MarkdownController?
@@ -31,7 +29,7 @@ class ParagraphNSView: NSTextView {
 
   convenience init() {
     let textStorage = NSTextStorage()
-    let layoutManager = NSLayoutManager()
+    let layoutManager = ParagraphFadeLayoutManager()
     textStorage.addLayoutManager(layoutManager)
     let textContainer = NSTextContainer(containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
     textContainer.widthTracksTextView = true
@@ -62,53 +60,53 @@ class ParagraphNSView: NSTextView {
     AppAppearance.update(appearance: effectiveAppearance)
   }
 
-  // MARK: - Intrinsic Content Size
-
-  override var intrinsicContentSize: NSSize {
-    if let cachedSize {
-      return cachedSize.size
-    }
-    var targetWidth = bounds.width
-    if targetWidth <= 0 || targetWidth.isInfinite {
-      targetWidth = NSScreen.main?.frame.width ?? 800
-    }
-
-    let measuredSize = measureSize(fittingWidth: targetWidth)
-    cachedSize = CachedParagraphNSViewSize(size: measuredSize, targetWidth: targetWidth)
-    return measuredSize
+  override func resetCursorRects() {
+    // Cursor regions only belong to the visible part of a paragraph. AppKit
+    // invalidates them again when scrolling changes the clipping geometry.
+    let visible = visibleRect.intersection(bounds)
+    guard !visible.isEmpty, !visible.isNull else { return }
+    super.resetCursorRects()
   }
 
-  /// Measures the size required to lay out the current content within `width`.
-  ///
-  /// Uses a dedicated, throwaway layout stack instead of the view's own text container.
-  /// The display container has `widthTracksTextView = true`, so its width follows the
-  /// view's frame width regardless of any `containerSize` we set. When the view is
-  /// measured before it has been given a frame (e.g. mid navigation transition) that
-  /// tracked width is `0`, which yields a zero height and collapses the paragraph. A
-  /// standalone container whose width we set directly always measures correctly.
+  override func addCursorRect(_ rect: NSRect, cursor: NSCursor) {
+    let visible = rect.intersection(visibleRect).intersection(bounds)
+    guard !visible.isEmpty, !visible.isNull else { return }
+    super.addCursorRect(visible, cursor: cursor)
+  }
+
+  override func setFrameSize(_ newSize: NSSize) {
+    let wasApplyingFrameSize = isApplyingFrameSize
+    isApplyingFrameSize = true
+    defer { isApplyingFrameSize = wasApplyingFrameSize }
+    super.setFrameSize(newSize)
+  }
+
+  override func scrollToVisible(_ rect: NSRect) -> Bool {
+    // NSTextView reveals its selection while resizing. Paragraph layout must
+    // not cancel the enclosing transcript's scroll animation or reader anchor.
+    // Selection and accessibility requests outside sizing still scroll normally.
+    guard !isApplyingFrameSize else { return false }
+    return super.scrollToVisible(rect)
+  }
+
+  // MARK: - Intrinsic Content Size
+
+  // SwiftUI owns paragraph sizing through sizeThatFits. Deriving an intrinsic
+  // size from the frame feeds layout output back into the next layout proposal.
+  override var intrinsicContentSize: NSSize {
+    NSSize(width: NSView.noIntrinsicMetric, height: NSView.noIntrinsicMetric)
+  }
+
+  /// The measurement stack owns its proposed width independently of the view
+  /// frame, and retains glyph/layout state across appended source snapshots.
   func measureSize(fittingWidth width: CGFloat) -> CGSize {
-    guard let textStorage, textStorage.length > 0, width > 0, width.isFinite else {
-      return .zero
+    guard measuringTextStorage.length > 0, width > 0, width.isFinite else { return .zero }
+    if measuringContainer.containerSize.width != width {
+      measuringContainer.containerSize = NSSize(width: width, height: CGFloat.greatestFiniteMagnitude)
     }
-    let measuringTextStorage = NSTextStorage(attributedString: textStorage)
-    let measuringLayoutManager = NSLayoutManager()
-    let measuringContainer = NSTextContainer(size: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude))
-    measuringContainer.lineFragmentPadding = 0
-    measuringContainer.maximumNumberOfLines = 0
-    measuringContainer.lineBreakMode = .byWordWrapping
-    measuringLayoutManager.addTextContainer(measuringContainer)
-    measuringTextStorage.addLayoutManager(measuringLayoutManager)
     measuringLayoutManager.ensureLayout(for: measuringContainer)
     let usedRect = measuringLayoutManager.usedRect(for: measuringContainer)
     return CGSize(width: usedRect.width.rounded(.up), height: usedRect.height.rounded(.up))
-  }
-
-  override func layout() {
-    super.layout()
-    if bounds.width != cachedSize?.targetWidth {
-      invalidateCachedSize()
-    }
-    invalidateIntrinsicContentSize()
   }
 
   // MARK: - Content Update
@@ -123,25 +121,33 @@ class ParagraphNSView: NSTextView {
     self.lineSpacing = lineSpacing
 
     let oldLength = textStorage?.length ?? 0
-    let finalString: NSMutableAttributedString
+    let layoutContents = markdownTextLayoutContents(newContents)
+    let finalString: NSAttributedString
     if lineSpacing != nil {
-      finalString = applyLineSpacing(to: newContents, lineSpacing: lineSpacing)
+      finalString = applyLineSpacing(to: layoutContents, lineSpacing: lineSpacing)
     } else {
-      finalString = newContents
+      finalString = layoutContents
     }
 
-    tearDownDisplayLink()
-    invalidateCachedSize()
-    textStorage?.setAttributedString(finalString)
+    let commonLength = textStorage?.replaceContentsPreservingPrefix(with: finalString) ?? 0
+    measuringTextStorage.replaceContentsPreservingPrefix(with: finalString)
 
     configureAccessibility(for: finalString)
 
-    invalidateIntrinsicContentSize()
+    let newContentLength = finalString.length - commonLength
 
-    let newContentLength = (textStorage?.length ?? 0) - oldLength
-
-    if animatedByWord, newContentLength > 0 {
-      let newContentRange = NSRange(location: oldLength, length: newContentLength)
+    if animatedByWord {
+      // Formatting-only updates must not finish an in-flight fade. Retain the
+      // animation timeline for unchanged text and animate only the replaced suffix.
+      if commonLength < oldLength {
+        updateTextViewWithCurrentAnimations()
+        activeAnimations = activeAnimations.compactMap { animation in
+          let range = NSIntersectionRange(animation.range, NSRange(location: 0, length: commonLength))
+          guard range.length > 0 else { return nil }
+          return FadeAnimationData(startTime: animation.startTime, duration: animation.duration, range: range)
+        }
+      }
+      let newContentRange = NSRange(location: commonLength, length: newContentLength)
       let wordRanges = finalString.splitIntoWords(withIn: newContentRange)
       let wordCount = wordRanges.count
       let delayBetweenWords: Double = ParagraphAnimationConstants.delayBetweenWordsRatio / Double(max(wordCount, 1))
@@ -157,17 +163,21 @@ class ParagraphNSView: NSTextView {
 
       updateTextViewWithCurrentAnimations()
 
-      if fadeAnimationDisplayLink == nil {
+      if !activeAnimations.isEmpty, fadeAnimationDisplayLink == nil {
         setUpDisplayLink()
       }
     } else {
+      // Prefix-preserving edits do not redraw unchanged animated words. Settle
+      // their drawing state before retiring the animation's display link.
+      updateTextViewWithCurrentAnimations()
       activeAnimations.removeAll()
+      tearDownDisplayLink()
     }
   }
 
   // MARK: - Line Spacing
 
-  private func applyLineSpacing(to attributedString: NSMutableAttributedString, lineSpacing: CGFloat?) -> NSMutableAttributedString {
+  private func applyLineSpacing(to attributedString: NSAttributedString, lineSpacing: CGFloat?) -> NSMutableAttributedString {
     let result = NSMutableAttributedString(attributedString: attributedString)
     if let lineSpacing {
       let paragraphStyle = NSMutableParagraphStyle()
@@ -181,16 +191,27 @@ class ParagraphNSView: NSTextView {
   // MARK: - View Setup
 
   private func setupView() {
-    if NSTextAttachment.textAttachmentViewProviderClass(
-      forFileType: UTType.markdownLatex.identifier
-    ) == nil {
-      NSTextAttachment.registerViewProviderClass(
-        LatexViewProvider.self,
-        forFileType: UTType.markdownLatex.identifier
-      )
+    let drawingLayoutManager = layoutManager as? ParagraphFadeLayoutManager ?? ParagraphFadeLayoutManager()
+    drawingLayoutManager.backgroundLayoutEnabled = false
+    // SwiftUI positions this full-height paragraph using exact measured geometry.
+    // Skipping offscreen line fragments would give drawing a different Y origin.
+    drawingLayoutManager.allowsNonContiguousLayout = false
+    measuringLayoutManager.backgroundLayoutEnabled = false
+    measuringContainer.lineFragmentPadding = 0
+    measuringContainer.maximumNumberOfLines = 0
+    measuringContainer.lineBreakMode = .byWordWrapping
+    measuringLayoutManager.addTextContainer(measuringContainer)
+    measuringTextStorage.addLayoutManager(measuringLayoutManager)
+    drawingLayoutManager.animations = { [weak self] in self?.activeAnimations ?? [] }
+    if layoutManager !== drawingLayoutManager {
+      textContainer?.replaceLayoutManager(drawingLayoutManager)
     }
 
+    LatexViewProvider.register()
+
     isEditable = false
+    isContinuousSpellCheckingEnabled = false
+    isGrammarCheckingEnabled = false
     isSelectable = true
     drawsBackground = false
     textContainer?.lineFragmentPadding = 0
@@ -199,7 +220,8 @@ class ParagraphNSView: NSTextView {
     textContainer?.maximumNumberOfLines = 0
     textContainer?.lineBreakMode = .byWordWrapping
 
-    isVerticallyResizable = true
+    // The representable owns the frame; NSTextView must not resize itself.
+    isVerticallyResizable = false
     isHorizontallyResizable = false
 
     linkTextAttributes = [:]
@@ -247,18 +269,11 @@ class ParagraphNSView: NSTextView {
 
   @objc private func updateFadeAnimation() {
     let currentTime = CACurrentMediaTime()
-    var completedAnimations: [UUID] = []
-
     updateTextViewWithCurrentAnimations()
 
-    for animation in activeAnimations {
-      let elapsed = currentTime - animation.startTime
-      let progress = elapsed / animation.duration
-      if progress >= 1.0 {
-        completedAnimations.append(animation.id)
-      }
-    }
-    activeAnimations.removeAll { completedAnimations.contains($0.id) }
+    // Expiration is local to each animation; an ID lookup per element makes
+    // cleanup quadratic when a large streamed chunk introduces many words.
+    activeAnimations.removeAll { currentTime - $0.startTime >= $0.duration }
 
     if activeAnimations.isEmpty {
       tearDownDisplayLink()
@@ -266,33 +281,22 @@ class ParagraphNSView: NSTextView {
   }
 
   private func updateTextViewWithCurrentAnimations() {
-    guard let textStorage else { return }
-    let currentTime = CACurrentMediaTime()
-
-    textStorage.beginEditing()
-    defer { textStorage.endEditing() }
-
-    for animation in activeAnimations {
-      guard animation.range.location + animation.range.length <= textStorage.length else {
-        continue
-      }
-      let elapsed = currentTime - animation.startTime
-      let animatedAlpha: CGFloat
-
-      if elapsed < 0 {
-        animatedAlpha = 0.0
-      } else {
-        let progress = min(max(elapsed / animation.duration, 0.0), 1.0)
-        let easedProgress = paragraphEaseOut(progress)
-        animatedAlpha = easedProgress
-      }
-
-      let defaultColor = NSColor(Color.Theme.Foreground.Primary.Primary750)
-      textStorage.enumerateAttribute(.foregroundColor, in: animation.range, options: []) { value, range, _ in
-        let baseColor = (value as? NSColor) ?? defaultColor
-        textStorage.addAttribute(.foregroundColor, value: baseColor.withAlphaComponent(animatedAlpha), range: range)
-      }
+    guard let textStorage, let layoutManager,
+          let first = activeAnimations.first,
+          let last = activeAnimations.last else { return }
+    let range = NSIntersectionRange(
+      NSRange(location: first.range.location, length: NSMaxRange(last.range) - first.range.location),
+      NSRange(location: 0, length: textStorage.length)
+    )
+    // Measurement uses a separate layout manager. Display invalidation only
+    // schedules glyphs already laid out by this drawing stack.
+    if let textContainer, window != nil, !visibleRect.isEmpty {
+      layoutManager.ensureLayout(
+        forBoundingRect: visibleRect.offsetBy(dx: -textContainerOrigin.x, dy: -textContainerOrigin.y),
+        in: textContainer
+      )
     }
+    layoutManager.invalidateDisplay(forCharacterRange: range)
   }
 
   private func setUpDisplayLink() {
@@ -308,10 +312,6 @@ class ParagraphNSView: NSTextView {
   private func tearDownDisplayLink() {
     fadeAnimationDisplayLink?.invalidate()
     fadeAnimationDisplayLink = nil
-  }
-
-  private func invalidateCachedSize() {
-    cachedSize = nil
   }
 
   func setTextContextMenu(_ menu: TextContextMenu?) {

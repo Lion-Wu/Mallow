@@ -24,6 +24,7 @@ extension MarkdownRenderConfig {
       blockSpacing: blockSpacing,
       textSelectionConfig: textSelectionConfig,
       thematicBreakColor: thematicBreakColor,
+      imageConfig: imageConfig,
       searchHighlightQuery: searchHighlightQuery
     )
   }

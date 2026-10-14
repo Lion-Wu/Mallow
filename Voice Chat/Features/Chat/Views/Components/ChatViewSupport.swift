@@ -28,7 +28,6 @@ struct VoiceMessageEqKey: Equatable, Sendable {
     let imageAttachmentsFP: Int
     let branchRenderEpoch: Int
     let showActionButtons: Bool
-    let branchControlsEnabled: Bool
     let layoutWidth: CGFloat
     let contentFP: ContentFingerprint
     let inlineErrorFP: ContentFingerprint?
@@ -39,10 +38,6 @@ struct VoiceMessageEqKey: Equatable, Sendable {
     let toolActivityPlacements: [ChatToolActivityPlacement]
     let developerModeEnabled: Bool
     let searchHighlightID: UUID?
-}
-
-enum ScrollTarget: Hashable {
-    case bottom
 }
 
 struct TextSelectionSheetItem: Identifiable {

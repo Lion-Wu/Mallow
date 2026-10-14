@@ -60,13 +60,17 @@ struct UserContextMenuModifier: ViewModifier {
 }
 
 struct MessageBranchControls: View {
+    @EnvironmentObject private var viewModel: ChatViewModel
     let currentIndex: Int
     let totalCount: Int
-    let isEnabled: Bool
     let canGoPrevious: Bool
     let canGoNext: Bool
     let onPrevious: () -> Void
     let onNext: () -> Void
+
+    private var isEnabled: Bool {
+        !(viewModel.isLoading || viewModel.isPriming || viewModel.isToolContinuationLoading || viewModel.isEditing)
+    }
 
     var body: some View {
         HStack(spacing: 6) {

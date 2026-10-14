@@ -18,10 +18,6 @@ extension String {
         let openMarker = "<think>"
         let closeMarker = "</think>"
 
-        guard self.contains(openMarker) else {
-            return ThinkParts(think: nil, isClosed: true, body: self)
-        }
-
         // Opening marker must be the first token in the content,
         // but no longer needs to be on a standalone line.
         guard self.hasPrefix(openMarker) else {

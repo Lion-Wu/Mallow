@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ChatConversationLayout<MessageList: View, HydrationMask: View>: View {
     @ObservedObject var audioManager: GlobalAudioManager
+    @Binding var scrollPosition: ScrollPosition
 
     let navigationTitle: String
     let isInitialContentReady: Bool
@@ -16,12 +17,12 @@ struct ChatConversationLayout<MessageList: View, HydrationMask: View>: View {
     let shouldDisplayAudioPlayer: Bool
     let messageList: () -> MessageList
     let hydrationMask: () -> HydrationMask
-    let onContentHeightChange: (CGFloat) -> Void
-    let onViewportHeightChange: (CGFloat) -> Void
-    let onBottomAnchorChange: (CGFloat) -> Void
+    let onScrollMetricsChange: (ChatScrollViewportMetrics) -> Void
+    let onScrollPhaseChange: (ScrollPhase) -> Void
+    let onAccessibilityScroll: (Edge) -> Void
     let onDismissKeyboard: () -> Void
     let onWidthChange: (CGFloat) -> Void
-    let onScrollProxyReady: (ScrollViewProxy, CGFloat) -> Void
+    let onScrollViewAppear: () -> Void
 
     var body: some View {
         conversationContent
@@ -37,18 +38,15 @@ struct ChatConversationLayout<MessageList: View, HydrationMask: View>: View {
         if !isVoiceOverlayPresented {
             ZStack {
                 scrollView
-                    .opacity(isInitialContentReady ? 1 : 0)
-                    .offset(
-                        y: isInitialContentReady
-                            ? 0
-                            : ChatScrollContentMotion.hiddenOffset
-                    )
-                    .scaleEffect(
-                        isInitialContentReady
-                            ? 1
-                            : ChatScrollContentMotion.hiddenScale,
-                        anchor: .bottom
-                    )
+                    .animation(ChatScrollContentMotion.animation) { content in
+                        content
+                            .opacity(isInitialContentReady ? 1 : 0)
+                            .offset(y: isInitialContentReady ? 0 : ChatScrollContentMotion.hiddenOffset)
+                            .scaleEffect(
+                                isInitialContentReady ? 1 : ChatScrollContentMotion.hiddenScale,
+                                anchor: .bottom
+                            )
+                    }
                     .allowsHitTesting(isInitialContentReady)
 
                 if !isInitialContentReady {
@@ -56,10 +54,6 @@ struct ChatConversationLayout<MessageList: View, HydrationMask: View>: View {
                         .allowsHitTesting(false)
                 }
             }
-            .animation(
-                ChatScrollContentMotion.animation,
-                value: isInitialContentReady
-            )
             .modifier(ChatViewPlatformTitleModifier(title: navigationTitle))
         } else {
             Color.clear
@@ -69,35 +63,64 @@ struct ChatConversationLayout<MessageList: View, HydrationMask: View>: View {
     }
 
     private var scrollView: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                messageList()
-            }
-            .coordinateSpace(name: "ChatScroll")
-            .background(
-                GeometryReader { outerGeo in
-                    Color.clear
-                        .preference(key: ViewportHeightKey.self, value: outerGeo.size.height)
-                        .onChange(of: outerGeo.size.width) { _, newWidth in
-                            onWidthChange(newWidth)
-                        }
-                        .onAppear {
-                            onWidthChange(outerGeo.size.width)
-                            onScrollProxyReady(proxy, outerGeo.size.width)
-                        }
-                }
-            )
-            .onPreferenceChange(ContentHeightKey.self, perform: onContentHeightChange)
-            .onPreferenceChange(ViewportHeightKey.self, perform: onViewportHeightChange)
-            .onPreferenceChange(BottomAnchorKey.self, perform: onBottomAnchorChange)
-            .defaultScrollAnchor(.bottom, for: .initialOffset)
-            .defaultScrollAnchor(.bottom, for: .sizeChanges)
-            .defaultScrollAnchor(.top, for: .alignment)
-            #if os(iOS) || os(tvOS)
-            .scrollDismissesKeyboard(.interactively)
-            #endif
-            .onTapGesture(perform: onDismissKeyboard)
+        // The viewport owns its size. Growing message content must not become
+        // an input to the window's minimum-size calculation.
+        GeometryReader { viewport in
+            transcriptScrollView(viewportSize: viewport.size)
         }
+    }
+
+    private func transcriptScrollView(viewportSize: CGSize) -> some View {
+        ScrollView {
+            messageList()
+        }
+        .coordinateSpace(name: "ChatScroll")
+        .onChange(of: viewportSize.width) { _, newWidth in
+            onWidthChange(newWidth)
+        }
+        .onAppear {
+            onWidthChange(viewportSize.width)
+            onScrollViewAppear()
+        }
+        .background {
+            Color.clear.preference(
+                key: ChatScrollMeasurementsKey.self,
+                value: ChatScrollMeasurements(viewportHeight: viewportSize.height)
+            )
+        }
+        .onPreferenceChange(ChatScrollMeasurementsKey.self) { measurements in
+            guard let contentHeight = measurements.contentHeight,
+                  let viewportHeight = measurements.viewportHeight,
+                  let bottomAnchorMaxY = measurements.bottomAnchorMaxY else { return }
+            onScrollMetricsChange(ChatScrollViewportMetrics(
+                contentHeight: contentHeight,
+                viewportHeight: viewportHeight,
+                bottomAnchorMaxY: bottomAnchorMaxY,
+                historyAnchor: measurements.historyAnchor,
+                searchTarget: measurements.searchTarget,
+                initialRenderGeneration: measurements.initialRenderGeneration
+            ))
+        }
+        .scrollPosition($scrollPosition)
+        .transaction { transaction in
+            // Geometry callbacks can coalesce with layout state updates.
+            // Preserve gesture velocity at the scroll view's consumption
+            // boundary, not only at the position mutation site.
+            transaction.scrollPositionUpdatePreservesVelocity = true
+        }
+        .accessibilityScrollAction(onAccessibilityScroll)
+        .onScrollPhaseChange { _, phase in
+            onScrollPhaseChange(phase)
+        }
+        .defaultScrollAnchor(.bottom, for: .initialOffset)
+        #if os(iOS)
+        .defaultScrollAnchor(.bottom, for: .sizeChanges)
+        #endif
+        .defaultScrollAnchor(.top, for: .alignment)
+        #if os(iOS) || os(tvOS)
+        .scrollDismissesKeyboard(.interactively)
+        #endif
+        .onTapGesture(perform: onDismissKeyboard)
     }
 
     private var audioPlayerOverlay: some View {

@@ -127,11 +127,17 @@ enum ChatMessageBranchResolver {
             }
         }
 
+        var checkedAncestors = Set<UUID>()
+        checkedAncestors.reserveCapacity(messages.count)
         for message in messages {
             var visited = Set<UUID>()
             var current: ChatMessage? = message
             while let cursor = current {
-                if !visited.insert(cursor.id).inserted {
+                let cursorID = cursor.id
+                // Once a path is checked (and any cycle is cut), every node
+                // on it leads to a valid root. Shared ancestors need no rescan.
+                guard !checkedAncestors.contains(cursorID) else { break }
+                if !visited.insert(cursorID).inserted {
                     if cursor.parentMessage != nil {
                         cursor.parentMessage = nil
                         result.didMutate = true
@@ -149,6 +155,7 @@ enum ChatMessageBranchResolver {
                 }
                 current = parent
             }
+            checkedAncestors.formUnion(visited)
         }
 
         var roots = rootCandidatesSorted(in: messages)

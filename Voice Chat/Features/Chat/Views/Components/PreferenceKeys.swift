@@ -7,24 +7,26 @@
 
 import SwiftUI
 
-struct ContentHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat { 0 }
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
+struct ChatScrollMeasurements: Equatable {
+    var contentHeight: CGFloat?
+    var initialRenderGeneration: UInt64?
+    var viewportHeight: CGFloat?
+    var bottomAnchorMaxY: CGFloat?
+    var historyAnchor: ChatHistoryAnchor?
+    var searchTarget: ChatSearchTargetGeometry?
 }
 
-struct ViewportHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat { 0 }
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = max(value, nextValue())
-    }
-}
+struct ChatScrollMeasurementsKey: PreferenceKey {
+    static var defaultValue: ChatScrollMeasurements { ChatScrollMeasurements() }
 
-struct BottomAnchorKey: PreferenceKey {
-    static var defaultValue: CGFloat { 0 }
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+    static func reduce(value: inout ChatScrollMeasurements, nextValue: () -> ChatScrollMeasurements) {
+        let next = nextValue()
+        if let height = next.contentHeight { value.contentHeight = height }
+        if let generation = next.initialRenderGeneration { value.initialRenderGeneration = generation }
+        if let height = next.viewportHeight { value.viewportHeight = height }
+        if let anchor = next.bottomAnchorMaxY { value.bottomAnchorMaxY = anchor }
+        if let anchor = next.historyAnchor { value.historyAnchor = anchor }
+        if let target = next.searchTarget { value.searchTarget = target }
     }
 }
 

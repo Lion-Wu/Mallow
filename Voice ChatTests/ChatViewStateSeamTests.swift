@@ -508,22 +508,22 @@ final class ChatViewStateSeamTests: XCTestCase {
         XCTAssertFalse(state.consumeScrollToBottomAfterSendIfReady(
             visibleCount: 2,
             bottomMessageID: firstBottomID,
-            scrollProxyAvailable: true
+            hasViewport: true
         ))
         XCTAssertFalse(state.consumeScrollToBottomAfterSendIfReady(
             visibleCount: 3,
             bottomMessageID: secondBottomID,
-            scrollProxyAvailable: false
+            hasViewport: false
         ))
         XCTAssertTrue(state.consumeScrollToBottomAfterSendIfReady(
             visibleCount: 3,
             bottomMessageID: secondBottomID,
-            scrollProxyAvailable: true
+            hasViewport: true
         ))
         XCTAssertFalse(state.consumeScrollToBottomAfterSendIfReady(
             visibleCount: 4,
             bottomMessageID: UUID(),
-            scrollProxyAvailable: true
+            hasViewport: true
         ))
     }
 
@@ -537,12 +537,12 @@ final class ChatViewStateSeamTests: XCTestCase {
         XCTAssertEqual(state.consumeOverflowTransitionScrollToBottomIfReady(
             metrics: metrics,
             hasSearchInterruption: false,
-            scrollProxyAvailable: false
+            hasViewport: false
         ), .waiting)
         XCTAssertEqual(state.consumeOverflowTransitionScrollToBottomIfReady(
             metrics: metrics,
             hasSearchInterruption: true,
-            scrollProxyAvailable: true
+            hasViewport: true
         ), .cancelled)
         XCTAssertFalse(state.hasActivatedComposerOverflowBottomAnchor)
 
@@ -550,7 +550,7 @@ final class ChatViewStateSeamTests: XCTestCase {
         XCTAssertEqual(state.consumeOverflowTransitionScrollToBottomIfReady(
             metrics: metrics,
             hasSearchInterruption: false,
-            scrollProxyAvailable: true
+            hasViewport: true
         ), .scrollToBottom)
         XCTAssertTrue(state.hasActivatedComposerOverflowBottomAnchor)
         XCTAssertFalse(state.pendingComposerOverflowScrollToBottom)

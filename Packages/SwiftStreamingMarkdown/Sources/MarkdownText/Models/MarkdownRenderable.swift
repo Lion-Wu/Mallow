@@ -31,10 +31,10 @@ indirect enum MarkdownRenderable: Identifiable, Equatable, @unchecked Sendable {
   case unorderedList(id: String, items: [MarkdownListItem], nestedLevel: Int)
 
   /// To be rendered as a code block
-  case codeBlock(id: String, language: String?, code: String)
+  case codeBlock(id: String, language: String?, code: String, highlight: NativeCodeHighlight? = nil)
 
   /// To be rendered as a table
-  case table(id: String, headers: [NSMutableAttributedString], rows: [[NSMutableAttributedString]], rawMarkdown: String)
+  case table(id: String, headers: [NSMutableAttributedString], rows: [[NSMutableAttributedString]], layout: MarkdownTableLayout? = nil)
 
   /// To be rendered as thematic break
   case thematicBreak(id: String)
@@ -53,7 +53,7 @@ indirect enum MarkdownRenderable: Identifiable, Equatable, @unchecked Sendable {
     case .heading(let id, _, _): return id
     case .orderedList(let id, _): return id
     case .unorderedList(let id, _, _): return id
-    case .codeBlock(let id, _, _): return id
+    case .codeBlock(let id, _, _, _): return id
     case .table(let id, _, _, _): return id
     case .thematicBreak(let id): return id
     case .blockQuote(let id, _): return id
@@ -64,13 +64,6 @@ indirect enum MarkdownRenderable: Identifiable, Equatable, @unchecked Sendable {
   var isCodeBlock: Bool {
     switch self {
     case .codeBlock: return true
-    default: return false
-    }
-  }
-
-  var isBlockQuote: Bool {
-    switch self {
-    case .blockQuote: return true
     default: return false
     }
   }

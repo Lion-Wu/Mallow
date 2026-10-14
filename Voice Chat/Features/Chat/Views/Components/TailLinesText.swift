@@ -138,11 +138,13 @@ func computeTailVisualTextWindow(
         let range = NSRange(location: start, length: total - start)
         let chunk = ns.substring(with: range) as NSString
 
-        // CoreText omits the empty visual line after a terminal line break unless
-        // another character follows it. Measure with a zero-width sentinel so the
-        // returned tail never contains `lines` text rows plus an extra blank row.
+        // CoreText needs a following character to count a terminal empty line.
+        // At other boundaries a sentinel can create a soft-wrapped line that
+        // the displayed text does not contain, dropping a real preview row.
         let measuredChunk = NSMutableString(string: chunk)
-        measuredChunk.append("\u{2060}")
+        if let lastScalar = text.unicodeScalars.last, CharacterSet.newlines.contains(lastScalar) {
+            measuredChunk.append("\u{2060}")
+        }
         let attrs: [CFString: Any] = [kCTFontAttributeName: font.ctFont]
         guard let attrStr = CFAttributedStringCreate(nil, measuredChunk as CFString, attrs as CFDictionary) else {
             return lastResult

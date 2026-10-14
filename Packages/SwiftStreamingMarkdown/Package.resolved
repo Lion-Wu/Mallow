@@ -11,14 +11,6 @@
       }
     },
     {
-      "identity" : "highlightswift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/appstefan/highlightswift",
-      "state" : {
-        "revision" : "99c431b38a1444a5fd6a4978307fbbefe3a7af53"
-      }
-    },
-    {
       "identity" : "ratex",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/erweixin/RaTeX.git",

@@ -25,6 +25,10 @@ extension UTType {
 }
 
 final class LatexTextAttachment: NSTextAttachment {
+  #if !os(visionOS)
+  @MainActor var textLayoutAttachment: (fontXHeight: CGFloat?, attachment: NSTextAttachment)?
+  #endif
+
   init(contents: Data) {
     super.init(
       data: contents,
