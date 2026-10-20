@@ -1,0 +1,97 @@
+//
+//  AppSettings.swift
+//  Mallow
+//
+//  Created by Codex on 2026/6/13.
+//
+
+import Foundation
+import SwiftData
+
+/// Persisted application preferences. New settings belong here and are included
+/// automatically in the database export. Credentials remain in Keychain.
+@Model
+final class AppSettings {
+    var id: UUID
+    var serverAddress: String
+    var textLang: String
+
+    var modelId: String
+    var language: String
+    var autoSplit: String
+
+    var apiURL: String
+    var selectedModel: String
+    var selectedChatServerPresetID: UUID?
+    var selectedVoiceServerPresetID: UUID?
+
+    var enableStreaming: Bool
+    var ttsProviderRawValue: String
+    var appleSpeechVoiceIdentifier: String?
+    var personalVoiceIdentifier: String?
+    var developerModeEnabled: Bool
+    var hapticFeedbackEnabled: Bool
+
+    // Currently selected preset identifier (optional when nothing is selected).
+    var selectedPresetID: UUID?
+
+    // Separate selections for text and voice modes.
+    var selectedNormalSystemPromptPresetID: UUID?
+    var selectedVoiceSystemPromptPresetID: UUID?
+    var modelThinkingPreferencesJSON: String?
+    var detectedAPIFormatsJSON: String?
+    var modelImageInputOverrideJSON: String?
+    var apiAdvancedSettingsJSON: String?
+    var toolUseSettingsJSON: String?
+
+    init(
+        serverAddress: String = "http://localhost:9880",
+        textLang: String = "auto",
+        modelId: String = "",
+        language: String = "auto",
+        autoSplit: String = "cut0",
+        apiURL: String = "http://localhost:1234",
+        selectedModel: String = "",
+        selectedChatServerPresetID: UUID? = nil,
+        selectedVoiceServerPresetID: UUID? = nil,
+        enableStreaming: Bool = true,
+        developerModeEnabled: Bool = false,
+        hapticFeedbackEnabled: Bool = SettingsDefaults.hapticFeedbackEnabled,
+        selectedPresetID: UUID? = nil,
+        selectedNormalSystemPromptPresetID: UUID? = nil,
+        selectedVoiceSystemPromptPresetID: UUID? = nil,
+        modelThinkingPreferencesJSON: String? = nil,
+        detectedAPIFormatsJSON: String? = nil,
+        modelImageInputOverrideJSON: String? = nil,
+        apiAdvancedSettingsJSON: String? = APIAdvancedSettingsCodec.encode(SettingsDefaults.apiAdvancedSettings),
+        toolUseSettingsJSON: String? = ToolUseSettingsCodec.encode(.defaults),
+        ttsProviderRawValue: String = TTSProvider.gptSoVITS.rawValue,
+        appleSpeechVoiceIdentifier: String? = nil,
+        personalVoiceIdentifier: String? = nil
+    ) {
+        self.id = UUID()
+        self.serverAddress = serverAddress
+        self.textLang = textLang
+        self.modelId = modelId
+        self.language = language
+        self.autoSplit = autoSplit
+        self.apiURL = apiURL
+        self.selectedModel = selectedModel
+        self.selectedChatServerPresetID = selectedChatServerPresetID
+        self.selectedVoiceServerPresetID = selectedVoiceServerPresetID
+        self.enableStreaming = enableStreaming
+        self.ttsProviderRawValue = ttsProviderRawValue
+        self.appleSpeechVoiceIdentifier = appleSpeechVoiceIdentifier
+        self.personalVoiceIdentifier = personalVoiceIdentifier
+        self.developerModeEnabled = developerModeEnabled
+        self.hapticFeedbackEnabled = hapticFeedbackEnabled
+        self.selectedPresetID = selectedPresetID
+        self.selectedNormalSystemPromptPresetID = selectedNormalSystemPromptPresetID
+        self.selectedVoiceSystemPromptPresetID = selectedVoiceSystemPromptPresetID
+        self.modelThinkingPreferencesJSON = modelThinkingPreferencesJSON
+        self.detectedAPIFormatsJSON = detectedAPIFormatsJSON
+        self.modelImageInputOverrideJSON = modelImageInputOverrideJSON
+        self.apiAdvancedSettingsJSON = apiAdvancedSettingsJSON
+        self.toolUseSettingsJSON = toolUseSettingsJSON
+    }
+}

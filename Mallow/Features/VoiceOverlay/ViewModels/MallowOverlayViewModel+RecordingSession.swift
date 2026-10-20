@@ -1,0 +1,287 @@
+//
+//  MallowOverlayViewModel+RecordingSession.swift
+//  Mallow
+//
+//  Created by OpenAI on 2026.06.14.
+//
+
+import Foundation
+
+extension MallowOverlayViewModel {
+    func startListening() {
+        guard autoResumeEnabled else { return }
+        guard isPresented else { return }
+        guard !currentVoiceWorkSnapshot().blocksListeningStart else { return }
+        guard !speechInputManager.isRecording else { return }
+        guard !isStartingRecording else { return }
+
+        let attemptID = recordingStartCoordinator.beginStart()
+        let startTask = Task { [weak self] in
+            guard let self else { return }
+            await self.startRecordingSession()
+            await MainActor.run {
+                switch self.recordingStartCoordinator.completeStart(attemptID: attemptID) {
+                case .stale, .finished:
+                    break
+                case .restartRequested:
+                    self.restartListening()
+                }
+            }
+        }
+        recordingStartCoordinator.registerStartRecordingTask(startTask)
+
+        let watchdogTask = Task { [weak self] in
+            guard let self else { return }
+            // Don't treat the permission prompt window as a hard startup failure.
+            // We only start the watchdog timeout after the system permission flow resolves.
+            while !Task.isCancelled {
+                let snapshot = await MainActor.run { () -> (stillRelevant: Bool, isWaitingOnPermissions: Bool) in
+                    guard self.recordingStartCoordinator.isActiveStartAttempt(attemptID) else { return (false, false) }
+                    guard self.isPresented else { return (false, false) }
+                    guard !self.speechInputManager.isRecording else { return (false, false) }
+                    return (true, self.speechInputManager.isRequestingPermissions)
+                }
+
+                guard snapshot.stillRelevant else { return }
+                guard snapshot.isWaitingOnPermissions else { break }
+
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+
+            try? await Task.sleep(for: .seconds(4))
+            await MainActor.run {
+                guard self.recordingStartCoordinator.isActiveStartAttempt(attemptID) else { return }
+                guard self.isPresented else { return }
+                guard !self.speechInputManager.isRecording else { return }
+                guard !self.speechInputManager.isRequestingPermissions else { return }
+                guard self.recordingStartCoordinator.failStart(attemptID: attemptID) else { return }
+                self.handleError(NSLocalizedString("Microphone is unavailable.", comment: "Shown when starting speech recognition takes too long"))
+            }
+        }
+        recordingStartCoordinator.registerStartWatchdogTask(watchdogTask)
+    }
+
+    func restartListening() {
+        if recordingStartCoordinator.requestRestartAfterStartIfNeeded() {
+            return
+        }
+        cleanupRecordingOnly()
+        startListening()
+    }
+
+    func startRecordingSession() async {
+        resetVisionCaptureSpeechActivity()
+        await speechInputManager.startRecording(
+            language: selectedLanguage,
+            onPartial: { [weak self] text in
+                guard let self else { return }
+                self.handleRecognizedPartial(text)
+            },
+            onFinal: { [weak self] text in
+                guard let self else { return }
+                self.handleRecognizedFinal(text)
+            },
+            onSpeechActivityStarted: { [weak self] in
+                guard let self else { return }
+                self.markVisionCaptureSpeechDetected()
+            }
+        )
+        if let error = speechInputManager.lastError, !error.isEmpty {
+            handleError(error)
+        }
+    }
+
+    func handleRecognizedPartial(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        markVisionCaptureSpeechDetected()
+    }
+
+    func handleRecognizedFinal(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        markVisionCaptureSpeechDetected()
+
+        if isSendSuppressed {
+            // User is holding the long press, so suppress automatic sending.
+            return
+        }
+
+        sendRecognizedText(trimmed)
+    }
+
+    func handleListeningTap() {
+        isSendSuppressed = false
+
+        if speechInputManager.isRecording {
+            speechInputManager.stopRecording()
+        } else if isStartingRecording {
+            // Treat a second tap as "cancel" even if the microphone hasn't finished starting yet.
+            cancelStartTasks()
+            speechInputManager.stopRecording(finalize: false)
+        } else {
+            startListening()
+        }
+    }
+
+    func sendRecognizedText(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let visionAttachments = selectedVisionAttachmentsForCurrentUtterance()
+        resetVisionCaptureSamples()
+        showErrorBanner = false
+        errorMessage = nil
+        textServiceStatus = nil
+        voiceServiceStatus = nil
+        realtimeAssistantSnapshot = nil
+        state = .loading
+        startLoadingWatchdog()
+        onRecognizedFinal?(trimmed, visionAttachments)
+    }
+
+    func cleanupRecordingOnly() {
+        speechInputManager.setHoldToSpeakActive(false)
+        speechInputManager.stopRecording(finalize: false)
+    }
+
+    func cleanupSession() {
+        onRecognizedFinal = nil
+        cancelStartTasks()
+        stopLoadingWatchdog()
+        cancelConnectivityTask()
+        dismissVisionCapture()
+        realtimeAssistantSnapshot = nil
+        cleanupRecordingOnly()
+        sessionCancellables.removeAll()
+    }
+
+    func cancelStartTasks() {
+        recordingStartCoordinator.cancelStartTasks()
+    }
+
+    func startLoadingWatchdog() {
+        loadingWatchdog.start(
+            isActive: { [weak self] in
+                guard let self else { return false }
+                return self.isPresented &&
+                    self.state == .loading &&
+                    !self.currentVoiceWorkSnapshot().hasNetworkWork
+            },
+            voiceWorkSnapshot: { [weak self] in
+                self?.currentVoiceWorkSnapshot() ?? VoiceWorkSnapshot.idle
+            },
+            onTimeout: { [weak self] in
+                self?.handleLoadingWatchdogTimeout()
+            }
+        )
+    }
+
+    func stopLoadingWatchdog() {
+        loadingWatchdog.stop()
+    }
+
+    func markLoadingProgress() {
+        guard state == .loading else { return }
+        loadingWatchdog.markProgress()
+    }
+
+    func handleLoadingWatchdogTimeout() {
+        activeChatSession?.cancelRealtimeVoiceRequest()
+        closeAudioIfVoiceWorkIsActive()
+        handleError(NSLocalizedString("Connection timed out", comment: "Shown when voice mode stalls without progress"))
+    }
+
+    func interruptActiveWorkOnDismiss() {
+        activeChatSession?.cancelRealtimeVoiceRequest()
+        stopLoadingWatchdog()
+        closeAudioIfVoiceWorkIsActive()
+    }
+
+    func interruptActiveWorkAndRestartListening() {
+        activeChatSession?.cancelRealtimeVoiceRequest()
+        autoResumeEnabled = true
+        cancelStartTasks()
+        stopLoadingWatchdog()
+        cancelConnectivityTask()
+        isSendSuppressed = false
+        showErrorBanner = false
+        errorMessage = nil
+        realtimeAssistantSnapshot = nil
+
+        closeAudioIfVoiceWorkIsActive()
+
+        state = .listening
+        restartListening()
+    }
+
+    func handleRecordingChange(_ isRecording: Bool) {
+        if case .error = state { return }
+        if isRecording {
+            beginVisionCaptureUtteranceIfNeeded()
+            stopLoadingWatchdog()
+            state = .listening
+        } else {
+            updateVisionCaptureRecordingState(isRecording: false)
+            resetVisionCaptureSpeechActivity()
+            resumeListeningIfIdle()
+        }
+    }
+
+    func handleAudioActivityChange() {
+        reconcileVoiceWorkPresentation()
+    }
+
+    func handleChatLoadingStateChange(_ isLoading: Bool) {
+        if isLoading, textServiceStatus?.kind == .failed {
+            textServiceStatus = nil
+            state = .loading
+        }
+        reconcileVoiceWorkPresentation()
+    }
+
+    func reconcileVoiceWorkPresentation() {
+        guard isPresented else { return }
+        if case .error = state, serviceStatuses.isEmpty { return }
+        guard !speechInputManager.isRecording else { return }
+
+        let snapshot = currentVoiceWorkSnapshot()
+        if hasTerminalServiceFailure,
+           audioManager.audioPlaybackSnapshot.hasPlayableAudioRemaining {
+            stopLoadingWatchdog()
+            state = .speaking
+            return
+        }
+        if hasTerminalServiceFailure,
+           !snapshot.isAudioPlaying,
+           !audioManager.audioPlaybackSnapshot.hasPlayableAudioRemaining,
+           let failedStatus = serviceStatuses.first(where: { $0.kind == .failed }) {
+            stopLoadingWatchdog()
+            state = .error(failedStatus.message)
+            return
+        }
+        switch snapshot.presentationPhase {
+        case .speaking:
+            stopLoadingWatchdog()
+            state = .speaking
+        case .loading:
+            state = .loading
+            if !loadingWatchdog.isRunning {
+                startLoadingWatchdog()
+            }
+        case .idle:
+            stopLoadingWatchdog()
+            resumeListeningIfIdle()
+        }
+    }
+
+    func resumeListeningIfIdle() {
+        guard autoResumeEnabled, isPresented else { return }
+        guard serviceStatuses.isEmpty else { return }
+        // Avoid restarting the microphone while we're in the middle of sending/loading a response.
+        guard !loadingWatchdog.isRunning else { return }
+        let snapshot = currentVoiceWorkSnapshot()
+        guard !snapshot.hasNetworkWork, !snapshot.blocksAutoResume else { return }
+        guard !speechInputManager.isRecording else { return }
+        startListening()
+    }
+}

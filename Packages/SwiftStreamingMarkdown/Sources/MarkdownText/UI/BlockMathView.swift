@@ -6,7 +6,7 @@
 import SwiftUI
 
 #if os(visionOS)
-import VoiceChatRaTeX
+import MallowRaTeX
 #else
 import RaTeX
 #endif
@@ -32,28 +32,28 @@ struct BlockMathView: UIViewRepresentable {
     self.colorScheme = colorScheme
   }
 
-  func makeUIView(context: Context) -> VoiceChatRaTeXView {
-    let view = VoiceChatRaTeXView()
+  func makeUIView(context: Context) -> MallowRaTeXView {
+    let view = MallowRaTeXView()
     view.setContentHuggingPriority(.required, for: .horizontal)
     view.setContentHuggingPriority(.required, for: .vertical)
     configure(view)
     return view
   }
 
-  func updateUIView(_ uiView: VoiceChatRaTeXView, context: Context) {
+  func updateUIView(_ uiView: MallowRaTeXView, context: Context) {
     configure(uiView)
   }
 
   func sizeThatFits(
     _ proposal: ProposedViewSize,
-    uiView: VoiceChatRaTeXView,
+    uiView: MallowRaTeXView,
     context: Context
   ) -> CGSize? {
     let size = uiView.intrinsicContentSize
     return CGSize(width: size.width.rounded(.up), height: size.height.rounded(.up))
   }
 
-  private func configure(_ view: VoiceChatRaTeXView) {
+  private func configure(_ view: MallowRaTeXView) {
     let traits = UITraitCollection(
       userInterfaceStyle: colorScheme == .dark ? .dark : .light
     )

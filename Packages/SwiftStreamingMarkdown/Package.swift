@@ -22,7 +22,7 @@ let package = Package(
     .package(url: "https://github.com/swiftlang/swift-markdown.git", exact: "0.7.3"),
     .package(path: "../HighlightSwift"),
     .package(url: "https://github.com/erweixin/RaTeX.git", exact: "0.1.13"),
-    .package(path: "../VoiceChatRaTeX"),
+    .package(path: "../MallowRaTeX"),
     .package(url: "https://github.com/markiv/SwiftUI-Shimmer", exact: "1.5.1")
   ],
   targets: [
@@ -33,7 +33,7 @@ let package = Package(
         .product(name: "Markdown", package: "swift-markdown"),
         .product(name: "HighlightSwift", package: "HighlightSwift"),
         .product(name: "RaTeX", package: "RaTeX", condition: .when(platforms: [.iOS, .macOS])),
-        .product(name: "VoiceChatRaTeX", package: "VoiceChatRaTeX", condition: .when(platforms: [.visionOS])),
+        .product(name: "MallowRaTeX", package: "MallowRaTeX", condition: .when(platforms: [.visionOS])),
         .product(name: "Shimmer", package: "SwiftUI-Shimmer")
       ],
       path: "Sources/MarkdownText",

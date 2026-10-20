@@ -1,4 +1,4 @@
-# Voice Chat
+# Mallow
 
 > [!WARNING]
 >
@@ -7,7 +7,7 @@
 > The app has only been tested on macOS 26.2 and iOS 26.2. Running it on earlier versions or other devices may result in issues.
 
 ## Overview
-Voice Chat is a SwiftUI app for macOS and iOS that combines:
+Mallow is a SwiftUI app for macOS and iOS that combines:
 - Text chat with a local/remote LLM server (OpenAI-compatible `v1/chat/completions` API).
 - Voice output via a [GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS) API server.
 

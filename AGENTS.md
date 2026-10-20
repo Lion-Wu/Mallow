@@ -53,7 +53,7 @@
 - Use XcodeBuildMCP for all Xcode project, build, run, test, simulator, UI automation, and debugging operations. Use command-line Xcode tools only when the MCP is unavailable or does not expose the required capability.
 - Refer to Apple’s official documentation, follow Apple Human Interface Guidelines for user-facing behavior, and use current Apple engineering best practices for implementation.
 - Use English for source code, identifiers, comments, documentation, logs, and other developer-facing or model-facing text. Localize user-facing text through the project's existing localization resources.
-- Treat current source, package manifests, and `Voice Chat.xcodeproj/project.pbxproj` as the source of truth.
+- Treat current source, package manifests, and `Mallow.xcodeproj/project.pbxproj` as the source of truth.
 - Follow the surrounding app or local-package style; do not mass-format vendored packages.
 - Keep Xcode group, target, Sources/Resources phase, and package wiring correct for file changes.
 - Preserve committed `Package.resolved` files unless dependency work is requested.

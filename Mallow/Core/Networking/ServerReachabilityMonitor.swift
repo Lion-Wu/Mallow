@@ -1,0 +1,255 @@
+//
+//  ServerReachabilityMonitor.swift
+//  Mallow
+//
+//  Created by OpenAI Codex on 2025/03/10.
+//
+
+import Foundation
+import Network
+
+private final class TCPProbeResumeGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Void, Error>?
+    private var connection: NWConnection?
+    private var pendingResult: Result<Void, Error>?
+
+    func install(
+        connection: NWConnection,
+        continuation: CheckedContinuation<Void, Error>
+    ) {
+        lock.lock()
+        if let pendingResult {
+            lock.unlock()
+            connection.cancel()
+            continuation.resume(with: pendingResult)
+            return
+        }
+        self.connection = connection
+        self.continuation = continuation
+        lock.unlock()
+    }
+
+    func finish(_ result: Result<Void, Error>) {
+        lock.lock()
+        guard pendingResult == nil else {
+            lock.unlock()
+            return
+        }
+        pendingResult = result
+        let connection = connection
+        let continuation = continuation
+        self.connection = nil
+        self.continuation = nil
+        lock.unlock()
+
+        connection?.cancel()
+        continuation?.resume(with: result)
+    }
+}
+
+/// Performs lightweight reachability checks for the text-generation and TTS servers.
+@MainActor
+final class ServerReachabilityMonitor: ObservableObject {
+    private let noticePublisher: any AppNoticePublishing
+    @Published private(set) var isChatReachable: Bool?
+    @Published private(set) var isTTSReachable: Bool?
+
+    private var monitorTask: Task<Void, Never>?
+    private let pollInterval: TimeInterval = 5
+
+    init(noticePublisher: any AppNoticePublishing = NoopAppNoticePublisher.shared) {
+        self.noticePublisher = noticePublisher
+    }
+
+    /// Starts periodic reachability checks (immediately, then on an interval).
+    func startMonitoring(snapshotProvider: @escaping @MainActor () -> ServerReachabilitySnapshot) {
+        monitorTask?.cancel()
+        monitorTask = Task { [weak self] in
+            guard let self else { return }
+            // Immediate check without waiting.
+            await self.checkAll(snapshot: snapshotProvider())
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(pollInterval))
+                await self.checkAll(snapshot: snapshotProvider())
+            }
+        }
+    }
+
+    func stopMonitoring() {
+        monitorTask?.cancel()
+        monitorTask = nil
+    }
+
+    /// Checks both chat and TTS endpoints and surfaces banners when unreachable.
+    func checkAll(snapshot: ServerReachabilitySnapshot) async {
+        await check(chatBase: snapshot.chatBaseURL)
+        if snapshot.requiresTTSNetworkService {
+            await checkTTS(ttsBase: snapshot.ttsBaseURL)
+        } else {
+            isTTSReachable = true
+            await clear(.tts)
+        }
+    }
+
+    /// Clears existing notices for the given category when connectivity is restored.
+    private func clear(_ category: AppErrorNotice.Category) async {
+        await MainActor.run {
+            self.noticePublisher.clear(category: category)
+        }
+    }
+
+    private func check(chatBase: String) async {
+        guard let endpoint = hostPort(from: chatBase, defaultPort: 80) else {
+            await MainActor.run { self.isChatReachable = nil }
+            return
+        }
+        do {
+            try await tcpProbe(host: endpoint.host, port: endpoint.port)
+            await MainActor.run { self.isChatReachable = true }
+            await clear(.textModel)
+        } catch is CancellationError {
+            return
+        } catch {
+            await MainActor.run {
+                self.isChatReachable = false
+                if self.shouldPublishNotice(for: .textModel) {
+                    self.noticePublisher.publishCritical(
+                        title: NSLocalizedString("Text server unreachable", comment: "Shown when the LLM endpoint cannot be reached"),
+                        message: friendlyMessage(for: error, base: chatBase),
+                        category: .textModel
+                    )
+                }
+            }
+        }
+    }
+
+    private func checkTTS(ttsBase: String) async {
+        guard let endpoint = hostPort(from: ttsBase, defaultPort: 9880) else {
+            await MainActor.run { self.isTTSReachable = nil }
+            return
+        }
+        do {
+            try await tcpProbe(host: endpoint.host, port: endpoint.port)
+            await MainActor.run { self.isTTSReachable = true }
+            await clear(.tts)
+        } catch is CancellationError {
+            return
+        } catch {
+            await MainActor.run {
+                self.isTTSReachable = false
+                if self.shouldPublishNotice(for: .tts) {
+                    self.noticePublisher.publishCritical(
+                        title: NSLocalizedString("TTS server unreachable", comment: "Shown when the TTS endpoint cannot be reached"),
+                        message: friendlyMessage(for: error, base: ttsBase),
+                        category: .tts
+                    )
+                }
+            }
+        }
+    }
+
+    private func hostPort(from base: String, defaultPort: UInt16) -> (host: String, port: UInt16)? {
+        let trimmed = base.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        // Ensure we have a scheme so URLComponents can parse host/port reliably.
+        let normalized: String
+        if trimmed.contains("://") {
+            normalized = trimmed
+        } else {
+            normalized = "http://\(trimmed)"
+        }
+
+        guard let comps = URLComponents(string: normalized) else { return nil }
+        let pathHost = comps.path.split(separator: "/").first.map(String.init)
+        guard let resolvedHost = comps.host ?? pathHost, !resolvedHost.isEmpty else { return nil }
+
+        let resolvedPort: UInt16? = {
+            if let p = comps.port {
+                return UInt16(exactly: p)
+            }
+            if let scheme = comps.scheme?.lowercased() {
+                switch scheme {
+                case "https": return 443
+                case "http": return 80
+                default: break
+                }
+            }
+            return defaultPort
+        }()
+        guard let resolvedPort else { return nil }
+
+        return (resolvedHost, resolvedPort)
+    }
+
+    private func tcpProbe(
+        host: String,
+        port: UInt16,
+        timeout: TimeInterval = NetworkRequestTimeouts.connection
+    ) async throws {
+        let gate = TCPProbeResumeGate()
+        try await withTaskCancellationHandler(operation: {
+            try Task.checkCancellation()
+            try await withCheckedThrowingContinuation {
+                (continuation: CheckedContinuation<Void, Error>) in
+                let endpointHost = NWEndpoint.Host(host)
+                guard let endpointPort = NWEndpoint.Port(rawValue: port) else {
+                    continuation.resume(throwing: URLError(.badURL))
+                    return
+                }
+
+                let params = NWParameters.tcp
+                params.allowLocalEndpointReuse = true
+                let connection = NWConnection(host: endpointHost, port: endpointPort, using: params)
+                let queue = DispatchQueue(label: "Mallow.TCPProbe.\(host):\(port)")
+
+                gate.install(connection: connection, continuation: continuation)
+
+                connection.stateUpdateHandler = { state in
+                    switch state {
+                    case .ready:
+                        gate.finish(.success(()))
+                    case .failed(let error):
+                        gate.finish(.failure(error))
+                    case .cancelled:
+                        gate.finish(.failure(URLError(.cancelled)))
+                    default:
+                        break
+                    }
+                }
+
+                connection.start(queue: queue)
+                queue.asyncAfter(deadline: .now() + timeout) {
+                    gate.finish(.failure(URLError(.timedOut)))
+                }
+            }
+        }, onCancel: {
+            gate.finish(.failure(CancellationError()))
+        })
+    }
+
+    private func friendlyMessage(for error: Error, base: String) -> String {
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .cannotFindHost, .cannotConnectToHost:
+                return String(format: NSLocalizedString("Could not connect to %@", comment: "Shown when a server host is unreachable"), base)
+            case .notConnectedToInternet:
+                return NSLocalizedString("You appear to be offline. Please check your internet connection.", comment: "Shown when the device is offline")
+            case .networkConnectionLost:
+                return NSLocalizedString("The network connection was lost.", comment: "Shown when the connection drops")
+            case .timedOut:
+                return NSLocalizedString("The request timed out. The server may be offline or busy.", comment: "Shown when a server request times out")
+            default:
+                return urlError.localizedDescription
+            }
+        }
+        return error.localizedDescription
+    }
+
+    private func shouldPublishNotice(for category: AppErrorNotice.Category) -> Bool {
+        // Avoid re-publishing if the same category is already displayed or was dismissed and not yet resolved.
+        guard !noticePublisher.isDismissed(for: category) else { return false }
+        return !noticePublisher.notices.contains(where: { $0.category == category })
+    }
+}

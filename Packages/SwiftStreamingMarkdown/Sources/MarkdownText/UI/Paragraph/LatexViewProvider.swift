@@ -13,8 +13,8 @@ import AppKit
 #endif
 
 #if os(visionOS)
-import VoiceChatRaTeX
-private typealias MarkdownAttachmentMathView = VoiceChatRaTeXView
+import MallowRaTeX
+private typealias MarkdownAttachmentMathView = MallowRaTeXView
 #else
 import RaTeX
 private typealias MarkdownAttachmentMathView = RaTeXView
