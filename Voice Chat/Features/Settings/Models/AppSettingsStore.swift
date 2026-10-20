@@ -126,15 +126,15 @@ enum AppSettingsStore {
         model.apiAdvancedSettingsJSON = row.recover("apiAdvancedSettingsJSON", defaultValue: model.apiAdvancedSettingsJSON)
         model.toolUseSettingsJSON = row.recover("toolUseSettingsJSON", defaultValue: model.toolUseSettingsJSON)
         model.apiAdvancedSettingsJSON = try row.validJSON(
-            model.apiAdvancedSettingsJSON, defaultValue: defaultAdvancedSettings
+            model.apiAdvancedSettingsJSON, defaultValue: defaultAdvancedSettings, field: "apiAdvancedSettingsJSON"
         )
-        model.toolUseSettingsJSON = try row.validJSON(model.toolUseSettingsJSON, defaultValue: defaultToolSettings)
-        model.modelImageInputOverrideJSON = try row.validJSON(model.modelImageInputOverrideJSON, defaultValue: defaultImageOverrides)
+        model.toolUseSettingsJSON = try row.validJSON(model.toolUseSettingsJSON, defaultValue: defaultToolSettings, field: "toolUseSettingsJSON")
+        model.modelImageInputOverrideJSON = try row.validJSON(model.modelImageInputOverrideJSON, defaultValue: defaultImageOverrides, field: "modelImageInputOverrideJSON")
         if let value = model.modelThinkingPreferencesJSON {
-            model.modelThinkingPreferencesJSON = try row.validJSON(value, defaultValue: [String: String]())
+            model.modelThinkingPreferencesJSON = try row.validJSON(value, defaultValue: [String: String](), field: "modelThinkingPreferencesJSON")
         }
         if let value = model.detectedAPIFormatsJSON {
-            model.detectedAPIFormatsJSON = try row.validJSON(value, defaultValue: [String: [String: String]]())
+            model.detectedAPIFormatsJSON = try row.validJSON(value, defaultValue: [String: [String: String]](), field: "detectedAPIFormatsJSON")
         }
         return model
     }

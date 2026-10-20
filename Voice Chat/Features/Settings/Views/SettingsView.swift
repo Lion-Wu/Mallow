@@ -31,6 +31,7 @@ enum SettingsDeletionTarget: String, Identifiable {
 
 private enum SettingsNavigationDestination: Hashable {
     case advancedAPISettings
+    case dataManagement
 }
 
 #if os(macOS)
@@ -53,6 +54,7 @@ struct SettingsView: View {
 #if os(macOS)
     @State private var measuredContentSize: CGSize = .zero
     @State private var macSelectedSettingsTab: MacSettingsTab = .servers
+    @State private var showingDataManagement = false
     @State private var macShowingAdvancedAPIResetConfirmation = false
     @State private var macShowingDeveloperDefaultsConfirmation = false
 #endif
@@ -100,6 +102,12 @@ struct SettingsView: View {
             macSettingsContent
                 .overlay(WindowSizeReader().allowsHitTesting(false))
         )
+        .sheet(isPresented: $showingDataManagement) {
+            NavigationStack {
+                DataManagementView(commitEdits: viewModel.commitPendingEdits)
+            }
+            .frame(minWidth: 720, idealWidth: 780, minHeight: 600, idealHeight: 680)
+        }
         .onPreferenceChange(WindowSizePreferenceKey.self) { newSize in
             updateWindowSizeIfNeeded(newSize)
         }
@@ -127,6 +135,8 @@ struct SettingsView: View {
                     switch destination {
                     case .advancedAPISettings:
                         advancedAPISettingsView
+                    case .dataManagement:
+                        DataManagementView(commitEdits: viewModel.commitPendingEdits)
                     }
                 }
             }
@@ -510,6 +520,34 @@ struct SettingsView: View {
             #if !os(macOS)
             Toggle("Haptic Feedback", isOn: $viewModel.hapticFeedbackEnabled)
             #endif
+            #if os(macOS)
+            Button { showingDataManagement = true } label: {
+                HStack {
+                    Label("Data Management", systemImage: "externaldrive")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                        .accessibilityHidden(true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            #else
+            NavigationLink(value: SettingsNavigationDestination.dataManagement) {
+                Label("Data Management", systemImage: "externaldrive")
+            }
+            #endif
+        } header: {
+            if hideHeader {
+                EmptyView()
+            } else {
+                sectionHeader("Advanced")
+            }
+        }
+
+        Section {
             Toggle(
                 "Developer Mode",
                 isOn: Binding(
@@ -517,12 +555,6 @@ struct SettingsView: View {
                     set: { settingsManager.updateDeveloperModeEnabled($0) }
                 )
             )
-        } header: {
-            if hideHeader {
-                EmptyView()
-            } else {
-                sectionHeader("Advanced")
-            }
         }
 
         #if os(macOS)

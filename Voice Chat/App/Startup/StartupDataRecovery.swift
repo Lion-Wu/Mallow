@@ -1,5 +1,40 @@
 import Foundation
+import CoreData
 import SwiftData
+import Darwin
+
+/// A live store has one application writer. SQLite serializes transactions,
+/// but cannot merge SwiftData relationship collections cached by another writer.
+nonisolated final class PersistentStoreOwnership: Sendable {
+    static let fileName = "store-writer.lock"
+    private let descriptor: Int32
+
+    struct AlreadyInUse: LocalizedError {
+        var errorDescription: String? {
+            String(localized: "Another instance of the app is using this data. Close that instance, then try again.")
+        }
+    }
+
+    init(directory: URL) throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent(Self.fileName)
+        let descriptor = Darwin.open(url.path, O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW, S_IRUSR | S_IWUSR)
+        guard descriptor >= 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
+        guard flock(descriptor, LOCK_EX | LOCK_NB) == 0 else {
+            let code = errno
+            Darwin.close(descriptor)
+            if code == EWOULDBLOCK { throw AlreadyInUse() }
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(code))
+        }
+        self.descriptor = descriptor
+    }
+
+    deinit {
+        // Closing releases the lock even after a crash. Keep the lock file's
+        // inode stable across imports, resets, and subsequent app launches.
+        Darwin.close(descriptor)
+    }
+}
 
 struct DataRecoveryCategory: Identifiable, Sendable {
     let id: String
@@ -10,6 +45,8 @@ struct DataRecoveryCategory: Identifiable, Sendable {
     var hasPartialLoss = false
     var names: [String] = []
     var skippedNames: [String] = []
+    var problems: [String] = []
+    var issues: [DataRecoveryIssue] = []
 }
 
 struct DataRecoveryPlan: Identifiable, Sendable {
@@ -23,8 +60,7 @@ struct DataRecoveryPlan: Identifiable, Sendable {
     func discard() { StartupDataRecovery.discard(container: container, directory: directory) }
 }
 
-/// Store selection changes only after a reviewed candidate has been saved.
-/// Superseded stores are removed after the app accepts the new container.
+/// The application always uses one fixed persistent store.
 nonisolated enum StartupPersistentStore {
     static let schema = Schema([
         ChatSession.self, ChatMessage.self, ChatRequestContextMetadata.self,
@@ -33,61 +69,46 @@ nonisolated enum StartupPersistentStore {
     ])
 
     static var defaultURL: URL { ModelConfiguration().url }
-    private static var selectionURL: URL {
-        defaultURL.deletingLastPathComponent().appendingPathComponent("recovered-store.json")
-    }
-    static var recoveryDirectory: URL {
-        defaultURL.deletingLastPathComponent().appendingPathComponent("DataRecovery", isDirectory: true)
-    }
-
-    static func currentURL() throws -> URL {
-        guard FileManager.default.fileExists(atPath: selectionURL.path) else { return defaultURL }
-        let id = try JSONDecoder().decode(UUID.self, from: Data(contentsOf: selectionURL))
-        let url = recoveryDirectory.appendingPathComponent(id.uuidString).appendingPathComponent("recovered.store")
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            throw CocoaError(.fileNoSuchFile)
-        }
-        return url
-    }
+    private static let replacementKey = "VoiceChatImportID"
 
     static func open(at url: URL) throws -> ModelContainer {
         try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)])
     }
 
-    static func activate(_ plan: DataRecoveryPlan) throws {
-        try JSONEncoder().encode(plan.id).write(to: selectionURL, options: .atomic)
+    static func replace(with plan: DataRecoveryPlan) throws {
+        // The operation ID coordinates the database commit with keychain writes.
+        var metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(type: .sqlite, at: plan.storeURL)
+        metadata[replacementKey] = plan.id.uuidString
+        try NSPersistentStoreCoordinator.setMetadata(metadata, type: .sqlite, at: plan.storeURL)
+        let coordinator = NSPersistentStoreCoordinator(managedObjectModel: NSManagedObjectModel())
+        try coordinator.replacePersistentStore(at: defaultURL, withPersistentStoreFrom: plan.storeURL, type: .sqlite)
+    }
+
+    static func replacementID() throws -> UUID? {
+        guard FileManager.default.fileExists(atPath: defaultURL.path) else { return nil }
+        let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(type: .sqlite, at: defaultURL)
+        guard let value = metadata[replacementKey] else { return nil }
+        guard let string = value as? String, let id = UUID(uuidString: string) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        return id
     }
 
     /// Keep storage ownership here rather than exporting the entire Library.
-    /// Include every recovery store even when selection metadata is unreadable.
     static func exportSources(defaultStoreURL: URL = defaultURL) -> [String: URL] {
         let directory = defaultStoreURL.deletingLastPathComponent()
         let names = [defaultStoreURL.lastPathComponent, defaultStoreURL.lastPathComponent + "-wal",
-                     defaultStoreURL.lastPathComponent + "-shm", "DataRecovery", "recovered-store.json"]
+                     defaultStoreURL.lastPathComponent + "-shm"]
         return Dictionary(uniqueKeysWithValues: names.map { ("Stores/" + $0, directory.appendingPathComponent($0)) })
     }
 
-    /// An explicitly confirmed reset removes every owned store and the selection
-    /// metadata without requiring any of them to be readable.
+    /// An explicitly confirmed reset does not require readable database contents.
     static func reset(defaultStoreURL: URL = defaultURL) throws {
         let manager = FileManager.default
         let directory = defaultStoreURL.deletingLastPathComponent()
         try removeStoreFiles(at: defaultStoreURL)
-        for name in ["DataRecovery", "recovered-store.json"] {
-            let url = directory.appendingPathComponent(name)
-            if manager.fileExists(atPath: url.path) { try manager.removeItem(at: url) }
-        }
-    }
-
-    static func removeSupersededStores(keeping storeURL: URL) throws {
-        let fileManager = FileManager.default
-        let directories = try fileManager.contentsOfDirectory(at: recoveryDirectory, includingPropertiesForKeys: nil)
-        let activeDirectory = storeURL.deletingLastPathComponent().standardizedFileURL.path
-        try removeStoreFiles(at: defaultURL)
-        for directory in directories where UUID(uuidString: directory.lastPathComponent) != nil
-            && directory.standardizedFileURL.path != activeDirectory {
-            try fileManager.removeItem(at: directory)
-        }
+        let journal = directory.appendingPathComponent(DataImportTransaction.fileName)
+        if manager.fileExists(atPath: journal.path) { try manager.removeItem(at: journal) }
     }
 
     static func removeStoreFiles(at storeURL: URL) throws {
@@ -103,19 +124,19 @@ nonisolated enum StartupPersistentStore {
 }
 
 nonisolated enum StartupDataRecovery {
-    static func prepare(sourceURL: URL, recoveryDirectory: URL) throws -> DataRecoveryPlan {
+    static func prepare(sourceURL: URL, temporaryDirectory: URL = FileManager.default.temporaryDirectory, allowSourceSidecarCreation: Bool = false) throws -> DataRecoveryPlan {
         let id = UUID()
-        let directory = recoveryDirectory.appendingPathComponent(id.uuidString, isDirectory: true)
+        let directory = temporaryDirectory.appendingPathComponent("DataPreparation-" + id.uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var keepCandidate = false
         var container: ModelContainer?
         defer {
             if !keepCandidate { discard(container: container, directory: directory) }
         }
-        let storeURL = directory.appendingPathComponent("recovered.store")
+        let storeURL = directory.appendingPathComponent("prepared.store")
         let candidate = try StartupPersistentStore.open(at: storeURL)
         container = candidate
-        let categories = try reconstruct(sourceURL: sourceURL, container: candidate)
+        let categories = try reconstruct(sourceURL: sourceURL, context: ModelContext(candidate), allowSourceSidecarCreation: allowSourceSidecarCreation)
         try Task.checkCancellation()
         keepCandidate = true
         return DataRecoveryPlan(id: id, storeURL: storeURL, container: candidate, categories: categories)
@@ -129,14 +150,15 @@ nonisolated enum StartupDataRecovery {
         catch { print("Could not remove recovery preview: \(error)") }
     }
 
-    private static func reconstruct(sourceURL: URL, container: ModelContainer) throws -> [DataRecoveryCategory] {
-        let source = try RecoveryStoreReader(url: sourceURL)
-        let context = ModelContext(container)
+    static func reconstruct(sourceURL: URL, context: ModelContext, allowSourceSidecarCreation: Bool, persist: Bool = true) throws -> [DataRecoveryCategory] {
+        let source = try RecoveryStoreReader(url: sourceURL, allowSidecarCreation: allowSourceSidecarCreation)
         context.autosaveEnabled = false
         var categories: [DataRecoveryCategory] = []
         var sessions: [Int64: ChatSession] = [:]
+        var sessionRows: [UUID: RecoveryRow] = [:]
         var messages: [Int64: ChatMessage] = [:]
         var parents: [Int64: Int64] = [:]
+        var messageRows: [Int64: RecoveryRow] = [:]
 
         func recover<M: PersistentModel>(
             _ entity: String, title: String,
@@ -165,17 +187,30 @@ nonisolated enum StartupDataRecovery {
                 try Task.checkCancellation()
                 let name = ["title", "name", "content"].compactMap { try? row.value($0, as: String.self) }.first
                 do {
-                    guard let id = identity(row), !id.isEmpty, identityCounts[id] == 1,
-                          selectedSettingsID == nil || selectedSettingsID == id else { throw row.invalid(identityField) }
+                    guard let id = identity(row), !id.isEmpty, identityCounts[id] == 1 else { throw row.invalid("identity") }
+                    guard selectedSettingsID == nil || selectedSettingsID == id else { throw row.invalid("additionalSettings") }
                     let model = try make(row)
                     try connect(model, row)
                     context.insert(model)
                     category.recovered += 1
                     category.hasPartialLoss = category.hasPartialLoss || row.hasLoss
                     if let name { category.names.append(String(name.prefix(120))) }
+                    if row.hasLoss {
+                        category.issues.append(DataRecoveryIssue(row: row, entity: entity, name: name,
+                            reason: .content, fields: row.lostFields.sorted()))
+                    }
                 } catch {
                     guard (error as NSError).domain == "RecoveryRecord" else { throw error }
                     category.skipped += 1
+                    let field = (error as NSError).userInfo["field"] as? String ?? ""
+                    let reason: DataRecoveryIssue.Reason = switch field {
+                    case "ZSESSION", "session": .ownership
+                    case "ZPARENTMESSAGE": .parent
+                    case "identity": .identity
+                    case "additionalSettings": .additionalSettings
+                    default: .content
+                    }
+                    category.issues.append(DataRecoveryIssue(row: row, entity: entity, name: name, reason: reason, fields: [field]))
                     if let name { category.skippedNames.append(String(name.prefix(120))) }
                 }
             }
@@ -184,6 +219,7 @@ nonisolated enum StartupDataRecovery {
 
         try recover("ChatSession", title: String(localized: "Chats"), make: recoverSession) { session, row in
             sessions[try row.integer("Z_PK")] = session
+            sessionRows[session.id] = row
         }
         try recover("ChatMessage", title: String(localized: "Messages"), make: recoverMessage) { message, row in
             let key = try row.integer("Z_PK")
@@ -193,6 +229,7 @@ nonisolated enum StartupDataRecovery {
             message.session = session
             parents[key] = parent
             messages[key] = message
+            messageRows[key] = row
         }
         // Keep only original, unambiguous parent chains. Missing parents and cycles
         // invalidate their descendants; they never become new conversation roots.
@@ -218,6 +255,9 @@ nonisolated enum StartupDataRecovery {
             categories[1].recovered -= 1
             categories[1].skipped += 1
             categories[1].skippedNames.append(String(message.content.prefix(120)))
+            if let row = messageRows[key] {
+                categories[1].issues.append(DataRecoveryIssue(row: row, entity: "ChatMessage", name: message.content, reason: .parent))
+            }
         }
         messages = messages.filter { validChains[$0.key] == true }
         categories[1].names = messages.keys.sorted().compactMap { messages[$0].map { String($0.content.prefix(120)) } }
@@ -225,19 +265,30 @@ nonisolated enum StartupDataRecovery {
             message.parentMessage = parents[key].flatMap { messages[$0] }
         }
         // These are display selections and projections, not message ownership.
+        let rowsByID = Dictionary(uniqueKeysWithValues: messages.compactMap { key, message in messageRows[key].map { (message.id, $0) } })
         let messagesBySession = Dictionary(grouping: messages.values, by: { $0.session?.id })
         for session in sessions.values {
             let surviving = messagesBySession[session.id] ?? []
             let lookup = Dictionary(uniqueKeysWithValues: surviving.map { ($0.id, $0) })
             if !surviving.contains(where: { $0.id == session.activeRootMessageID && $0.parentMessage == nil }) {
+                if session.activeRootMessageID != nil, let row = sessionRows[session.id] {
+                    categories[0].issues.append(DataRecoveryIssue(row: row, entity: "ChatSession", name: session.title, reason: .selection))
+                    categories[0].hasPartialLoss = true
+                }
                 session.activeRootMessageID = nil
             }
             for message in surviving {
                 if message.activeChildMessageID.flatMap({ lookup[$0] })?.parentMessage !== message {
+                    if message.activeChildMessageID != nil, let row = rowsByID[message.id] {
+                        categories[1].issues.append(DataRecoveryIssue(row: row, entity: "ChatMessage", name: message.content, reason: .selection))
+                        categories[1].hasPartialLoss = true
+                    }
                     message.activeChildMessageID = nil
                 }
             }
-            let latest = surviving.max { $0.createdAt < $1.createdAt }
+            let latest = surviving.max {
+                $0.createdAt == $1.createdAt ? $0.id.uuidString < $1.id.uuidString : $0.createdAt < $1.createdAt
+            }
             session.lastMessageID = latest?.id
             session.lastMessageAt = latest?.createdAt
             session.sidebarPreviewText = ChatSession.sidebarPreviewText(for: latest)
@@ -248,8 +299,17 @@ nonisolated enum StartupDataRecovery {
         try recover("VoiceServerPreset", title: String(localized: "Voice Server Presets"), make: recoverVoiceServer)
         try recover("VoicePreset", title: String(localized: "Voice Presets"), make: recoverVoice)
         try recover("SystemPromptPreset", title: String(localized: "System Prompt Presets"), make: recoverPrompt)
-        try recover("ChatRequestContextMetadata", title: String(localized: "Request Metadata"), make: recoverMetadata, identityField: "fingerprint")
-        try context.save()
+        var metadataIDs: Set<String> = []
+        try recover("ChatRequestContextMetadata", title: String(localized: "Request Metadata"), make: recoverMetadata, identityField: "fingerprint") { metadata, _ in
+            metadataIDs.insert(metadata.fingerprint)
+        }
+        for (key, message) in messages {
+            if let fingerprint = message.requestContextFingerprint, !metadataIDs.contains(fingerprint), let row = messageRows[key] {
+                categories[1].issues.append(DataRecoveryIssue(row: row, entity: "ChatMessage", name: message.content, reason: .metadata))
+                categories[1].hasPartialLoss = true
+            }
+        }
+        if persist { try context.save() }
         return categories
     }
 
@@ -267,10 +327,11 @@ extension StartupDataRecovery {
         return model
     }
 
-    private static func recoverMessage(_ row: RecoveryRow) throws -> ChatMessage {
+    static func recoverMessage(_ row: RecoveryRow) throws -> ChatMessage {
         let model = ChatMessage(content: "", isUser: false)
         model.id = try row.value("id")
         model.activeChildMessageID = row.recover("activeChildMessageID", defaultValue: model.activeChildMessageID)
+        model.importSourceMessageID = row.recover("importSourceMessageID", defaultValue: model.importSourceMessageID)
         model.content = try row.value("content")
         model.requestContentSnapshot = row.recover("requestContentSnapshot", defaultValue: model.requestContentSnapshot)
         model.assistantSegmentsData = row.recover("assistantSegmentsData", defaultValue: model.assistantSegmentsData)
@@ -310,13 +371,15 @@ extension StartupDataRecovery {
         model.toolActivityPlacementsData = row.recover("toolActivityPlacementsData", defaultValue: model.toolActivityPlacementsData)
         // Keep readable payloads unchanged. Invalid structured display data is
         // omitted; the normal renderer can still display the original body.
-        model.assistantSegmentsData = row.validArray(model.assistantSegmentsData, of: ChatAssistantSegment.self)
-        model.openAIResponsesConversationItemsData = row.validArray(model.openAIResponsesConversationItemsData, of: JSONValue.self)
-        model.imageAttachmentsData = try row.readableItems(model.imageAttachmentsData, of: ChatImageAttachment.self)
-        model.providerResponseIDsData = try row.readableItems(model.providerResponseIDsData, of: String.self)
-        model.toolActivityPlacementsData = row.validArray(model.toolActivityPlacementsData, of: ChatToolActivityPlacement.self)
+        model.assistantSegmentsData = row.validArray(model.assistantSegmentsData, of: ChatAssistantSegment.self, field: "assistantSegmentsData")
+        model.openAIResponsesConversationItemsData = row.validArray(model.openAIResponsesConversationItemsData, of: JSONValue.self, field: "openAIResponsesConversationItemsData")
+        model.imageAttachmentsData = try row.readableItems(model.imageAttachmentsData, of: ChatImageAttachment.self, field: "imageAttachmentsData")
+        model.providerResponseIDsData = try row.readableItems(model.providerResponseIDsData, of: String.self, field: "providerResponseIDsData")
+        model.toolActivityPlacementsData = row.validArray(model.toolActivityPlacementsData, of: ChatToolActivityPlacement.self, field: "toolActivityPlacementsData")
         if model.assistantSegmentsData == nil {
-            if model.toolActivityPlacements.contains(where: { $0.assistantSegmentAnchor != nil }) { row.hasLoss = true }
+            if model.toolActivityPlacements.contains(where: { $0.assistantSegmentAnchor != nil }) {
+                row.noteLoss("toolActivityPlacementsData", explanation: String(localized: "Tool positions refer to missing message segments."))
+            }
             model.toolActivityPlacements = model.toolActivityPlacements.filter { $0.assistantSegmentAnchor == nil }
         }
         return model
@@ -413,8 +476,8 @@ extension StartupDataRecovery {
         model.toolAuthorizationModeRawValue = row.recover("toolAuthorizationModeRawValue", defaultValue: model.toolAuthorizationModeRawValue)
         model.allowHighRiskToolAutoExecution = row.recover("allowHighRiskToolAutoExecution", defaultValue: model.allowHighRiskToolAutoExecution)
         model.useProviderContinuationIDs = row.recover("useProviderContinuationIDs", defaultValue: model.useProviderContinuationIDs)
-        model.enabledToolIDsJSON = try row.validJSON(model.enabledToolIDsJSON, defaultValue: [String]())
-        model.toolSchemaSummaryJSON = try row.validJSON(model.toolSchemaSummaryJSON, defaultValue: JSONValue.object([:]))
+        model.enabledToolIDsJSON = try row.validJSON(model.enabledToolIDsJSON, defaultValue: [String](), field: "enabledToolIDsJSON")
+        model.toolSchemaSummaryJSON = try row.validJSON(model.toolSchemaSummaryJSON, defaultValue: JSONValue.object([:]), field: "toolSchemaSummaryJSON")
         return model
     }
 }

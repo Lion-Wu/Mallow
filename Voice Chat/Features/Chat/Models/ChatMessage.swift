@@ -32,6 +32,8 @@ final class ChatMessage {
 
     // MARK: - Branching
     var activeChildMessageID: UUID?
+    // Imported conflict copies retain their original identity across exchanges.
+    var importSourceMessageID: UUID?
 
     // MARK: - Content
     var content: String

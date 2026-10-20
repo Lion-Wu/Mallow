@@ -152,25 +152,16 @@ final class StartupDataRecoveryTests: XCTestCase {
     func testRawExportIncludesUnreadableBytesSidecarsAndKeychain() throws {
         try withFixture { fixture in
             let source = fixture.root.appendingPathComponent("raw", isDirectory: true)
-            try FileManager.default.createDirectory(at: source.appendingPathComponent("DataRecovery"), withIntermediateDirectories: true)
-            try FileManager.default.createSymbolicLink(
-                at: source.appendingPathComponent("DataRecovery/system-link"),
-                withDestinationURL: fixture.root.appendingPathComponent("missing-system-directory")
-            )
+            try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
             let files = ["broken.store": Data([0, 255, 1]), "broken.store-wal": Data([7, 8]), "broken.store-shm": Data([9])]
             for (name, bytes) in files { try bytes.write(to: source.appendingPathComponent(name)) }
             let keychain = try PropertyListSerialization.data(fromPropertyList: [["acct": "synthetic-key", "v_Data": Data("synthetic-secret".utf8)]], format: .xml, options: 0)
             let crashReports = source.appendingPathComponent("CrashReporter")
             try FileManager.default.createDirectory(at: crashReports, withIntermediateDirectories: true)
             try Data("unrelated report".utf8).write(to: crashReports.appendingPathComponent("report.plist"))
-            let recovery = source.appendingPathComponent("DataRecovery/damaged-candidate")
-            try FileManager.default.createDirectory(at: recovery, withIntermediateDirectories: true)
-            try Data([0, 255]).write(to: recovery.appendingPathComponent("recovered.store"))
-            try Data("unreadable selection".utf8).write(to: source.appendingPathComponent("recovered-store.json"))
             let sources = StartupPersistentStore.exportSources(defaultStoreURL: source.appendingPathComponent("broken.store"))
             XCTAssertEqual(Set(sources.keys), Set([
-                "Stores/broken.store", "Stores/broken.store-wal", "Stores/broken.store-shm",
-                "Stores/DataRecovery", "Stores/recovered-store.json"
+                "Stores/broken.store", "Stores/broken.store-wal", "Stores/broken.store-shm"
             ]))
             let archive = try RawDataExport.prepare(sources: sources, keychain: keychain, temporaryDirectory: fixture.root)
             XCTAssertGreaterThan(try Data(contentsOf: archive.url).count, 0)
@@ -184,8 +175,6 @@ final class StartupDataRecoveryTests: XCTestCase {
             XCTAssertEqual(unzip.terminationStatus, 0)
             let contents = unpacked.appendingPathComponent("Voice Chat Data")
             var expected = Dictionary(uniqueKeysWithValues: files.map { ("Stores/" + $0.key, $0.value) })
-            expected["Stores/DataRecovery/damaged-candidate/recovered.store"] = Data([0, 255])
-            expected["Stores/recovered-store.json"] = Data("unreadable selection".utf8)
             expected["Keychain.plist"] = keychain
             for (name, bytes) in expected { XCTAssertEqual(try Data(contentsOf: contents.appendingPathComponent(name)), bytes) }
             let entries = try XCTUnwrap(FileManager.default.enumerator(at: unpacked, includingPropertiesForKeys: [.isRegularFileKey])?.allObjects as? [URL])
@@ -229,15 +218,9 @@ final class StartupDataRecoveryTests: XCTestCase {
         }
     }
 
-    func testResetRemovesDamagedSelectionAndAllStoresWithoutReadingThem() throws {
+    func testResetRemovesStoreWithoutReadingIt() throws {
         try withFixture { fixture in
             let manager = FileManager.default
-            let selection = fixture.root.appendingPathComponent("recovered-store.json")
-            let recovery = fixture.root.appendingPathComponent("DataRecovery")
-            let previous = recovery.appendingPathComponent(UUID().uuidString)
-            try manager.createDirectory(at: previous, withIntermediateDirectories: true)
-            try Data("damaged selection".utf8).write(to: selection)
-            try Data([0, 255]).write(to: previous.appendingPathComponent("recovered.store"))
             for suffix in ["-wal", "-shm"] {
                 try Data([0, 255]).write(to: URL(fileURLWithPath: fixture.source.path + suffix))
             }
@@ -246,9 +229,7 @@ final class StartupDataRecoveryTests: XCTestCase {
 
             try StartupPersistentStore.reset(defaultStoreURL: fixture.source)
 
-            for url in [fixture.source, selection, recovery] {
-                XCTAssertFalse(manager.fileExists(atPath: url.path))
-            }
+            XCTAssertFalse(manager.fileExists(atPath: fixture.source.path))
             for suffix in ["-wal", "-shm"] {
                 XCTAssertFalse(manager.fileExists(atPath: fixture.source.path + suffix))
             }
@@ -386,7 +367,7 @@ final class StartupDataRecoveryTests: XCTestCase {
         init(root: URL) { self.root = root }
 
         func prepare() throws -> DataRecoveryPlan {
-            let plan = try StartupDataRecovery.prepare(sourceURL: source, recoveryDirectory: root.appendingPathComponent("Recovery"))
+            let plan = try StartupDataRecovery.prepare(sourceURL: source, temporaryDirectory: root)
             plans.append(plan)
             return plan
         }

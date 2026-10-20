@@ -187,6 +187,15 @@ final class ChatViewModel: ObservableObject {
         bindStreamingSession()
     }
 
+    func didApplyStoredMessageChanges() {
+        invalidateCachesAfterMessageMutation()
+        let messageIDs = Set(chatSession.messages.map(\.id))
+        messageToolActivities = messageToolActivities.filter { messageIDs.contains($0.key) }
+        messageToolActivityPlacements = messageToolActivityPlacements.filter { messageIDs.contains($0.key) }
+        publishMessageStructureChange()
+        publishBranchChange()
+    }
+
     // MARK: - Public API for the realtime overlay
     func prepareRealtimeTTSForNextAssistant() {
         realtimeNarrationCoordinator.prepareNextAssistant()

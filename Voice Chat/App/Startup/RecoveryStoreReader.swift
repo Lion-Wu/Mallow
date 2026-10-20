@@ -6,14 +6,18 @@ import SQLite3
 final class RecoveryStoreReader {
     private var database: OpaquePointer?
 
-    init(url: URL) throws {
-        let status = sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nil)
+    init(url: URL, allowSidecarCreation: Bool = false) throws {
+        // Extracted copies may lack WAL/SHM files. SQLite needs a writable handle
+        // to create those sidecars even though all recovery queries are read-only.
+        let access = allowSidecarCreation ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY
+        let status = sqlite3_open_v2(url.path, &database, access | SQLITE_OPEN_FULLMUTEX, nil)
         guard status == SQLITE_OK else {
             let error = databaseError()
             if let database { sqlite3_close(database) }
             database = nil
             throw error
         }
+        try query("PRAGMA query_only = ON") { _ in }
         try query("BEGIN") { _ in }
     }
 
@@ -81,7 +85,32 @@ final class RecoveryStoreReader {
         return complete
     }
 
-    private func query(_ sql: String, consume: (RecoveryRow) throws -> Void) throws {
+    /// Counts persisted text and blob payloads without loading attachments into memory.
+    /// SQLite pages, indexes, numeric fields, and free space are accounted for separately.
+    func payloadSize(entity: String, only field: String? = nil, excluding excludedField: String? = nil) throws -> Int64 {
+        let expression = try payloadSizeExpression(entity: entity, only: field, excluding: excludedField)
+        var bytes: Int64 = 0
+        try query("SELECT COALESCE(SUM(\(expression)), 0) AS BYTES FROM Z\(entity.uppercased())") { row in
+            bytes = try row.integer("BYTES")
+        }
+        return bytes
+    }
+
+    func payloadSizeExpression(entity: String, only field: String? = nil, excluding excludedField: String? = nil) throws -> String {
+        let table = "Z" + entity.uppercased()
+        var columns: [String] = []
+        try query("PRAGMA table_info(\(table))") { row in
+            guard case .text(let name) = row.values["name"],
+                  case .text(let type) = row.values["type"] else { return }
+            if let field, name != "Z" + field.uppercased() { return }
+            if let excludedField, name == "Z" + excludedField.uppercased() { return }
+            if ["TEXT", "VARCHAR", "BLOB"].contains(type.uppercased()) { columns.append(name) }
+        }
+        guard !columns.isEmpty else { return "0" }
+        return columns.map { "COALESCE(length(CAST(\($0) AS BLOB)), 0)" }.joined(separator: " + ")
+    }
+
+    func query(_ sql: String, consume: (RecoveryRow) throws -> Void) throws {
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else { throw databaseError() }
         defer { sqlite3_finalize(statement) }
@@ -140,6 +169,8 @@ enum RecoveryValue {
 final class RecoveryRow {
     let values: [String: RecoveryValue]
     var hasLoss = false
+    var lostFields: Set<String> = []
+    var fieldProblems: [String: String] = [:]
 
     init(values: [String: RecoveryValue]) { self.values = values }
 
@@ -176,14 +207,14 @@ final class RecoveryRow {
     func recover<T>(_ field: String, defaultValue: T) -> T {
         guard values["Z" + field.uppercased()] != nil else { return defaultValue }
         do { return try value(field) }
-        catch { hasLoss = true; return defaultValue }
+        catch { hasLoss = true; lostFields.insert(field); return defaultValue }
     }
 
     func recover<T>(_ field: String, defaultValue: T?) -> T? {
         guard let raw = values["Z" + field.uppercased()] else { return defaultValue }
         if case .null = raw { return nil }
         do { return try value(field, as: T.self) }
-        catch { hasLoss = true; return defaultValue }
+        catch { hasLoss = true; lostFields.insert(field); return defaultValue }
     }
 
     func integer(_ column: String) throws -> Int64 {
@@ -197,28 +228,60 @@ final class RecoveryRow {
     }
 
     func invalid(_ field: String) -> NSError {
-        NSError(domain: "RecoveryRecord", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unreadable field: \(field)"])
+        if fieldProblems[field] == nil {
+            fieldProblems[field] = String(localized: "The stored value is missing or has an invalid type.")
+        }
+        return NSError(domain: "RecoveryRecord", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unreadable field: \(field)", "field": field])
     }
 
-    func validJSON<T: Codable>(_ value: String?, defaultValue: T) throws -> String {
-        if let value, (try? JSONDecoder().decode(T.self, from: Data(value.utf8))) != nil { return value }
-        if value != nil { hasLoss = true }
+    func noteLoss(_ field: String, explanation: String) {
+        hasLoss = true
+        lostFields.insert(field)
+        fieldProblems[field] = explanation
+    }
+
+    private func decodingLoss(_ field: String, error: Error) {
+        let context: DecodingError.Context?
+        let reason: String
+        switch error {
+        case DecodingError.keyNotFound(let key, let value):
+            context = value
+            reason = String(localized: "A required value is missing.") + " (" + key.stringValue + ")"
+        case DecodingError.valueNotFound(_, let value):
+            context = value
+            reason = String(localized: "A required value is missing.")
+        case DecodingError.typeMismatch(_, let value):
+            context = value
+            reason = String(localized: "The stored value has the wrong type.")
+        case DecodingError.dataCorrupted(let value):
+            context = value
+            reason = String(localized: "The stored data is not valid for this field.")
+        default:
+            context = nil
+            reason = String(localized: "The stored data is not valid for this field.")
+        }
+        let path = context?.codingPath.map(\.stringValue).joined(separator: ".") ?? ""
+        noteLoss(field, explanation: path.isEmpty ? reason : path + ": " + reason)
+    }
+
+    func validJSON<T: Codable>(_ value: String?, defaultValue: T, field: String) throws -> String {
+        if let value {
+            do { _ = try JSONDecoder().decode(T.self, from: Data(value.utf8)); return value }
+            catch { decodingLoss(field, error: error) }
+        }
         return String(decoding: try JSONEncoder().encode(defaultValue), as: UTF8.self)
     }
 
-    func validArray<T: Decodable>(_ data: Data?, of type: T.Type) -> Data? {
+    func validArray<T: Decodable>(_ data: Data?, of type: T.Type, field: String = "content") -> Data? {
         guard let data else { return nil }
-        guard (try? JSONDecoder().decode([T].self, from: data)) != nil else {
-            hasLoss = true
-            return nil
-        }
-        return data
+        do { _ = try JSONDecoder().decode([T].self, from: data); return data }
+        catch { decodingLoss(field, error: error); return nil }
     }
 
-    func readableItems<T: Codable>(_ data: Data?, of type: T.Type) throws -> Data? {
+    func readableItems<T: Codable>(_ data: Data?, of type: T.Type, field: String = "content") throws -> Data? {
         guard let data else { return nil }
-        if (try? JSONDecoder().decode([T].self, from: data)) != nil { return data }
-        hasLoss = true
+        do { _ = try JSONDecoder().decode([T].self, from: data); return data }
+        catch { decodingLoss(field, error: error) }
         guard let items = (try? JSONSerialization.jsonObject(with: data)) as? [Any] else { return nil }
         let readable: [T] = items.compactMap { item in
             guard let encoded = try? JSONSerialization.data(withJSONObject: item, options: [.fragmentsAllowed]) else { return nil }

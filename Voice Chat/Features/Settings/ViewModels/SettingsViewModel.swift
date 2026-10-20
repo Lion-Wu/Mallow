@@ -238,6 +238,7 @@ final class SettingsViewModel: ObservableObject {
 
     // MARK: - Dependency
     let settingsManager: SettingsManager
+    private var editingContextID: ObjectIdentifier?
     let presetBindingController: SettingsPresetBindingController
     private let modelCatalogController: SettingsModelCatalogController
 
@@ -435,6 +436,7 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func refreshFromSettingsManager() {
+        editingContextID = settingsManager.context.map(ObjectIdentifier.init)
         let s = settingsManager.serverSettings
         let c = settingsManager.chatSettings
         let v = settingsManager.voiceSettings
@@ -605,6 +607,10 @@ final class SettingsViewModel: ObservableObject {
     }
 
     func commitPendingEdits() {
+        guard editingContextID == settingsManager.context.map(ObjectIdentifier.init) else {
+            refreshFromSettingsManager()
+            return
+        }
         commitChatServerEdits()
         commitVoiceServerEdits()
         commitVoicePresetEdits()

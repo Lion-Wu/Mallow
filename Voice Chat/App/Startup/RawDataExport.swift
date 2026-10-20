@@ -9,6 +9,56 @@ nonisolated struct RawDataExport {
         sources: [String: URL], keychain: Data,
         temporaryDirectory: URL = FileManager.default.temporaryDirectory
     ) throws -> RawDataExport {
+        try stage(sources: sources, keychain: keychain, temporaryDirectory: temporaryDirectory).archive()
+    }
+
+    struct StagedSnapshot: Sendable {
+        let directory: URL
+        var contentsName: String = "Voice Chat Data"
+
+        func archive() throws -> RawDataExport {
+            let manager = FileManager.default
+            var keepArchive = false
+            defer { if !keepArchive { discard() } }
+            try Task.checkCancellation()
+            let contents = directory.appendingPathComponent(contentsName, isDirectory: true)
+            let archive = directory.appendingPathComponent(contentsName + ".zip")
+            var coordinationError: NSError?
+            var copyResult: Result<Void, Error> = .failure(CocoaError(.fileReadUnknown))
+            NSFileCoordinator().coordinate(readingItemAt: contents, options: .forUploading, error: &coordinationError) { snapshot in
+                copyResult = Result { try manager.copyItem(at: snapshot, to: archive) }
+            }
+            if let coordinationError { throw coordinationError }
+            try copyResult.get()
+            try manager.removeItem(at: contents)
+            keepArchive = true
+            return RawDataExport(url: archive)
+        }
+
+        func discard() { RawDataExport.remove(directory) }
+    }
+
+    static func prepareFiles(_ sources: [URL]) throws -> RawDataExport {
+        let manager = FileManager.default
+        let directory = manager.temporaryDirectory.appendingPathComponent("DataExport-" + UUID().uuidString)
+        let snapshot = StagedSnapshot(directory: directory, contentsName: "Unused Files")
+        let contents = directory.appendingPathComponent(snapshot.contentsName, isDirectory: true)
+        var complete = false
+        defer { if !complete { snapshot.discard() } }
+        try manager.createDirectory(at: contents, withIntermediateDirectories: true)
+        for source in sources {
+            try Task.checkCancellation()
+            try copyStoredFiles(from: source, to: contents.appendingPathComponent(source.lastPathComponent), skipSymbolicLinks: false)
+        }
+        let archive = try snapshot.archive()
+        complete = true
+        return archive
+    }
+
+    static func stage(
+        sources: [String: URL], keychain: Data,
+        temporaryDirectory: URL = FileManager.default.temporaryDirectory
+    ) throws -> StagedSnapshot {
         let manager = FileManager.default
         let directory = temporaryDirectory.appendingPathComponent("DataExport-" + UUID().uuidString)
         let contents = directory.appendingPathComponent("Voice Chat Data", isDirectory: true)
@@ -33,20 +83,15 @@ nonisolated struct RawDataExport {
         try JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys])
             .write(to: contents.appendingPathComponent("Manifest.json"))
         try keychain.write(to: contents.appendingPathComponent("Keychain.plist"))
-        let archive = directory.appendingPathComponent("Voice Chat Data.zip")
-        var coordinationError: NSError?
-        var copyResult: Result<Void, Error> = .failure(CocoaError(.fileReadUnknown))
-        NSFileCoordinator().coordinate(readingItemAt: contents, options: .forUploading, error: &coordinationError) { snapshot in
-            copyResult = Result { try manager.copyItem(at: snapshot, to: archive) }
-        }
-        if let coordinationError { throw coordinationError }
-        try copyResult.get()
-        try manager.removeItem(at: contents)
         keepArchive = true
-        return RawDataExport(url: archive)
+        return StagedSnapshot(directory: directory)
     }
 
     static func applicationSnapshot() throws -> RawDataExport {
+        try stageApplicationSnapshot().archive()
+    }
+
+    static func stageApplicationSnapshot() throws -> StagedSnapshot {
         let manager = FileManager.default
         let identifier = Bundle.main.bundleIdentifier ?? "VoiceChat"
         #if os(macOS)
@@ -57,9 +102,11 @@ nonisolated struct RawDataExport {
         }
         #endif
         var sources = StartupPersistentStore.exportSources()
+        let journal = StartupPersistentStore.defaultURL.deletingLastPathComponent().appendingPathComponent(DataImportTransaction.fileName)
+        if manager.fileExists(atPath: journal.path) { sources["Stores/" + DataImportTransaction.fileName] = journal }
         sources["Documents"] = try manager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
         let keychain = try keychainSnapshot(service: identifier)
-        return try prepare(sources: sources, keychain: keychain)
+        return try stage(sources: sources, keychain: keychain)
     }
 
     static func keychainSnapshot(service: String) throws -> Data {
@@ -102,16 +149,19 @@ nonisolated struct RawDataExport {
 
     func discard() { Self.remove(url.deletingLastPathComponent()) }
 
-    private static func copyStoredFiles(from source: URL, to destination: URL) throws {
+    private static func copyStoredFiles(from source: URL, to destination: URL, skipSymbolicLinks: Bool = true) throws {
         let manager = FileManager.default
         let values = try source.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
         // Sandbox Library links point to system-managed locations outside the
         // app's stored data. Never follow them into the export.
-        guard values.isSymbolicLink != true else { return }
+        if values.isSymbolicLink == true {
+            if skipSymbolicLinks { return }
+            throw CocoaError(.fileReadUnsupportedScheme, userInfo: [NSURLErrorKey: source])
+        }
         if values.isDirectory == true {
             try manager.createDirectory(at: destination, withIntermediateDirectories: true)
             for child in try manager.contentsOfDirectory(at: source, includingPropertiesForKeys: [.isSymbolicLinkKey, .isDirectoryKey]) {
-                try copyStoredFiles(from: child, to: destination.appendingPathComponent(child.lastPathComponent))
+                try copyStoredFiles(from: child, to: destination.appendingPathComponent(child.lastPathComponent), skipSymbolicLinks: skipSymbolicLinks)
             }
         } else {
             try manager.copyItem(at: source, to: destination)
@@ -119,6 +169,7 @@ nonisolated struct RawDataExport {
     }
 
     private static func remove(_ directory: URL) {
+        guard FileManager.default.fileExists(atPath: directory.path) else { return }
         do { try FileManager.default.removeItem(at: directory) }
         catch { print("Could not remove data export: \(error)") }
     }

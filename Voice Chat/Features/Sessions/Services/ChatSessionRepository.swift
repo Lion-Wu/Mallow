@@ -47,10 +47,17 @@ protocol ChatSessionRepository: ChatSessionPersisting {
     func attach(context: ModelContext)
     func detach()
     func fetchSessions() throws -> [ChatSession]
+    func flushForDataTransfer() throws
     func hydrateTransientMessageState(in session: ChatSession)
     func createSession(title: String) -> ChatSession?
     func delete(_ session: ChatSession)
     func setImmediatePersistenceEnabled(_ enabled: Bool)
+}
+
+extension ChatSessionRepository {
+    func flushForDataTransfer() throws {
+        throw ChatSessionRepositoryReadError.contextUnavailable
+    }
 }
 
 /// SwiftData-backed implementation that centralises throttling and error handling.
@@ -161,6 +168,11 @@ final class SwiftDataChatSessionRepository: ChatSessionRepository {
 
             return saveContext(label: "throttled session save", at: now)
         }
+    }
+
+    func flushForDataTransfer() throws {
+        guard context != nil else { throw ChatSessionRepositoryReadError.contextUnavailable }
+        _ = try saveContextOrThrow(label: "prepare data transfer", notifyObserver: true)
     }
 
     func flushPendingSaves() {

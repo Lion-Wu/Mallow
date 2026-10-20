@@ -392,6 +392,17 @@
 		AE0929000000000000000101 /* StartupDataRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0929000000000000000102 /* StartupDataRecoveryTests.swift */; };
 		AE0930000000000000000101 /* RawDataExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0930000000000000000102 /* RawDataExport.swift */; };
 		AE0930000000000000000103 /* DataExportSharePresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0930000000000000000104 /* DataExportSharePresenter.swift */; };
+		AE1014000000000000020000 /* AppDataBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1014000000000000010000 /* AppDataBackup.swift */; };
+		AE1014000000000000020001 /* AppDataBackupRecords.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1014000000000000010001 /* AppDataBackupRecords.swift */; };
+		AE1014000000000000020002 /* DataBackupCredentials.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1014000000000000010002 /* DataBackupCredentials.swift */; };
+		AE1014000000000000020003 /* DataBackupMerge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1014000000000000010003 /* DataBackupMerge.swift */; };
+		AE1014000000000000020004 /* DataImportTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1014000000000000010004 /* DataImportTransaction.swift */; };
+		AE1014000000000000020005 /* DataManagementModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1014000000000000010005 /* DataManagementModel.swift */; };
+		AE1014000000000000020006 /* DataManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1014000000000000010006 /* DataManagementView.swift */; };
+		AE1014000000000000020007 /* DataStorageUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1014000000000000010007 /* DataStorageUsage.swift */; };
+		AE1014000000000000020008 /* DataBackupArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1014000000000000010008 /* DataBackupArchive.swift */; };
+		AE101500000000000002000A /* DataManagementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE101500000000000001000A /* DataManagementStore.swift */; };
+		AE101500000000000002000B /* DataManagementBrowserViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE101500000000000001000B /* DataManagementBrowserViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -808,6 +819,17 @@
 		AE0929000000000000000102 /* StartupDataRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StartupDataRecoveryTests.swift; path = "Voice ChatTests/StartupDataRecoveryTests.swift"; sourceTree = SOURCE_ROOT; };
 		AE0930000000000000000102 /* RawDataExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RawDataExport.swift; path = "Voice Chat/App/Startup/RawDataExport.swift"; sourceTree = SOURCE_ROOT; };
 		AE0930000000000000000104 /* DataExportSharePresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataExportSharePresenter.swift; path = "Voice Chat/App/Startup/DataExportSharePresenter.swift"; sourceTree = SOURCE_ROOT; };
+		AE1014000000000000010000 /* AppDataBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDataBackup.swift; path = "Voice Chat/Features/DataManagement/AppDataBackup.swift"; sourceTree = SOURCE_ROOT; };
+		AE1014000000000000010001 /* AppDataBackupRecords.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDataBackupRecords.swift; path = "Voice Chat/Features/DataManagement/AppDataBackupRecords.swift"; sourceTree = SOURCE_ROOT; };
+		AE1014000000000000010002 /* DataBackupCredentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataBackupCredentials.swift; path = "Voice Chat/Features/DataManagement/DataBackupCredentials.swift"; sourceTree = SOURCE_ROOT; };
+		AE1014000000000000010003 /* DataBackupMerge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataBackupMerge.swift; path = "Voice Chat/Features/DataManagement/DataBackupMerge.swift"; sourceTree = SOURCE_ROOT; };
+		AE1014000000000000010004 /* DataImportTransaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataImportTransaction.swift; path = "Voice Chat/Features/DataManagement/DataImportTransaction.swift"; sourceTree = SOURCE_ROOT; };
+		AE1014000000000000010005 /* DataManagementModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataManagementModel.swift; path = "Voice Chat/Features/DataManagement/DataManagementModel.swift"; sourceTree = SOURCE_ROOT; };
+		AE1014000000000000010006 /* DataManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataManagementView.swift; path = "Voice Chat/Features/DataManagement/DataManagementView.swift"; sourceTree = SOURCE_ROOT; };
+		AE1014000000000000010007 /* DataStorageUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataStorageUsage.swift; path = "Voice Chat/Features/DataManagement/DataStorageUsage.swift"; sourceTree = SOURCE_ROOT; };
+		AE1014000000000000010008 /* DataBackupArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataBackupArchive.swift; path = "Voice Chat/Features/DataManagement/DataBackupArchive.swift"; sourceTree = SOURCE_ROOT; };
+		AE101500000000000001000A /* DataManagementStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataManagementStore.swift; path = "Voice Chat/Features/DataManagement/DataManagementStore.swift"; sourceTree = SOURCE_ROOT; };
+		AE101500000000000001000B /* DataManagementBrowserViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataManagementBrowserViews.swift; path = "Voice Chat/Features/DataManagement/DataManagementBrowserViews.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1158,6 +1180,7 @@
 		FD9100000000000000000012 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				AE1014000000000000030000 /* DataManagement */,
 				FD910000000000000000000E /* Chat */,
 				FDAC30000000000000000004 /* MCP */,
 				FD910000000000000000000F /* Sessions */,
@@ -1630,6 +1653,24 @@
 			name = Localization;
 			sourceTree = "<group>";
 		};
+		AE1014000000000000030000 /* DataManagement */ = {
+			isa = PBXGroup;
+			children = (
+				AE1014000000000000010000 /* AppDataBackup.swift */,
+				AE1014000000000000010001 /* AppDataBackupRecords.swift */,
+				AE1014000000000000010002 /* DataBackupCredentials.swift */,
+				AE1014000000000000010003 /* DataBackupMerge.swift */,
+				AE1014000000000000010004 /* DataImportTransaction.swift */,
+				AE1014000000000000010005 /* DataManagementModel.swift */,
+				AE1014000000000000010006 /* DataManagementView.swift */,
+				AE1014000000000000010007 /* DataStorageUsage.swift */,
+				AE101500000000000001000B /* DataManagementBrowserViews.swift */,
+				AE101500000000000001000A /* DataManagementStore.swift */,
+				AE1014000000000000010008 /* DataBackupArchive.swift */,
+			);
+			name = DataManagement;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1751,6 +1792,17 @@
 			buildActionMask = 2147483647;
 			files = (
 				AE0930000000000000000101 /* RawDataExport.swift in Sources */,
+				AE1014000000000000020000 /* AppDataBackup.swift in Sources */,
+				AE1014000000000000020001 /* AppDataBackupRecords.swift in Sources */,
+				AE1014000000000000020002 /* DataBackupCredentials.swift in Sources */,
+				AE1014000000000000020003 /* DataBackupMerge.swift in Sources */,
+				AE1014000000000000020004 /* DataImportTransaction.swift in Sources */,
+				AE1014000000000000020005 /* DataManagementModel.swift in Sources */,
+				AE1014000000000000020006 /* DataManagementView.swift in Sources */,
+				AE1014000000000000020007 /* DataStorageUsage.swift in Sources */,
+				AE101500000000000002000B /* DataManagementBrowserViews.swift in Sources */,
+				AE101500000000000002000A /* DataManagementStore.swift in Sources */,
+				AE1014000000000000020008 /* DataBackupArchive.swift in Sources */,
 				AE0930000000000000000103 /* DataExportSharePresenter.swift in Sources */,
 				AE0924000000000000000201 /* DataRecoveryPreviewView.swift in Sources */,
 				AE0924000000000000000101 /* StartupDataRecovery.swift in Sources */,

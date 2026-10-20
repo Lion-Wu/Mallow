@@ -327,6 +327,21 @@ final class ChatSessionsViewModel: ObservableObject {
         _ = loadChatSessions() // Keeps list in sync with persisted state.
     }
 
+    @discardableResult
+    func didApplyDataManagementChanges(deletedIDs: Set<UUID>) -> Bool {
+        for id in deletedIDs {
+            deletedSessionIDs.insert(id)
+            pendingOrderingUpdates.removeValue(forKey: id)
+        }
+        guard loadChatSessions() else { return false }
+        for session in chatSessions {
+            invalidateSidebarPresentationCache(for: session.id)
+            viewModelCache[session.id]?.didApplyStoredMessageChanges()
+        }
+        sidebarContentDidChange.send(())
+        return true
+    }
+
     // MARK: - Persistence (SwiftData)
     @discardableResult
     func persist(session: ChatSession, reason: SessionPersistReason = .throttled) -> Bool {
@@ -588,6 +603,14 @@ extension ChatSessionsViewModel: ChatSessionPersisting {
             // would write the same session twice.
             trackNewSession(session)
         }
+    }
+
+    var hasDataTransferBlockingActivity: Bool {
+        !sessionsWithActiveTextRequests.isEmpty || isRealtimeVoiceLocked
+    }
+
+    func flushForDataTransfer() throws {
+        try repository.flushForDataTransfer()
     }
 
     func flushPendingSaves() {

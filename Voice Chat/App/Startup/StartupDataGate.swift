@@ -21,6 +21,7 @@ final class StartupDataCoordinator: ObservableObject {
         case loading
         case ready(ModelContainer)
         case failed(String)
+        case unavailable(String)
     }
 
     @Published private(set) var launchState: LaunchState = .loading
@@ -29,36 +30,43 @@ final class StartupDataCoordinator: ObservableObject {
     @Published private(set) var isScanningRecovery = false
     @Published private(set) var recoveryPlan: DataRecoveryPlan?
     @Published private(set) var recoveryError: String?
-    @Published private(set) var recoveryCleanupError: String?
+    @Published private(set) var importCleanupError: String?
     private var recoveryTask: Task<Void, Never>?
     var isRecoveryActive: Bool { isScanningRecovery || recoveryPlan != nil }
     private var activeOperationID = UUID()
     private let containerFactory: ContainerFactory
     private let prepareContainer: ContainerPreparer
+    private let ownershipDirectory: URL?
+    private var storeOwnership: PersistentStoreOwnership?
     var onWillResetPersistentStore: (() -> Void)?
 
     init(prepareContainer: @escaping ContainerPreparer = { _ in }) {
         self.containerFactory = Self.makeContainer
         self.prepareContainer = prepareContainer
+        ownershipDirectory = StartupPersistentStore.defaultURL.deletingLastPathComponent()
         beginPersistentContainerLoad()
     }
 
     init(
         containerFactory: @escaping ContainerFactory,
+        ownershipDirectory: URL? = nil,
         prepareContainer: @escaping ContainerPreparer = { _ in }
     ) {
         self.containerFactory = containerFactory
         self.prepareContainer = prepareContainer
+        self.ownershipDirectory = ownershipDirectory
         beginPersistentContainerLoad()
     }
 
     func reportPersistentStoreReadFailure(_ error: Error) {
+        guard ownershipDirectory == nil || storeOwnership != nil else { return }
         guard !isResettingStore, !isRecoveryActive, !isExporting else { return }
         activeOperationID = UUID()
         launchState = .failed(Self.formatErrorMessage(error))
     }
 
     func resetDataAndRetry() {
+        guard case .failed = launchState else { return }
         guard !isResettingStore, !isRecoveryActive, !isExporting else { return }
         onWillResetPersistentStore?()
         isResettingStore = true
@@ -109,9 +117,9 @@ final class StartupDataCoordinator: ObservableObject {
         #endif
     }
 
-    /// Builds the selected SwiftData container, including confirmed recoveries.
+    /// Opens the fixed application database.
     private nonisolated static func makeContainer() throws -> ModelContainer {
-        try StartupPersistentStore.open(at: StartupPersistentStore.currentURL())
+        try StartupPersistentStore.open(at: StartupPersistentStore.defaultURL)
     }
 
     func scanForRecoverableData() {
@@ -119,13 +127,12 @@ final class StartupDataCoordinator: ObservableObject {
         guard case .failed = launchState else { return }
         onWillResetPersistentStore?()
         recoveryError = nil
-        recoveryCleanupError = nil
+        importCleanupError = nil
         isScanningRecovery = true
         recoveryTask = Task.detached(priority: .userInitiated) { [weak self] in
             do {
                 let plan = try StartupDataRecovery.prepare(
-                    sourceURL: StartupPersistentStore.currentURL(),
-                    recoveryDirectory: StartupPersistentStore.recoveryDirectory
+                    sourceURL: StartupPersistentStore.defaultURL
                 )
                 guard let self else {
                     plan.discard()
@@ -162,28 +169,76 @@ final class StartupDataCoordinator: ObservableObject {
 
     func confirmRecovery() {
         guard let plan = recoveryPlan, plan.recoveredCount > 0 else { return }
+        recoveryPlan = nil
         recoveryError = nil
+        defer { plan.discard() }
+        do { try replacePersistentStore(with: plan) }
+        catch { recoveryError = Self.formatErrorMessage(error) }
+    }
+
+    func installImportedStore(_ plan: DataRecoveryPlan, credentials: [DataBackupCredential]) throws {
+        guard case .ready = launchState,
+              !isResettingStore, !isRecoveryActive, !isExporting else { throw CocoaError(.userCancelled) }
+        importCleanupError = nil
+        do { try DataImportTransaction.begin(operationID: plan.id, credentials: credentials) }
+        catch {
+            if DataImportTransaction.hasPendingTransaction {
+                onWillResetPersistentStore?()
+                launchState = .failed(Self.formatErrorMessage(error))
+            }
+            throw error
+        }
+        do { try replacePersistentStore(with: plan) }
+        catch {
+            // Restore credentials only when replacement did not commit.
+            // A committed replacement never restores the previous database.
+            do { try DataImportTransaction.recoverInterruptedImport() }
+            catch {
+                launchState = .failed(Self.formatErrorMessage(error))
+                throw error
+            }
+            throw error
+        }
+        do { try DataImportTransaction.finish() }
+        catch { importCleanupError = Self.formatErrorMessage(error) }
+    }
+
+    private func replacePersistentStore(with plan: DataRecoveryPlan) throws {
+        onWillResetPersistentStore?()
+        launchState = .loading
         do {
-            try StartupPersistentStore.activate(plan)
-            recoveryPlan = nil
-            launchState = .loading
-            prepareContainer(plan.container)
-            guard case .loading = launchState else { return }
-            launchState = .ready(plan.container)
-            do { try StartupPersistentStore.removeSupersededStores(keeping: plan.storeURL) }
-            catch { recoveryCleanupError = Self.formatErrorMessage(error) }
+            try StartupPersistentStore.replace(with: plan)
+            let container = try Self.makeContainer()
+            prepareContainer(container)
+            guard case .loading = launchState else { throw CocoaError(.fileReadCorruptFile) }
+            launchState = .ready(container)
         } catch {
-            recoveryError = Self.formatErrorMessage(error)
+            launchState = .failed(Self.formatErrorMessage(error))
+            throw error
         }
     }
 
     private func beginPersistentContainerLoad() {
+        if let ownershipDirectory, storeOwnership == nil {
+            do { storeOwnership = try PersistentStoreOwnership(directory: ownershipDirectory) }
+            catch {
+                launchState = .unavailable(error.localizedDescription)
+                return
+            }
+        }
+        do { try DataImportTransaction.recoverInterruptedImport() }
+        catch {
+            launchState = .failed(Self.formatErrorMessage(error))
+            return
+        }
         launchState = .loading
         let operationID = UUID()
         activeOperationID = operationID
         let factory = containerFactory
+        let ownership = storeOwnership
 
         Task { [weak self] in
+            defer { withExtendedLifetime(ownership) {} }
             let result = await Self.makeContainerAsync(using: factory)
             guard let self, self.activeOperationID == operationID else { return }
             switch result {
@@ -196,6 +251,11 @@ final class StartupDataCoordinator: ObservableObject {
                 self.launchState = .failed(Self.formatErrorMessage(error))
             }
         }
+    }
+
+    func retryStoreAccess() {
+        guard case .unavailable = launchState else { return }
+        beginPersistentContainerLoad()
     }
 
     private nonisolated static func makeContainerAsync(
@@ -257,6 +317,22 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
             switch coordinator.launchState {
             case .loading:
                 loadingContent()
+            case .unavailable(let message):
+                ZStack {
+                    AppBackgroundView()
+                    VStack(spacing: 18) {
+                        Image(systemName: "externaldrive.badge.person.crop")
+                            .font(.system(size: 34))
+                        Text("Data Is Unavailable").font(.title3.weight(.semibold))
+                        Text(message).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        HStack {
+                            Button("Exit") { coordinator.exitApplication() }.buttonStyle(.bordered)
+                            Button("Try Again") { coordinator.retryStoreAccess() }.buttonStyle(.borderedProminent)
+                        }
+                    }
+                    .padding(24)
+                    .frame(maxWidth: 520)
+                }
             case .failed(let errorMessage):
                 StartupDataErrorView(
                     errorMessage: errorMessage,
@@ -279,6 +355,7 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
                 )
             case .ready(let container):
                 readyContent(container)
+                    .id(ObjectIdentifier(container))
             }
         }
         .background {
@@ -296,15 +373,18 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
         } message: { Text(exportError ?? "") }
         .sheet(isPresented: $isShowingRecovery, onDismiss: {
             coordinator.cancelRecovery()
-            isShowingCleanupError = coordinator.recoveryCleanupError != nil
+            isShowingCleanupError = coordinator.importCleanupError != nil
         }) {
             DataRecoveryPreviewView(coordinator: coordinator)
         }
-        .alert("Original Data Could Not Be Deleted", isPresented: $isShowingCleanupError) {
+        .alert("Import Cleanup Failed", isPresented: $isShowingCleanupError) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("The recovered data is in use, but some original data files could not be deleted.")
-            Text(coordinator.recoveryCleanupError ?? "")
+            Text("The data was imported, but the temporary import journal could not be removed.")
+            Text(coordinator.importCleanupError ?? "")
+        }
+        .onChange(of: coordinator.importCleanupError, initial: true) { _, error in
+            if error != nil, !isShowingRecovery { isShowingCleanupError = true }
         }
         .onChange(of: coordinator.recoveryPlan?.id) { oldValue, newValue in
             if oldValue != nil, newValue == nil { isShowingRecovery = false }

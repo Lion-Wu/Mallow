@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CryptoKit
 import SwiftUI
 import SwiftData
 
@@ -131,6 +132,104 @@ final class AppEnvironment: ObservableObject {
         sessionsModelContext = sessionsContext
         chatSessionsViewModel.refreshChatConfigurationIfNeeded()
         return true
+    }
+
+    func stageRawDataExport() throws -> RawDataExport.StagedSnapshot {
+        try flushForDataManagement()
+        // All app-owned database writers run on the main actor. Copy the saved
+        // files before yielding, then compress the private copy in the background.
+        return try RawDataExport.stageApplicationSnapshot()
+    }
+
+    func stageDataManagementRead() throws -> RawDataExport.StagedSnapshot {
+        try flushForDataManagement()
+        let current = StartupPersistentStore.defaultURL
+        let sources = Dictionary(uniqueKeysWithValues: ["", "-wal", "-shm"].map {
+            ("default.store" + $0, URL(fileURLWithPath: current.path + $0))
+        })
+        return try RawDataExport.stage(sources: sources, keychain: RawDataExport.keychainSnapshot(service: Bundle.main.bundleIdentifier ?? "VoiceChat"))
+    }
+
+    func ownsDataManagementContext(_ context: ModelContext) -> Bool {
+        context.container === boundModelContainer
+    }
+
+    func dataManagementSourceMatches(_ reviewed: DataBackupReadResult) throws -> Bool {
+        try flushForDataManagement()
+        guard try AppDataBackup.sourceRevision(at: StartupPersistentStore.defaultURL) == reviewed.sourceRevision else { return false }
+        let keychain = try RawDataExport.keychainSnapshot(service: Bundle.main.bundleIdentifier ?? "VoiceChat")
+        return DataBackupCredentials.recover(keychain, presetIDs: Set(reviewed.snapshot.chatServers.map(\.id))).values == reviewed.snapshot.credentials
+    }
+
+    func dataManagementSourceMatches(_ revision: SHA256.Digest) throws -> Bool {
+        try flushForDataManagement()
+        return try AppDataBackup.sourceRevision(at: StartupPersistentStore.defaultURL) == revision
+    }
+
+    private func flushForDataManagement() throws {
+        guard boundModelContainer != nil else { throw ChatSessionRepositoryReadError.contextUnavailable }
+        if let failure = settingsManager.settingsWriteFailure { throw NSError(domain: "DataTransferSettings", code: 1, userInfo: [NSLocalizedDescriptionKey: failure.message]) }
+        try chatSessionsViewModel.flushForDataTransfer()
+        try settingsManager.persistence.saveContextOrThrow(label: "prepare data transfer")
+    }
+
+    func validateDataImportAvailability() throws {
+        guard !chatSessionsViewModel.hasDataTransferBlockingActivity,
+              !voiceOverlayViewModel.isPresented, !speechInputManager.isRecording,
+              !audioManager.isAudioPlaying, !audioManager.hasPendingTTSSynthesisWork() else { throw DataBackupError.activityInProgress }
+    }
+
+    func applyDataManagementMutation(_ mutation: DataManagementMutation, revision: SHA256.Digest) throws {
+        try validateDataImportAvailability()
+        try flushForDataManagement()
+        guard boundModelContainer != nil,
+              let sessionsContext = sessionsModelContext,
+              let settingsContext = settingsModelContext else { throw ChatSessionRepositoryReadError.contextUnavailable }
+        let storeURL = StartupPersistentStore.defaultURL
+        guard try AppDataBackup.sourceRevision(at: storeURL) == revision else { throw DataBackupError.dataChanged }
+        let context: ModelContext
+        switch mutation {
+        case .deletePreference: context = settingsContext
+        case .deleteModelData(_, let messageIDs) where messageIDs.isEmpty: context = settingsContext
+        default: context = sessionsContext
+        }
+        let autosaveEnabled = context.autosaveEnabled
+        context.autosaveEnabled = false
+        defer { context.autosaveEnabled = autosaveEnabled }
+        do {
+            try mutation.apply(in: context, storeURL: storeURL)
+            try Task.checkCancellation()
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
+    func synchronizeDataManagementChanges(_ mutation: DataManagementMutation) throws {
+        guard let container = boundModelContainer else { throw ChatSessionRepositoryReadError.contextUnavailable }
+        if mutation.changesSettings {
+            // Replace the settings projection after a committed maintenance write.
+            // Its editing-context identity also prevents stale settings forms from
+            // writing their previous values back over the deletion.
+            let updatedSettingsContext = ModelContext(container)
+            guard settingsManager.attach(context: updatedSettingsContext) else {
+                throw DataBackupError.integrityCheckFailed
+            }
+            settingsModelContext = updatedSettingsContext
+        }
+        switch mutation {
+        case .deletePreference:
+            // Preference-only writes do not modify chat records.
+            break
+        case .deleteModelData(_, let messageIDs) where messageIDs.isEmpty:
+            break
+        default:
+            guard chatSessionsViewModel.didApplyDataManagementChanges(deletedIDs: mutation.deletedChatIDs) else {
+                throw DataBackupError.integrityCheckFailed
+            }
+        }
+        chatSessionsViewModel.refreshChatConfigurationIfNeeded()
     }
 
     func quiescePersistentStore() {

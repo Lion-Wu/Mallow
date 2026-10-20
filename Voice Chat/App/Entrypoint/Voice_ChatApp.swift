@@ -16,6 +16,7 @@ struct Voice_ChatApp: App {
     @StateObject private var startupCoordinator: StartupDataCoordinator
 
     init() {
+        _ = DataStorageInspector.launchDate
         let appEnvironment = AppEnvironment()
         let startupCoordinator = StartupDataCoordinator { [weak appEnvironment] container in
             appEnvironment?.start(with: container)
@@ -73,6 +74,7 @@ struct Voice_ChatApp: App {
                 readyContent: { container in
                     SettingsView(settingsManager: appEnvironment.settingsManager)
                         .environmentObject(appEnvironment)
+                        .environmentObject(startupCoordinator)
                         .environmentObject(appEnvironment.errorCenter)
                         .modelContainer(container)
                 }
@@ -87,6 +89,7 @@ struct Voice_ChatApp: App {
     private func mainContent(isPersistentDataReady: Bool) -> some View {
         ContentView(isPersistentDataReady: isPersistentDataReady)
             .environmentObject(appEnvironment)
+            .environmentObject(startupCoordinator)
             .environmentObject(appEnvironment.audioManager)
             .environmentObject(appEnvironment.settingsManager)
             .environmentObject(appEnvironment.chatSessionsViewModel)
