@@ -70,9 +70,9 @@ final class AppEnvironment: ObservableObject {
                     return
                 }
                 errorCenter.publishCritical(
-                    title: String(localized: "Data Saving Issue"),
+                    title: String(localized: "DATA_SAVING_ISSUE", defaultValue: "Data Saving Issue"),
                     message: String(format: NSLocalizedString(
-                        "Your latest chat changes could not be saved. They may be lost if you close the app.\n%@",
+                        "CHAT_SAVE_FAILED", value: "Your latest chat changes could not be saved. They may be lost if you close the app.\n%@",
                         comment: "Chat save failure notice followed by the underlying error"
                     ), error.localizedDescription),
                     category: .dataSaving

@@ -36,6 +36,6 @@ extension QueuedChatDraft {
         if !collapsed.isEmpty {
             return collapsed
         }
-        return String(localized: "Image-only message")
+        return String(localized: "CHAT_IMAGE_ONLY_MESSAGE", defaultValue: "Image-only message")
     }
 }

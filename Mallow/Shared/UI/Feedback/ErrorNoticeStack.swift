@@ -105,7 +105,7 @@ struct ErrorNoticeStack: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Dismiss error")
+                    .accessibilityLabel("ERROR_ACTION_DISMISS")
                 }
                 .padding(.vertical, bannerVerticalPadding)
                 .padding(.horizontal, 12)

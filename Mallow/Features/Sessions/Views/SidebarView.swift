@@ -69,12 +69,12 @@ struct SidebarView: View {
 
     @ViewBuilder
     private var sidebarSearchLoadingRow: some View {
-        sidebarLoadingRow(title: "Searching...")
+        sidebarLoadingRow(title: "SEARCH_IN_PROGRESS")
     }
 
     @ViewBuilder
     private var sidebarInitialLoadingRow: some View {
-        sidebarLoadingRow(title: "Loading...")
+        sidebarLoadingRow(title: "COMMON_LOADING")
     }
 
     private func sidebarLoadingRow(title: LocalizedStringKey) -> some View {
@@ -109,21 +109,21 @@ struct SidebarView: View {
             #endif
         }
         #if os(iOS) || os(tvOS) || os(visionOS)
-        .alert("Rename Chat",
+        .alert("CHAT_ACTION_RENAME",
                isPresented: renameAlertBinding) {
-            TextField("New Title", text: $newTitle)
-            Button("Cancel", role: .cancel) {
+            TextField("CHAT_NEW_TITLE", text: $newTitle)
+            Button("COMMON_ACTION_CANCEL", role: .cancel) {
                 dismissRenameSheet()
             }
-            Button("Save") {
+            Button("COMMON_ACTION_SAVE") {
                 commitRename()
             }
             .disabled(trimmedRenameTitle.isEmpty)
         }
         #endif
-        .alert("Delete chat?",
+        .alert("CHAT_DELETE_CONFIRMATION",
                isPresented: $showDeleteChatAlert) {
-            Button("Delete", role: .destructive) {
+            Button("COMMON_ACTION_DELETE", role: .destructive) {
                 let indexes = Set(pendingDeleteSessionIDs.compactMap { sessionID in
                     chatSessionsViewModel.chatSessions.firstIndex(where: { $0.id == sessionID })
                 })
@@ -133,11 +133,11 @@ struct SidebarView: View {
                 }
                 pendingDeleteSessionIDs.removeAll()
             }
-            Button("Cancel", role: .cancel) {
+            Button("COMMON_ACTION_CANCEL", role: .cancel) {
                 pendingDeleteSessionIDs.removeAll()
             }
         } message: {
-            Text("This action cannot be undone.")
+            Text("COMMON_IRREVERSIBLE_WARNING")
         }
         .onAppear {
             scheduleSidebarSearchRefresh(debounce: false)
@@ -309,18 +309,18 @@ struct SidebarView: View {
     @ViewBuilder
     private func renameSheetView() -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Rename Chat")
+            Text("CHAT_ACTION_RENAME")
                 .font(.headline)
-            TextField("New Title", text: $newTitle)
+            TextField("CHAT_NEW_TITLE", text: $newTitle)
                 .textFieldStyle(.roundedBorder)
                 .focused($isRenameFieldFocused)
                 .onSubmit(commitRename)
             HStack {
-                Button("Cancel") {
+                Button("COMMON_ACTION_CANCEL") {
                     dismissRenameSheet()
                 }
                 Spacer()
-                Button("Save") {
+                Button("COMMON_ACTION_SAVE") {
                     commitRename()
                 }
                 .keyboardShortcut(.defaultAction)
@@ -437,7 +437,7 @@ struct SidebarView: View {
         .onChange(of: chatSessionsViewModel.selectedSessionID, initial: true) { _, sessionID in
             synchronizeSidebarSelection(with: sessionID)
         }
-        .searchable(text: $searchText, placement: .sidebar, prompt: Text("Search Chats"))
+        .searchable(text: $searchText, placement: .sidebar, prompt: Text("CHAT_SEARCH_PLACEHOLDER"))
         .safeAreaInset(edge: .bottom) {
             SidebarSettingsFooter(style: .mac, onOpenSettings: onOpenSettings)
         }
@@ -449,17 +449,17 @@ struct SidebarView: View {
             key: .init(title: "draft"), content: AnyView(macDraftRow))]
         if shouldShowInitialSessionLoading || sidebarGroups.isEmpty {
             rows.append(NativeSidebarRow(id: "chats-header", selectionID: nil, isGroup: true,
-                key: .init(title: "chats"), content: AnyView(Text("Chats").font(.caption).foregroundStyle(.secondary))))
+                key: .init(title: "chats"), content: AnyView(Text("CHAT_LIST_TITLE").font(.caption).foregroundStyle(.secondary))))
             let content: AnyView
             let key: String
             if shouldShowInitialSessionLoading {
                 content = AnyView(sidebarInitialLoadingRow); key = "loading"
             } else if visibleSearchKeyword.isEmpty {
-                content = AnyView(Text("No chats yet").foregroundStyle(.secondary)); key = "empty"
+                content = AnyView(Text("CHAT_LIST_EMPTY").foregroundStyle(.secondary)); key = "empty"
             } else if shouldShowSidebarSearchLoading {
                 content = AnyView(sidebarSearchLoadingRow); key = "searching"
             } else {
-                content = AnyView(Text(String(format: NSLocalizedString("No chats match \"%@\"", comment: ""), visibleSearchKeyword))); key = visibleSearchKeyword
+                content = AnyView(Text(String(format: NSLocalizedString("CHAT_SEARCH_NO_MATCHES", value: "No chats match \"%@\"", comment: ""), visibleSearchKeyword))); key = visibleSearchKeyword
             }
             rows.append(NativeSidebarRow(id: "status", selectionID: nil, isGroup: false,
                 key: .init(title: key), content: content))
@@ -471,8 +471,8 @@ struct SidebarView: View {
                     rows.append(NativeSidebarRow(id: session.id, selectionID: session.id, isGroup: false,
                         key: .init(title: session.title, preview: sidebarPreview(for: session), isRenaming: renamingSession?.id == session.id),
                         content: AnyView(macSessionRow(session).contextMenu {
-                            Button("Rename") { renameSession(session) }
-                            Button("Delete", role: .destructive) { requestDelete(for: session) }
+                            Button("COMMON_ACTION_RENAME") { renameSession(session) }
+                            Button("COMMON_ACTION_DELETE", role: .destructive) { requestDelete(for: session) }
                         }), measurementContent: AnyView(macSessionRowContent(session)), canDelete: true))
                 }
             }
@@ -499,15 +499,15 @@ struct SidebarView: View {
                 }
             }
             if shouldShowInitialSessionLoading || sidebarGroups.isEmpty {
-                Section(LocalizedStringKey("Chats")) {
+                Section(LocalizedStringKey("CHAT_LIST_TITLE")) {
                     if shouldShowInitialSessionLoading {
                         sidebarInitialLoadingRow
                             .listRowBackground(Color.clear)
                     } else if visibleSearchKeyword.isEmpty {
                         ContentUnavailableView(
-                            LocalizedStringKey("No chats yet"),
+                            LocalizedStringKey("CHAT_LIST_EMPTY"),
                             systemImage: "text.bubble",
-                            description: Text("Start a new conversation to begin talking.")
+                            description: Text("VOICE_START_NEW_CHAT_HINT")
                         )
                         .listRowBackground(Color.clear)
                     } else if shouldShowSidebarSearchLoading {
@@ -515,9 +515,9 @@ struct SidebarView: View {
                             .listRowBackground(Color.clear)
                     } else {
                         ContentUnavailableView(
-                            LocalizedStringKey("No Results"),
+                            LocalizedStringKey("SEARCH_NO_RESULTS"),
                             systemImage: "magnifyingglass",
-                            description: Text("Try a different search.")
+                            description: Text("SEARCH_RETRY_HINT")
                         )
                         .listRowBackground(Color.clear)
                     }
@@ -533,8 +533,8 @@ struct SidebarView: View {
                                 iosSessionRow(session)
                             }
                             .contextMenu {
-                                Button("Rename") { renameSession(session) }
-                                Button("Delete", role: .destructive) {
+                                Button("COMMON_ACTION_RENAME") { renameSession(session) }
+                                Button("COMMON_ACTION_DELETE", role: .destructive) {
                                     requestDelete(for: session)
                                 }
                             }
@@ -562,12 +562,12 @@ struct SidebarView: View {
             .listStyle(.insetGrouped)
             .navigationTitle(appDisplayName)
             .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $searchText, prompt: Text("Search Chats"))
+            .searchable(text: $searchText, prompt: Text("CHAT_SEARCH_PLACEHOLDER"))
             .toolbar {
                 if #available(iOS 26.0, *) {
                     ToolbarItem(placement: .bottomBar) {
                         Button(action: onOpenSettings) {
-                            Label("Settings", systemImage: "gear")
+                            Label("SETTINGS_TITLE", systemImage: "gear")
                         }
                     }
 
@@ -579,20 +579,20 @@ struct SidebarView: View {
 
                     ToolbarItem(placement: .bottomBar) {
                         Button(action: selectDraftSession) {
-                            Label("New Chat", systemImage: "square.and.pencil")
+                            Label("CHAT_TITLE_NEW", systemImage: "square.and.pencil")
                         }
                         .disabled(!chatSessionsViewModel.canStartNewSession)
                     }
                 } else {
                     ToolbarItemGroup(placement: .bottomBar) {
                         Button(action: onOpenSettings) {
-                            Label("Settings", systemImage: "gear")
+                            Label("SETTINGS_TITLE", systemImage: "gear")
                         }
 
                         Spacer()
 
                         Button(action: selectDraftSession) {
-                            Label("New Chat", systemImage: "square.and.pencil")
+                            Label("CHAT_TITLE_NEW", systemImage: "square.and.pencil")
                         }
                         .disabled(!chatSessionsViewModel.canStartNewSession)
                     }
@@ -616,22 +616,22 @@ struct SidebarView: View {
             }
 
             if shouldShowInitialSessionLoading || sidebarGroups.isEmpty {
-                Section(LocalizedStringKey("Chats")) {
+                Section(LocalizedStringKey("CHAT_LIST_TITLE")) {
                     if shouldShowInitialSessionLoading {
                         sidebarInitialLoadingRow
                     } else if visibleSearchKeyword.isEmpty {
                         ContentUnavailableView(
-                            LocalizedStringKey("No chats yet"),
+                            LocalizedStringKey("CHAT_LIST_EMPTY"),
                             systemImage: "text.bubble",
-                            description: Text("Start a new conversation to begin talking.")
+                            description: Text("VOICE_START_NEW_CHAT_HINT")
                         )
                     } else if shouldShowSidebarSearchLoading {
                         sidebarSearchLoadingRow
                     } else {
                         ContentUnavailableView(
-                            LocalizedStringKey("No Results"),
+                            LocalizedStringKey("SEARCH_NO_RESULTS"),
                             systemImage: "magnifyingglass",
-                            description: Text("Try a different search.")
+                            description: Text("SEARCH_RETRY_HINT")
                         )
                     }
                 }
@@ -645,8 +645,8 @@ struct SidebarView: View {
                                     selectSessionFromSidebar(session)
                                 }
                                 .contextMenu {
-                                    Button("Rename") { renameSession(session) }
-                                    Button("Delete", role: .destructive) {
+                                    Button("COMMON_ACTION_RENAME") { renameSession(session) }
+                                    Button("COMMON_ACTION_DELETE", role: .destructive) {
                                         requestDelete(for: session)
                                     }
                                 }
@@ -695,7 +695,7 @@ struct SidebarView: View {
         HStack(spacing: 8) {
             Image(systemName: "plus.circle.fill")
                 .foregroundStyle(.secondary)
-            Text("New Chat")
+            Text("CHAT_TITLE_NEW")
                 .font(.headline)
             Spacer()
         }
@@ -737,7 +737,7 @@ struct SidebarView: View {
         HStack(spacing: 12) {
             Image(systemName: "plus.circle.fill")
                 .foregroundStyle(.secondary)
-            Text("New Chat")
+            Text("CHAT_TITLE_NEW")
                 .font(.body.weight(.semibold))
             Spacer()
         }
@@ -1045,7 +1045,7 @@ private struct NativeSidebarList: NSViewRepresentable {
 
         func tableView(_ tableView: NSTableView, rowActionsForRow row: Int, edge: NSTableView.RowActionEdge) -> [NSTableViewRowAction] {
             guard edge == .trailing, displayed[row].row.canDelete else { return [] }
-            return [NSTableViewRowAction(style: .destructive, title: NSLocalizedString("Delete", comment: "")) { [weak self] _, index in
+            return [NSTableViewRowAction(style: .destructive, title: NSLocalizedString("COMMON_ACTION_DELETE", value: "Delete", comment: "")) { [weak self] _, index in
                 self?.deleteRow(index)
             }]
         }

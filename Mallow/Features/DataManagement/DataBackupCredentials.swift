@@ -30,10 +30,10 @@ enum DataBackupCredentials {
     }
 
     nonisolated static func recover(_ data: Data, presetIDs: Set<UUID>) -> (values: [DataBackupCredential], category: DataRecoveryCategory) {
-        var category = DataRecoveryCategory(id: "Credentials", title: String(localized: "API Keys"))
+        var category = DataRecoveryCategory(id: "Credentials", title: String(localized: "DATA_API_KEYS", defaultValue: "API Keys"))
         guard let records = (try? PropertyListSerialization.propertyList(from: data, format: nil)) as? [Any] else {
             category.hasUnknownLoss = true
-            category.problems.append(String(localized: "The API key file could not be read because its format is invalid."))
+            category.problems.append(String(localized: "DATA_API_KEY_FILE_INVALID", defaultValue: "The API key file could not be read because its format is invalid."))
             return ([], category)
         }
         let accounts = Dictionary(uniqueKeysWithValues: presetIDs.map { (ChatAPIKeyStore().account(forChatServerPresetID: $0), $0) })
@@ -42,24 +42,24 @@ enum DataBackupCredentials {
         for (index, record) in records.enumerated() {
             func skip(_ explanation: String) {
                 category.skipped += 1
-                category.problems.append(String(format: String(localized: "API key %lld: %@"), Int64(index + 1), explanation))
+                category.problems.append(String(format: String(localized: "DATA_API_KEY_ENTRY", defaultValue: "API key %lld: %@"), Int64(index + 1), explanation))
             }
             let item = record as? [String: Any]
             guard let account = item?[kSecAttrAccount as String] as? String, !account.isEmpty else {
-                skip(String(localized: "This record has no valid account identifier."))
+                skip(String(localized: "DATA_API_KEY_ACCOUNT_INVALID", defaultValue: "This record has no valid account identifier."))
                 continue
             }
             guard counts[account] == 1 else {
-                skip(String(localized: "Multiple keys share this account, so the correct key cannot be determined."))
+                skip(String(localized: "DATA_API_KEY_ACCOUNT_AMBIGUOUS", defaultValue: "Multiple keys share this account, so the correct key cannot be determined."))
                 continue
             }
             guard let id = accounts[account] else {
-                skip(String(localized: "This key has no matching server preset, so it cannot be included in the merge."))
+                skip(String(localized: "DATA_API_KEY_PRESET_MISSING", defaultValue: "This key has no matching server preset, so it cannot be included in the merge."))
                 continue
             }
             guard let bytes = item?[kSecValueData as String] as? Data,
                   let value = String(data: bytes, encoding: .utf8) else {
-                skip(String(localized: "The key value is missing or unreadable."))
+                skip(String(localized: "DATA_API_KEY_VALUE_UNREADABLE", defaultValue: "The key value is missing or unreadable."))
                 continue
             }
             values.append(DataBackupCredential(presetID: id, value: value))

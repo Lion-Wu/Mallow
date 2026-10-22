@@ -200,7 +200,7 @@ extension SettingsManager {
         return true
     }
 
-    func createVoiceServerPreset(name: String = String(localized: "New Preset")) -> VoiceServerPreset? {
+    func createVoiceServerPreset(name: String = String(localized: "PRESET_TITLE_NEW", defaultValue: "New Preset")) -> VoiceServerPreset? {
         guard let context else { return nil }
         let preset = SettingsVoiceServerRuntime.createPreset(
             name: name,
@@ -286,7 +286,7 @@ extension SettingsManager {
         )
     }
 
-    func createChatServerPreset(name: String = String(localized: "New Preset")) -> ChatServerPreset? {
+    func createChatServerPreset(name: String = String(localized: "PRESET_TITLE_NEW", defaultValue: "New Preset")) -> ChatServerPreset? {
         guard let context else { return nil }
         let preset = ChatServerPresetStore.create(
             name: name,

@@ -37,12 +37,12 @@ extension GlobalAudioManager {
         let snapshot = currentTTSSettingsSnapshot()
         if snapshot.provider == .personalVoice {
             return NSLocalizedString(
-                "Apple Personal Voice is not authorized or available.",
+                "VOICE_PERSONAL_UNAVAILABLE_OR_UNAUTHORIZED", value: "Apple Personal Voice is not authorized or available.",
                 comment: "Shown when Apple Personal Voice synthesis cannot start"
             )
         }
         return String(
-            format: NSLocalizedString("Unable to construct TTS URL from %@", comment: "Shown when the TTS endpoint URL cannot be built"),
+            format: NSLocalizedString("VOICE_TTS_URL_INVALID", value: "Unable to construct TTS URL from %@", comment: "Shown when the TTS endpoint URL cannot be built"),
             snapshot.serverAddress
         )
     }
@@ -153,7 +153,7 @@ extension GlobalAudioManager {
                         kind: .longWait,
                         requestContext: context,
                         message: NSLocalizedString(
-                            "Connected, but audio is not ready yet. You can keep waiting or retry.",
+                            "VOICE_LOADING_AUDIO_DELAYED", value: "Connected, but audio is not ready yet. You can keep waiting or retry.",
                             comment: "Non-fatal wait for a complete generated audio segment"
                         )
                     )

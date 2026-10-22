@@ -56,17 +56,17 @@ nonisolated enum DataBackupMerge {
         var sessions = Dictionary(uniqueKeysWithValues: current.sessions.map { ($0.id, $0) })
         for session in incoming.sessions { sessions[session.id] = session }
         merged.sessions = sessions.values.sorted { $0.id.uuidString < $1.id.uuidString }
-        merged.chatServers = merge(current.chatServers, incoming.chatServers, id: \.id, category: String(localized: "Chat Server Presets"), name: { $0.name })
-        merged.voiceServers = merge(current.voiceServers, incoming.voiceServers, id: \.id, category: String(localized: "Voice Server Presets"), name: { $0.name })
-        merged.voicePresets = merge(current.voicePresets, incoming.voicePresets, id: \.id, category: String(localized: "Voice Presets"), name: { $0.name })
-        merged.prompts = merge(current.prompts, incoming.prompts, id: \.id, category: String(localized: "System Prompt Presets"), name: { $0.name })
-        merged.credentials = merge(current.credentials, incoming.credentials, id: \.presetID, category: String(localized: "API Keys"), name: { credential in
+        merged.chatServers = merge(current.chatServers, incoming.chatServers, id: \.id, category: String(localized: "DATA_CHAT_SERVER_PRESETS", defaultValue: "Chat Server Presets"), name: { $0.name })
+        merged.voiceServers = merge(current.voiceServers, incoming.voiceServers, id: \.id, category: String(localized: "DATA_VOICE_SERVER_PRESETS", defaultValue: "Voice Server Presets"), name: { $0.name })
+        merged.voicePresets = merge(current.voicePresets, incoming.voicePresets, id: \.id, category: String(localized: "DATA_VOICE_PRESETS", defaultValue: "Voice Presets"), name: { $0.name })
+        merged.prompts = merge(current.prompts, incoming.prompts, id: \.id, category: String(localized: "DATA_SYSTEM_PROMPT_PRESETS", defaultValue: "System Prompt Presets"), name: { $0.name })
+        merged.credentials = merge(current.credentials, incoming.credentials, id: \.presetID, category: String(localized: "DATA_API_KEYS", defaultValue: "API Keys"), name: { credential in
             merged.chatServers.first { $0.id == credential.presetID }?.name ?? credential.presetID.uuidString
         })
         if var imported = incoming.settings.first {
             // App settings are a singleton even when two installations assigned different IDs.
             if let existing = current.settings.first { imported.id = existing.id }
-            merged.settings = merge(current.settings, [imported], id: \.id, category: String(localized: "Settings"), name: { _ in String(localized: "Settings") })
+            merged.settings = merge(current.settings, [imported], id: \.id, category: String(localized: "SETTINGS_TITLE", defaultValue: "Settings"), name: { _ in String(localized: "SETTINGS_TITLE", defaultValue: "Settings") })
         }
 
         var messages = Dictionary(uniqueKeysWithValues: current.messages.map { ($0.id, $0) })
@@ -156,7 +156,7 @@ nonisolated enum DataBackupMerge {
             let kind: DataImportChange.Kind
             if let previous = oldMessages[id] { kind = previous == value ? .skipped : .updated }
             else { kind = branchIDs.contains(id) ? .branch : .added }
-            changes.append(DataImportChange(kind: kind, category: String(localized: "Messages"),
+            changes.append(DataImportChange(kind: kind, category: String(localized: "MESSAGE_LIST", defaultValue: "Messages"),
                 name: String(value.content.prefix(160)), messageID: id, sessionID: value.sessionID))
         }
         merged.messages = messages.values.sorted { $0.id.uuidString < $1.id.uuidString }
@@ -176,7 +176,7 @@ nonisolated enum DataBackupMerge {
             if incomingSessions[merged.sessions[index].id] != nil {
                 let value = merged.sessions[index]
                 let kind: DataImportChange.Kind = originalSessions[value.id].map { $0 == value ? .skipped : .updated } ?? .added
-                changes.append(DataImportChange(kind: kind, category: String(localized: "Chats"), name: value.title, sessionID: value.id))
+                changes.append(DataImportChange(kind: kind, category: String(localized: "CHAT_LIST_TITLE", defaultValue: "Chats"), name: value.title, sessionID: value.id))
             }
         }
         try merged.validateRelationships()

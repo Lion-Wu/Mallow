@@ -43,7 +43,7 @@ struct ChatViewPresentationModifier: ViewModifier {
         platformPresentations(for: content)
             .alert(item: $activeAlert, content: makeAlert(for:))
             .alert(
-                "Current model does not support image input",
+                "CHAT_MODEL_IMAGE_INPUT_UNSUPPORTED",
                 isPresented: Binding(
                     get: { viewModel.pendingUnsupportedImageQueuedDraftID != nil },
                     set: { isPresented in
@@ -144,11 +144,11 @@ struct ChatViewPresentationModifier: ViewModifier {
 
     @ViewBuilder
     private var unsupportedQueuedDraftAlertButtons: some View {
-        Button("Cancel", role: .cancel) {
+        Button("COMMON_ACTION_CANCEL", role: .cancel) {
             viewModel.dismissUnsupportedImageConfirmationForQueuedDraft()
         }
 
-        Button("Edit Message") {
+        Button("MESSAGE_ACTION_EDIT") {
             guard let draftID = viewModel.pendingUnsupportedImageQueuedDraftID else { return }
             viewModel.dismissUnsupportedImageConfirmationForQueuedDraft()
             onEditUnsupportedQueuedDraft(draftID)
@@ -156,7 +156,7 @@ struct ChatViewPresentationModifier: ViewModifier {
 
         if let draftID = viewModel.pendingUnsupportedImageQueuedDraftID,
            viewModel.queuedDraftCanSendAsTextOnly(id: draftID) {
-            Button("Continue", role: .destructive) {
+            Button("COMMON_ACTION_CONTINUE", role: .destructive) {
                 guard let queuedDraftID = viewModel.pendingUnsupportedImageQueuedDraftID else { return }
                 viewModel.dismissUnsupportedImageConfirmationForQueuedDraft()
                 if !onContinueUnsupportedQueuedDraftTextOnly(queuedDraftID) {
@@ -164,7 +164,7 @@ struct ChatViewPresentationModifier: ViewModifier {
                 }
             }
         } else {
-            Button("Delete", role: .destructive) {
+            Button("COMMON_ACTION_DELETE", role: .destructive) {
                 guard let draftID = viewModel.pendingUnsupportedImageQueuedDraftID else { return }
                 viewModel.dismissUnsupportedImageConfirmationForQueuedDraft()
                 onDeleteUnsupportedQueuedDraft(draftID)
@@ -176,9 +176,9 @@ struct ChatViewPresentationModifier: ViewModifier {
         Group {
             if let draftID = viewModel.pendingUnsupportedImageQueuedDraftID,
                viewModel.queuedDraftCanSendAsTextOnly(id: draftID) {
-                Text("Continue with text only and ignore all images?")
+                Text("CHAT_CONTINUE_TEXT_ONLY")
             } else {
-                Text("This message contains only images. Edit it or delete it.")
+                Text("CHAT_IMAGE_ONLY_EDIT_WARNING")
             }
         }
     }
@@ -187,16 +187,16 @@ struct ChatViewPresentationModifier: ViewModifier {
         switch alert {
         case .startVoiceModeInterrupt:
             return Alert(
-                title: Text("Other activity is still running"),
-                message: Text("There are other tasks still running. Continuing will interrupt them and start voice mode."),
-                primaryButton: .destructive(Text("Continue"), action: onContinueVoiceInterrupt),
+                title: Text("VOICE_OTHER_TASKS_RUNNING"),
+                message: Text("VOICE_INTERRUPT_TASKS_DESCRIPTION"),
+                primaryButton: .destructive(Text("COMMON_ACTION_CONTINUE"), action: onContinueVoiceInterrupt),
                 secondaryButton: .cancel()
             )
         case .unsupportedImageSend:
             return Alert(
-                title: Text("Current model does not support image input"),
-                message: Text("Continue with text only and ignore all images?"),
-                primaryButton: .destructive(Text("Continue")) {
+                title: Text("CHAT_MODEL_IMAGE_INPUT_UNSUPPORTED"),
+                message: Text("CHAT_CONTINUE_TEXT_ONLY"),
+                primaryButton: .destructive(Text("COMMON_ACTION_CONTINUE")) {
                     if !onContinueUnsupportedImageSend() {
                         onNothingToSendAfterDroppingImages()
                     }
@@ -206,27 +206,27 @@ struct ChatViewPresentationModifier: ViewModifier {
         case .unsupportedImageBranchRestart(let confirmation):
             if confirmation.canContinueTextOnly {
                 return Alert(
-                    title: Text("Current model does not support image input"),
-                    message: Text("Continue with text only and ignore all images?"),
-                    primaryButton: .destructive(Text("Continue")) {
+                    title: Text("CHAT_MODEL_IMAGE_INPUT_UNSUPPORTED"),
+                    message: Text("CHAT_CONTINUE_TEXT_ONLY"),
+                    primaryButton: .destructive(Text("COMMON_ACTION_CONTINUE")) {
                         onContinueUnsupportedImageBranchRestart(confirmation)
                     },
                     secondaryButton: .cancel()
                 )
             }
             return Alert(
-                title: Text("Current model does not support image input"),
-                message: Text("This message contains only images. Edit it before retrying with this model."),
-                primaryButton: .default(Text("Edit Message")) {
+                title: Text("CHAT_MODEL_IMAGE_INPUT_UNSUPPORTED"),
+                message: Text("CHAT_IMAGE_ONLY_RETRY_WARNING"),
+                primaryButton: .default(Text("MESSAGE_ACTION_EDIT")) {
                     onEditUnsupportedImageBranchRestart(confirmation.userMessageID)
                 },
                 secondaryButton: .cancel()
             )
         case .deleteQueuedDraft(let draftID):
             return Alert(
-                title: Text("Delete message?"),
-                message: Text("This message will be deleted."),
-                primaryButton: .destructive(Text("Delete")) {
+                title: Text("MESSAGE_DELETE_CONFIRMATION"),
+                message: Text("MESSAGE_DELETE_DESCRIPTION"),
+                primaryButton: .destructive(Text("COMMON_ACTION_DELETE")) {
                     viewModel.removeQueuedDraft(id: draftID)
                 },
                 secondaryButton: .cancel()

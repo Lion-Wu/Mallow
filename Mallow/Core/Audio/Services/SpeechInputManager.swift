@@ -31,13 +31,13 @@ final class SpeechInputManager: NSObject, ObservableObject {
         var defaultDisplayName: String {
             switch self {
             case .english:
-                return NSLocalizedString("English", comment: "Dictation language")
+                return NSLocalizedString("LANGUAGE_ENGLISH", value: "English", comment: "Dictation language")
             case .simplifiedChinese:
-                return NSLocalizedString("Simplified Chinese", comment: "Dictation language")
+                return NSLocalizedString("LANGUAGE_CHINESE_SIMPLIFIED", value: "Simplified Chinese", comment: "Dictation language")
             case .traditionalChinese:
-                return NSLocalizedString("Traditional Chinese", comment: "Dictation language")
+                return NSLocalizedString("LANGUAGE_CHINESE_TRADITIONAL", value: "Traditional Chinese", comment: "Dictation language")
             case .japanese:
-                return NSLocalizedString("Japanese", comment: "Dictation language")
+                return NSLocalizedString("LANGUAGE_JAPANESE", value: "Japanese", comment: "Dictation language")
             }
         }
 
@@ -96,7 +96,7 @@ final class SpeechInputManager: NSObject, ObservableObject {
         guard !Task.isCancelled else { return }
 
         guard permissionOK else {
-            lastError = NSLocalizedString("Speech recognition or microphone permission not granted", comment: "Shown when the app lacks microphone or speech recognition access")
+            lastError = NSLocalizedString("VOICE_RECOGNITION_PERMISSION_DENIED", value: "Speech recognition or microphone permission not granted", comment: "Shown when the app lacks microphone or speech recognition access")
             return
         }
 
@@ -327,7 +327,7 @@ final class SpeechInputManager: ObservableObject {
     }
 
     @Published private(set) var isRecording: Bool = false
-    @Published var lastError: String? = NSLocalizedString("Speech input is not supported on this platform.", comment: "Shown when speech input is unavailable")
+    @Published var lastError: String? = NSLocalizedString("VOICE_INPUT_UNSUPPORTED", value: "Speech input is not supported on this platform.", comment: "Shown when speech input is unavailable")
     let inputMotionAudioSource = VoiceMicrophoneAudioSource()
     @Published var currentLanguage: DictationLanguage = .english
     @Published private(set) var isHoldToSpeakActive: Bool = false
@@ -337,7 +337,7 @@ final class SpeechInputManager: ObservableObject {
                         onPartial: @escaping @MainActor (String) -> Void,
                         onFinal:   @escaping @MainActor (String) -> Void,
                         onSpeechActivityStarted: @escaping @MainActor () -> Void = {}) async {
-        lastError = NSLocalizedString("Speech input is not supported on this platform.", comment: "Shown when speech input is unavailable")
+        lastError = NSLocalizedString("VOICE_INPUT_UNSUPPORTED", value: "Speech input is not supported on this platform.", comment: "Shown when speech input is unavailable")
     }
 
     func setHoldToSpeakActive(_ active: Bool) {

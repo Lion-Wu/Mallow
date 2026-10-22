@@ -16,7 +16,7 @@ struct SettingsChatServerSection: View {
     var body: some View {
         Section {
             #if os(macOS)
-            LabeledContent("Preset") {
+            LabeledContent("PRESET_TITLE") {
                 Picker("", selection: $viewModel.selectedChatServerPresetID) {
                     ForEach(viewModel.chatServerPresetList) { preset in
                         Text(preset.name).tag(Optional.some(preset.id))
@@ -31,27 +31,27 @@ struct SettingsChatServerSection: View {
                     Button {
                         viewModel.addChatServerPreset()
                     } label: {
-                        Label("Add", systemImage: "plus.circle.fill")
+                        Label("COMMON_ACTION_ADD", systemImage: "plus.circle.fill")
                             .foregroundStyle(.blue)
                     }
                     .buttonStyle(.plain)
                     .controlSize(.small)
-                    .help("Add preset")
+                    .help("PRESET_ACTION_ADD")
 
                     Button(role: .destructive) {
                         requestDeletion(.chatServerPreset)
                     } label: {
-                        Label("Delete", systemImage: "trash")
+                        Label("COMMON_ACTION_DELETE", systemImage: "trash")
                             .foregroundStyle(.red)
                     }
                     .buttonStyle(.plain)
                     .controlSize(.small)
-                    .help("Delete selected preset")
+                    .help("PRESET_ACTION_DELETE_SELECTED")
                     .disabled(viewModel.chatServerPresetList.count <= 1 || viewModel.selectedChatServerPresetID == nil)
                 }
             }
             #else
-            Picker("Preset", selection: $viewModel.selectedChatServerPresetID) {
+            Picker("PRESET_TITLE", selection: $viewModel.selectedChatServerPresetID) {
                 ForEach(viewModel.chatServerPresetList) { preset in
                     Text(preset.name).tag(Optional.some(preset.id))
                 }
@@ -62,7 +62,7 @@ struct SettingsChatServerSection: View {
                 Button {
                     viewModel.addChatServerPreset()
                 } label: {
-                    Label("Add", systemImage: "plus.circle.fill")
+                    Label("COMMON_ACTION_ADD", systemImage: "plus.circle.fill")
                         .foregroundStyle(.blue)
                 }
                 .buttonStyle(.plain)
@@ -71,7 +71,7 @@ struct SettingsChatServerSection: View {
                 Button(role: .destructive) {
                     requestDeletion(.chatServerPreset)
                 } label: {
-                    Label("Delete", systemImage: "trash")
+                    Label("COMMON_ACTION_DELETE", systemImage: "trash")
                         .foregroundStyle(.red)
                 }
                 .buttonStyle(.plain)
@@ -81,20 +81,20 @@ struct SettingsChatServerSection: View {
             #endif
 
             LabeledTextField(
-                label: "Preset Name",
-                placeholder: "Enter preset name",
+                label: "PRESET_NAME",
+                placeholder: "PRESET_NAME_PLACEHOLDER",
                 text: $viewModel.chatServerPresetName,
                 onCommit: { viewModel.commitChatServerEdits() }
             )
 
             LabeledTextField(
-                label: "Server URL",
-                placeholder: "http://localhost:1234",
+                label: "SETTINGS_SERVER_URL",
+                placeholder: "SETTINGS_CHAT_SERVER_URL_PLACEHOLDER",
                 text: $viewModel.apiURL,
                 onCommit: { viewModel.commitChatServerEdits() }
             )
 
-            LabeledContent("API Format") {
+            LabeledContent("SETTINGS_API_FORMAT") {
                 Picker("", selection: $viewModel.selectedChatAPIFormatPreference) {
                     ForEach(ChatProviderDescriptorRegistry.apiFormatOptions) { option in
                         Text(option.displayName).tag(option.preference)
@@ -108,7 +108,7 @@ struct SettingsChatServerSection: View {
                 Text(
                     String(
                         format: NSLocalizedString(
-                            "Detected API Format: %@",
+                            "SETTINGS_DETECTED_API_FORMAT", value: "Detected API Format: %@",
                             comment: "Shows the auto-detected API format under the API format picker"
                         ),
                         detectedChatAPIFormatName
@@ -120,8 +120,8 @@ struct SettingsChatServerSection: View {
             }
 
             LabeledSecureField(
-                label: "API Key",
-                placeholder: "Enter API key",
+                label: "SETTINGS_API_KEY",
+                placeholder: "SETTINGS_API_KEY_PLACEHOLDER",
                 text: $viewModel.chatAPIKey,
                 onCommit: { viewModel.commitChatServerEdits() }
             )
@@ -136,11 +136,11 @@ struct SettingsChatServerSection: View {
             EmptyView()
         } else {
             #if os(macOS)
-            Text("Chat Server")
+            Text("SETTINGS_CHAT_SERVER")
                 .font(.headline)
                 .textCase(.none)
             #else
-            Text("Chat Server")
+            Text("SETTINGS_CHAT_SERVER")
             #endif
         }
     }

@@ -208,15 +208,15 @@ final class AppErrorCenter: ObservableObject, AppNoticePublishing {
     private func defaultTitle(for category: AppErrorNotice.Category) -> String {
         switch category {
         case .textModel:
-            return NSLocalizedString("Text Generation Issue", comment: "Fallback title when the LLM/text server is unavailable")
+            return NSLocalizedString("CHAT_TEXT_GENERATION_ISSUE", value: "Text Generation Issue", comment: "Fallback title when the LLM/text server is unavailable")
         case .modelCatalog:
-            return NSLocalizedString("Unable to Send Messages", comment: "Model catalog unavailable notice title")
+            return NSLocalizedString("CHAT_SEND_UNAVAILABLE", value: "Unable to Send Messages", comment: "Model catalog unavailable notice title")
         case .tts:
-            return NSLocalizedString("Voice Playback Issue", comment: "Fallback title when TTS or audio playback fails")
+            return NSLocalizedString("VOICE_PLAYBACK_ISSUE", value: "Voice Playback Issue", comment: "Fallback title when TTS or audio playback fails")
         case .realtimeVoice:
-            return NSLocalizedString("Realtime Voice Issue", comment: "Fallback title when realtime voice mode fails")
+            return NSLocalizedString("VOICE_REALTIME_ISSUE", value: "Realtime Voice Issue", comment: "Fallback title when realtime voice mode fails")
         case .dataSaving:
-            return NSLocalizedString("Data Saving Issue", comment: "Fallback title when chat data cannot be saved")
+            return NSLocalizedString("DATA_SAVING_ISSUE", value: "Data Saving Issue", comment: "Fallback title when chat data cannot be saved")
         }
     }
 

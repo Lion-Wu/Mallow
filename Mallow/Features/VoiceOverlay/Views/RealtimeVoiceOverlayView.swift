@@ -383,7 +383,7 @@ struct RealtimeVoiceOverlayView: View {
             service: serviceTitle(status.source),
             status: status.kind == .failed ? nil : serviceStateTitle(status.kind),
             isFailure: status.kind == .failed,
-            retryLabel: String(localized: "Retry"),
+            retryLabel: String(localized: "COMMON_ACTION_RETRY", defaultValue: "Retry"),
             retryAction: status.kind == .longWait || status.kind == .failed ? {
                 AppHaptics.trigger(.selection)
                 viewModel.retryService(status.source)
@@ -394,23 +394,23 @@ struct RealtimeVoiceOverlayView: View {
     private func serviceTitle(_ source: RealtimeVoiceServiceSource) -> String {
         switch source {
         case .text:
-            NSLocalizedString("Text service", comment: "Label for text generation status in realtime voice mode")
+            NSLocalizedString("CHAT_TEXT_SERVICE", value: "Text service", comment: "Label for text generation status in realtime voice mode")
         case .voice:
-            NSLocalizedString("Voice service", comment: "Label for speech generation status in realtime voice mode")
+            NSLocalizedString("VOICE_SERVICE", value: "Voice service", comment: "Label for speech generation status in realtime voice mode")
         }
     }
 
     private func serviceStateTitle(_ kind: RealtimeVoiceServiceStatusKind) -> String {
         switch kind {
         case .longWait:
-            NSLocalizedString("Taking longer than expected", comment: "Non-fatal long response status")
+            NSLocalizedString("NETWORK_RESPONSE_DELAYED", value: "Taking longer than expected", comment: "Non-fatal long response status")
         case .retrying(let attempt):
             String(
-                format: NSLocalizedString("Retrying (attempt %d)...", comment: "Shown while auto retry is waiting to reconnect"),
+                format: NSLocalizedString("AUDIO_RETRY_ATTEMPT", value: "Retrying (attempt %d)...", comment: "Shown while auto retry is waiting to reconnect"),
                 max(1, attempt)
             )
         case .failed:
-            NSLocalizedString("Request failed", comment: "Terminal service request status")
+            NSLocalizedString("NETWORK_REQUEST_FAILED", value: "Request failed", comment: "Terminal service request status")
         }
     }
 
@@ -436,7 +436,7 @@ struct RealtimeVoiceOverlayView: View {
         service: String? = nil,
         status: String? = nil,
         isFailure: Bool = true,
-        retryLabel: String = String(localized: "Tap to reconnect"),
+        retryLabel: String = String(localized: "VOICE_RECONNECT_HINT", defaultValue: "Tap to reconnect"),
         retryAction: (() -> Void)?
     ) -> some View {
         let content = VStack(spacing: 6) {
@@ -542,8 +542,8 @@ struct RealtimeVoiceOverlayView: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(ChatTheme.accent)
                     .accessibilityLabel(Text(viewModel.isVisionCapturePresented
-                        ? LocalizedStringKey("Close voice vision camera")
-                        : LocalizedStringKey("Open voice vision camera")))
+                        ? LocalizedStringKey("CAMERA_ACTION_CLOSE_VISION")
+                        : LocalizedStringKey("CAMERA_ACTION_OPEN_VISION")))
                 }
 #endif
             }
@@ -572,7 +572,7 @@ struct RealtimeVoiceOverlayView: View {
             .buttonBorderShape(.circle)
             .controlSize(.large)
             .labelStyle(.iconOnly)
-            .accessibilityLabel("Close realtime voice overlay")
+            .accessibilityLabel("VOICE_ACTION_CLOSE_OVERLAY")
         } else {
             legacyCloseButton
         }
@@ -599,7 +599,7 @@ struct RealtimeVoiceOverlayView: View {
                 )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Close realtime voice overlay")
+        .accessibilityLabel("VOICE_ACTION_CLOSE_OVERLAY")
     }
 
     private var closeButtonSize: CGFloat {

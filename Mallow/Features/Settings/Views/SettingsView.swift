@@ -22,9 +22,9 @@ enum SettingsDeletionTarget: String, Identifiable {
     var title: LocalizedStringKey {
         switch self {
         case .voicePreset, .chatServerPreset, .voiceServerPreset:
-            return "Delete this preset?"
+            return "PRESET_DELETE_CONFIRMATION"
         case .normalPromptPreset, .voicePromptPreset:
-            return "Delete this prompt preset?"
+            return "PROMPT_PRESET_DELETE_CONFIRMATION"
         }
     }
 }
@@ -80,10 +80,10 @@ struct SettingsView: View {
         switch requestStyle {
         case .openAIResponses:
             return provider == .unknown
-                ? NSLocalizedString("Unknown, using OpenAI Responses", comment: "Detected API format name")
-                : NSLocalizedString("OpenAI Responses", comment: "Detected API format name")
+                ? NSLocalizedString("SETTINGS_UNKNOWN_OPENAI_RESPONSES", value: "Unknown, using OpenAI Responses", comment: "Detected API format name")
+                : NSLocalizedString("API_FORMAT_OPENAI_RESPONSES", value: "OpenAI Responses", comment: "Detected API format name")
         case .openAIChatCompletions:
-            return NSLocalizedString("OpenAI Chat Completions", comment: "Detected API format name")
+            return NSLocalizedString("API_FORMAT_OPENAI_CHAT_COMPLETIONS", value: "OpenAI Chat Completions", comment: "Detected API format name")
         case .anthropicMessages:
             return ChatProvider.anthropic.displayName
         case .lmStudioRESTV1:
@@ -92,7 +92,7 @@ struct SettingsView: View {
             if let provider, provider != .unknown {
                 return provider.displayName
             }
-            return NSLocalizedString("Unknown", comment: "Provider display name")
+            return NSLocalizedString("COMMON_UNKNOWN", value: "Unknown", comment: "Provider display name")
         }
     }
 
@@ -125,10 +125,10 @@ struct SettingsView: View {
                     developerSection()
                     applicationInfoSection
                 }
-                .navigationBarTitle("Settings", displayMode: .inline)
+                .navigationBarTitle("SETTINGS_TITLE", displayMode: .inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("Close") { dismiss() }
+                        Button("COMMON_ACTION_CLOSE") { dismiss() }
                     }
                 }
                 .navigationDestination(for: SettingsNavigationDestination.self) { destination in
@@ -160,18 +160,18 @@ struct SettingsView: View {
                 }
             }
             .alert(
-                pendingDeletionTarget?.title ?? LocalizedStringKey("Delete"),
+                pendingDeletionTarget?.title ?? LocalizedStringKey("COMMON_ACTION_DELETE"),
                 isPresented: deletionAlertBinding
             ) {
-                Button("Delete", role: .destructive, action: performPendingDeletion)
-                Button("Cancel", role: .cancel) {
+                Button("COMMON_ACTION_DELETE", role: .destructive, action: performPendingDeletion)
+                Button("COMMON_ACTION_CANCEL", role: .cancel) {
                     pendingDeletionTarget = nil
                 }
             } message: {
-                Text("This action cannot be undone.")
+                Text("COMMON_IRREVERSIBLE_WARNING")
             }
-            .alert("Error", isPresented: settingsWriteFailureAlertBinding) {
-                Button("Close") {
+            .alert("COMMON_ERROR_TITLE", isPresented: settingsWriteFailureAlertBinding) {
+                Button("COMMON_ACTION_CLOSE") {
                     settingsManager.clearSettingsWriteFailure()
                 }
             } message: {
@@ -231,7 +231,7 @@ struct SettingsView: View {
             NavigationLink {
                 AboutView()
             } label: {
-                Text("About \(ApplicationInformation.name)")
+                Text(LocalizedStringResource("ABOUT_TITLE", defaultValue: "About \(ApplicationInformation.name)"))
             }
         }
     }
@@ -269,7 +269,7 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .tabItem {
-            Label("Servers", systemImage: "server.rack")
+            Label("SETTINGS_SERVERS", systemImage: "server.rack")
         }
     }
 
@@ -280,7 +280,7 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .tabItem {
-            Label("Voice Settings", systemImage: "speaker.wave.3.fill")
+            Label("SETTINGS_VOICE_SETTINGS", systemImage: "speaker.wave.3.fill")
         }
     }
 
@@ -292,14 +292,14 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         .tabItem {
-            Label("Chat", systemImage: "text.bubble.fill")
+            Label("CHAT_TITLE", systemImage: "text.bubble.fill")
         }
     }
 
     private var macDeveloperTab: some View {
         macDeveloperSettingsPage
         .tabItem {
-            Label("Advanced", systemImage: "wrench.and.screwdriver")
+            Label("SETTINGS_ADVANCED", systemImage: "wrench.and.screwdriver")
         }
     }
 
@@ -326,7 +326,7 @@ struct SettingsView: View {
     private func serverSection(hideHeader: Bool = false) -> some View {
         Section {
             #if os(macOS)
-            LabeledContent("Speech Provider") {
+            LabeledContent("VOICE_SPEECH_PROVIDER") {
                 Picker("", selection: $viewModel.ttsProvider) {
                     ForEach(TTSProvider.allCases) { provider in
                         Text(provider.displayName).tag(provider)
@@ -335,7 +335,7 @@ struct SettingsView: View {
                 .labelsHidden()
             }
             #else
-            Picker("Speech Provider", selection: $viewModel.ttsProvider) {
+            Picker("VOICE_SPEECH_PROVIDER", selection: $viewModel.ttsProvider) {
                 ForEach(TTSProvider.allCases) { provider in
                     Text(provider.displayName).tag(provider)
                 }
@@ -345,7 +345,7 @@ struct SettingsView: View {
 
             if viewModel.ttsProvider == .gptSoVITS {
                 #if os(macOS)
-                LabeledContent("Preset") {
+                LabeledContent("PRESET_TITLE") {
                     Picker("", selection: $viewModel.selectedVoiceServerPresetID) {
                         ForEach(viewModel.voiceServerPresetList) { p in
                             Text(p.name).tag(Optional.some(p.id))
@@ -360,27 +360,27 @@ struct SettingsView: View {
                         Button {
                             viewModel.addVoiceServerPreset()
                         } label: {
-                            Label("Add", systemImage: "plus.circle.fill")
+                            Label("COMMON_ACTION_ADD", systemImage: "plus.circle.fill")
                                 .foregroundStyle(.blue)
                         }
                         .buttonStyle(.plain)
                         .controlSize(.small)
-                        .help("Add preset")
+                        .help("PRESET_ACTION_ADD")
 
                         Button(role: .destructive) {
                             requestDeletion(.voiceServerPreset)
                         } label: {
-                            Label("Delete", systemImage: "trash")
+                            Label("COMMON_ACTION_DELETE", systemImage: "trash")
                                 .foregroundStyle(.red)
                         }
                         .buttonStyle(.plain)
                         .controlSize(.small)
-                        .help("Delete selected preset")
+                        .help("PRESET_ACTION_DELETE_SELECTED")
                         .disabled(viewModel.voiceServerPresetList.count <= 1 || viewModel.selectedVoiceServerPresetID == nil)
                     }
                 }
                 #else
-                Picker("Preset", selection: $viewModel.selectedVoiceServerPresetID) {
+                Picker("PRESET_TITLE", selection: $viewModel.selectedVoiceServerPresetID) {
                     ForEach(viewModel.voiceServerPresetList) { p in
                         Text(p.name).tag(Optional.some(p.id))
                     }
@@ -391,7 +391,7 @@ struct SettingsView: View {
                     Button {
                         viewModel.addVoiceServerPreset()
                     } label: {
-                        Label("Add", systemImage: "plus.circle.fill")
+                        Label("COMMON_ACTION_ADD", systemImage: "plus.circle.fill")
                             .foregroundStyle(.blue)
                     }
                     .buttonStyle(.plain)
@@ -400,7 +400,7 @@ struct SettingsView: View {
                     Button(role: .destructive) {
                         requestDeletion(.voiceServerPreset)
                     } label: {
-                        Label("Delete", systemImage: "trash")
+                        Label("COMMON_ACTION_DELETE", systemImage: "trash")
                             .foregroundStyle(.red)
                     }
                     .buttonStyle(.plain)
@@ -410,15 +410,15 @@ struct SettingsView: View {
                 #endif
 
                 LabeledTextField(
-                    label: "Preset Name",
-                    placeholder: "Enter preset name",
+                    label: "PRESET_NAME",
+                    placeholder: "PRESET_NAME_PLACEHOLDER",
                     text: $viewModel.voiceServerPresetName,
                     onCommit: { viewModel.commitVoiceServerEdits() }
                 )
 
                 LabeledTextField(
-                    label: "Server URL",
-                    placeholder: "http://localhost:9880",
+                    label: "SETTINGS_SERVER_URL",
+                    placeholder: "SETTINGS_VOICE_SERVER_URL_PLACEHOLDER",
                     text: $viewModel.serverAddress,
                     onCommit: { viewModel.commitVoiceServerEdits() }
                 )
@@ -427,7 +427,7 @@ struct SettingsView: View {
             if hideHeader {
                 EmptyView()
             } else {
-                sectionHeader("Voice Server")
+                sectionHeader("SETTINGS_VOICE_SERVER")
             }
         }
     }
@@ -447,39 +447,39 @@ struct SettingsView: View {
         Section {
             if viewModel.ttsProvider == .gptSoVITS {
                 LabeledTextField(
-                    label: "Text Language",
-                    placeholder: "e.g. auto/zh/en",
+                    label: "VOICE_TEXT_LANGUAGE",
+                    placeholder: "VOICE_LANGUAGE_PLACEHOLDER",
                     text: $viewModel.textLang,
                     onCommit: { viewModel.commitVoiceServerEdits() }
                 )
             }
 
             #if os(macOS)
-            Toggle("Enable Streaming", isOn: $viewModel.enableStreaming)
+            Toggle("SETTINGS_STREAMING", isOn: $viewModel.enableStreaming)
             if viewModel.ttsProvider == .gptSoVITS {
-                LabeledContent("Split Method") {
+                LabeledContent("VOICE_SPLIT_METHOD") {
                     Picker("", selection: $viewModel.autoSplit) {
-                        Text("cut0: No Split").tag("cut0")
-                        Text("cut1: every 4 sentences").tag("cut1")
-                        Text("cut2: every 50 chars").tag("cut2")
-                        Text("cut3: by Chinese period").tag("cut3")
-                        Text("cut4: by English period").tag("cut4")
-                        Text("cut5: by punctuation").tag("cut5")
+                        Text("VOICE_SPLIT_NONE").tag("cut0")
+                        Text("VOICE_SPLIT_FOUR_SENTENCES").tag("cut1")
+                        Text("VOICE_SPLIT_FIFTY_CHARACTERS").tag("cut2")
+                        Text("VOICE_SPLIT_CHINESE_PERIOD").tag("cut3")
+                        Text("VOICE_SPLIT_ENGLISH_PERIOD").tag("cut4")
+                        Text("VOICE_SPLIT_PUNCTUATION").tag("cut5")
                     }
                     .labelsHidden()
                     .disabled(viewModel.enableStreaming)
                 }
             }
             #else
-            Toggle("Enable Streaming", isOn: $viewModel.enableStreaming)
+            Toggle("SETTINGS_STREAMING", isOn: $viewModel.enableStreaming)
             if viewModel.ttsProvider == .gptSoVITS {
-                Picker("Split Method", selection: $viewModel.autoSplit) {
-                    Text("cut0: No Split").tag("cut0")
-                    Text("cut1: every 4 sentences").tag("cut1")
-                    Text("cut2: every 50 chars").tag("cut2")
-                    Text("cut3: by Chinese period").tag("cut3")
-                    Text("cut4: by English period").tag("cut4")
-                    Text("cut5: by punctuation").tag("cut5")
+                Picker("VOICE_SPLIT_METHOD", selection: $viewModel.autoSplit) {
+                    Text("VOICE_SPLIT_NONE").tag("cut0")
+                    Text("VOICE_SPLIT_FOUR_SENTENCES").tag("cut1")
+                    Text("VOICE_SPLIT_FIFTY_CHARACTERS").tag("cut2")
+                    Text("VOICE_SPLIT_CHINESE_PERIOD").tag("cut3")
+                    Text("VOICE_SPLIT_ENGLISH_PERIOD").tag("cut4")
+                    Text("VOICE_SPLIT_PUNCTUATION").tag("cut5")
                 }
                 .disabled(viewModel.enableStreaming)
             }
@@ -488,7 +488,7 @@ struct SettingsView: View {
             if hideHeader {
                 EmptyView()
             } else {
-                sectionHeader("Voice Settings")
+                sectionHeader("SETTINGS_VOICE_SETTINGS")
             }
         }
     }
@@ -517,12 +517,12 @@ struct SettingsView: View {
     private func developerSection(hideHeader: Bool = false) -> some View {
         Section {
             #if !os(macOS)
-            Toggle("Haptic Feedback", isOn: $viewModel.hapticFeedbackEnabled)
+            Toggle("SETTINGS_HAPTIC_FEEDBACK", isOn: $viewModel.hapticFeedbackEnabled)
             #endif
             #if os(macOS)
             Button { showingDataManagement = true } label: {
                 HStack {
-                    Label("Data Management", systemImage: "externaldrive")
+                    Label("DATA_MANAGEMENT", systemImage: "externaldrive")
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .semibold))
@@ -535,20 +535,20 @@ struct SettingsView: View {
             .buttonStyle(.plain)
             #else
             NavigationLink(value: SettingsNavigationDestination.dataManagement) {
-                Label("Data Management", systemImage: "externaldrive")
+                Label("DATA_MANAGEMENT", systemImage: "externaldrive")
             }
             #endif
         } header: {
             if hideHeader {
                 EmptyView()
             } else {
-                sectionHeader("Advanced")
+                sectionHeader("SETTINGS_ADVANCED")
             }
         }
 
         Section {
             Toggle(
-                "Developer Mode",
+                "SETTINGS_DEVELOPER_MODE",
                 isOn: Binding(
                     get: { settingsManager.developerModeEnabled },
                     set: { settingsManager.updateDeveloperModeEnabled($0) }
@@ -581,7 +581,7 @@ struct SettingsView: View {
         if settingsManager.developerModeEnabled {
             Section {
                 NavigationLink(value: SettingsNavigationDestination.advancedAPISettings) {
-                    Label("Advanced Options", systemImage: "slider.horizontal.3")
+                    Label("SETTINGS_ADVANCED_OPTIONS", systemImage: "slider.horizontal.3")
                 }
             }
         }

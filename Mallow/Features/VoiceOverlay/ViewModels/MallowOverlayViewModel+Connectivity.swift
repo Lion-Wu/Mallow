@@ -70,18 +70,18 @@ extension MallowOverlayViewModel {
         let requiresTTSNetworkService = settingsManager.voiceSettings.provider.requiresNetworkTTSService
 
         if chatBase.isEmpty || (requiresTTSNetworkService && ttsBase.isEmpty) {
-            return NSLocalizedString("Server address is not configured.", comment: "Shown when realtime voice mode is started but server addresses are missing")
+            return NSLocalizedString("VOICE_SERVER_NOT_CONFIGURED", value: "Server address is not configured.", comment: "Shown when realtime voice mode is started but server addresses are missing")
         }
 
         if chatOK == false && ttsOK == false {
-            return NSLocalizedString("Unable to connect to the chat and voice servers.", comment: "Shown when both chat and voice servers are unreachable")
+            return NSLocalizedString("VOICE_CHAT_SERVERS_CONNECTION_FAILED", value: "Unable to connect to the chat and voice servers.", comment: "Shown when both chat and voice servers are unreachable")
         }
         if chatOK == false {
-            return NSLocalizedString("Unable to connect to the chat server.", comment: "Shown when the chat server is unreachable for realtime voice mode")
+            return NSLocalizedString("CHAT_SERVER_CONNECTION_FAILED", value: "Unable to connect to the chat server.", comment: "Shown when the chat server is unreachable for realtime voice mode")
         }
         if ttsOK == false {
-            return NSLocalizedString("Unable to connect to the voice server.", comment: "Shown when the voice server is unreachable for realtime voice mode")
+            return NSLocalizedString("VOICE_SERVER_CONNECTION_FAILED", value: "Unable to connect to the voice server.", comment: "Shown when the voice server is unreachable for realtime voice mode")
         }
-        return NSLocalizedString("Unable to connect. Please check your server settings.", comment: "Fallback message when realtime voice mode cannot connect")
+        return NSLocalizedString("NETWORK_CONNECTION_SETTINGS_ERROR", value: "Unable to connect. Please check your server settings.", comment: "Fallback message when realtime voice mode cannot connect")
     }
 }

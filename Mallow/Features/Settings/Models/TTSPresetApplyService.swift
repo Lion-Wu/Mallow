@@ -54,18 +54,18 @@ enum TTSPresetApplyError: LocalizedError, Sendable {
         switch self {
         case .invalidServerAddress(.gptWeights):
             return NSLocalizedString(
-                "Invalid server address for GPT weights",
+                "PRESET_GPT_INVALID_SERVER_ADDRESS", value: "Invalid server address for GPT weights",
                 comment: "Shown when the GPT weights endpoint cannot be constructed"
             )
         case .invalidServerAddress(.sovitsWeights):
             return NSLocalizedString(
-                "Invalid server address for SoVITS weights",
+                "PRESET_SOVITS_INVALID_SERVER_ADDRESS", value: "Invalid server address for SoVITS weights",
                 comment: "Shown when the SoVITS weights endpoint cannot be constructed"
             )
         case let .requestFailed(.gptWeights, statusCode?, _):
             return String(
                 format: NSLocalizedString(
-                    "Set GPT weights failed (HTTP %d)",
+                    "PRESET_GPT_WEIGHTS_HTTP_ERROR", value: "Set GPT weights failed (HTTP %d)",
                     comment: "Shown when setting GPT weights fails with an HTTP status."
                 ),
                 statusCode
@@ -73,7 +73,7 @@ enum TTSPresetApplyError: LocalizedError, Sendable {
         case let .requestFailed(.sovitsWeights, statusCode?, _):
             return String(
                 format: NSLocalizedString(
-                    "Set SoVITS weights failed (HTTP %d)",
+                    "PRESET_SOVITS_WEIGHTS_HTTP_ERROR", value: "Set SoVITS weights failed (HTTP %d)",
                     comment: "Shown when setting SoVITS weights fails with an HTTP status."
                 ),
                 statusCode
@@ -81,7 +81,7 @@ enum TTSPresetApplyError: LocalizedError, Sendable {
         case let .requestFailed(.gptWeights, nil, errorDescription):
             return String(
                 format: NSLocalizedString(
-                    "Set GPT weights failed: %@",
+                    "PRESET_GPT_WEIGHTS_ERROR", value: "Set GPT weights failed: %@",
                     comment: "Shown when setting GPT weights fails with an error."
                 ),
                 errorDescription
@@ -89,7 +89,7 @@ enum TTSPresetApplyError: LocalizedError, Sendable {
         case let .requestFailed(.sovitsWeights, nil, errorDescription):
             return String(
                 format: NSLocalizedString(
-                    "Set SoVITS weights failed: %@",
+                    "PRESET_SOVITS_WEIGHTS_ERROR", value: "Set SoVITS weights failed: %@",
                     comment: "Shown when setting SoVITS weights fails with an error."
                 ),
                 errorDescription

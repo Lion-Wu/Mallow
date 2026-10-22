@@ -80,7 +80,7 @@ struct SettingsModelCatalogState {
         if result.models.isEmpty {
             emptyModelsMessage = String(
                 format: NSLocalizedString(
-                    "No models returned from %@",
+                    "MODEL_LIST_EMPTY_RESPONSE", value: "No models returned from %@",
                     comment: "Shown when a provider endpoint responds successfully but with an empty models list"
                 ),
                 result.endpoint.provider.displayName
@@ -110,14 +110,14 @@ struct SettingsModelCatalogState {
         if let statusError = underlyingError as? HTTPStatusError {
             message = String(
                 format: NSLocalizedString(
-                    "Chat server responded with status %d.",
+                    "CHAT_SERVER_HTTP_ERROR", value: "Chat server responded with status %d.",
                     comment: "Displayed when the chat server returns an error"
                 ),
                 statusError.statusCode
             )
         } else {
             message = String(
-                format: NSLocalizedString("Request failed: %@", comment: "Model list request failed"),
+                format: NSLocalizedString("NETWORK_REQUEST_FAILED_DETAIL", value: "Request failed: %@", comment: "Model list request failed"),
                 underlyingError.localizedDescription
             )
         }
@@ -192,9 +192,9 @@ final class SettingsModelCatalogController {
             }
             guard !Task.isCancelled, let self, self.activeRequestID == requestID else { return }
             self.noticePublisher.publishCritical(
-                title: NSLocalizedString("Unable to Send Messages", comment: "Model catalog unavailable notice title"),
+                title: NSLocalizedString("CHAT_SEND_UNAVAILABLE", value: "Unable to Send Messages", comment: "Model catalog unavailable notice title"),
                 message: NSLocalizedString(
-                    "Models have not been loaded. You cannot send messages until models are available. Check the server connection and refresh the model list in Settings.",
+                    "MODEL_LIST_NOT_LOADED", value: "Models have not been loaded. You cannot send messages until models are available. Check the server connection and refresh the model list in Settings.",
                     comment: "Shown when no model catalog is available after the server connection timeout"
                 ),
                 category: .modelCatalog
@@ -209,7 +209,7 @@ final class SettingsModelCatalogController {
             applyState(SettingsModelCatalogState.validationFailure(
                 from: loadingState,
                 message: NSLocalizedString(
-                    "Server URL is empty or invalid.",
+                    "NETWORK_SERVER_URL_INVALID", value: "Server URL is empty or invalid.",
                     comment: "Shown when the model list URL is missing"
                 )
             ))
@@ -226,7 +226,7 @@ final class SettingsModelCatalogController {
             applyState(SettingsModelCatalogState.validationFailure(
                 from: loadingState,
                 message: NSLocalizedString(
-                    "Invalid Server URL",
+                    "NETWORK_INVALID_SERVER_URL", value: "Invalid Server URL",
                     comment: "Shown when the model list URL cannot be parsed"
                 )
             ))

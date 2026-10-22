@@ -88,10 +88,10 @@ final class DataManagementModel: ObservableObject {
     }
 
     func exportBackup(environment: AppEnvironment, commitEdits: @escaping () -> Void) {
-        run(.exportBackup, message: String(localized: "Preparing Export...")) {
+        run(.exportBackup, message: String(localized: "DATA_PREPARING_EXPORT", defaultValue: "Preparing Export...")) {
             commitEdits()
             let snapshot = try environment.stageRawDataExport()
-            self.progress?.message = String(localized: "Compressing Data...")
+            self.progress?.message = String(localized: "DATA_COMPRESSING", defaultValue: "Compressing Data...")
             do {
                 self.preparedExport = try await Self.background {
                     try DataPreparedExport(archive: snapshot.archive(), source: .backup)
@@ -105,7 +105,7 @@ final class DataManagementModel: ObservableObject {
 
     func exportUnusedFiles(_ files: [DataUnusedFile]) {
         guard !files.isEmpty else { return }
-        run(.exportUnusedFiles, message: String(localized: "Preparing Export...")) {
+        run(.exportUnusedFiles, message: String(localized: "DATA_PREPARING_EXPORT", defaultValue: "Preparing Export...")) {
             self.preparedExport = try await Self.background {
                 try DataPreparedExport(archive: DataUnusedFileInspector.export(files), source: .unusedFiles)
             }
@@ -120,7 +120,7 @@ final class DataManagementModel: ObservableObject {
     }
 
     func importBackup(_ url: URL, environment: AppEnvironment, commitEdits: @escaping () -> Void) {
-        run(.readImport, message: String(localized: "Reading Import File...")) {
+        run(.readImport, message: String(localized: "DATA_READING_IMPORT", defaultValue: "Reading Import File...")) {
             let incoming = try await Self.background {
                 let access = url.startAccessingSecurityScopedResource()
                 defer { if access { url.stopAccessingSecurityScopedResource() } }
@@ -135,7 +135,7 @@ final class DataManagementModel: ObservableObject {
                 return try result.get()
             }
             commitEdits()
-            self.progress?.message = String(localized: "Comparing Data...")
+            self.progress?.message = String(localized: "DATA_COMPARING", defaultValue: "Comparing Data...")
             let current = try await self.readCurrentData(environment: environment)
             self.preview = try await Self.background { try DataBackupMerge.preview(current: current, incoming: incoming) }
         }
@@ -143,7 +143,7 @@ final class DataManagementModel: ObservableObject {
 
     func confirmImport(environment: AppEnvironment, coordinator: StartupDataCoordinator, commitEdits: @escaping () -> Void) {
         guard let reviewed = preview else { return }
-        run(.mergeImport, message: String(localized: "Checking for Changes...")) {
+        run(.mergeImport, message: String(localized: "DATA_CHECKING_CHANGES", defaultValue: "Checking for Changes...")) {
             commitEdits()
             try environment.validateDataImportAvailability()
             guard try environment.dataManagementSourceMatches(reviewed.original) else {
@@ -151,7 +151,7 @@ final class DataManagementModel: ObservableObject {
                 self.preview = try await Self.background { try DataBackupMerge.preview(current: current, incoming: reviewed.incoming) }
                 throw DataBackupError.dataChanged
             }
-            self.progress?.message = String(localized: "Merging Data...")
+            self.progress?.message = String(localized: "DATA_MERGING", defaultValue: "Merging Data...")
             let worker = Task.detached(priority: .userInitiated) { try reviewed.merged.prepareStore() }
             let plan = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
             defer { plan.discard() }
@@ -176,7 +176,7 @@ final class DataManagementModel: ObservableObject {
     }
 
     func scanData(environment: AppEnvironment, commitEdits: @escaping () -> Void) {
-        run(.scanData, message: String(localized: "Checking Data...")) {
+        run(.scanData, message: String(localized: "DATA_CHECKING", defaultValue: "Checking Data...")) {
             self.cleanupReport = nil
             self.unusedFiles = nil
             do { self.unusedFiles = try await Self.background { try DataUnusedFileInspector.scan() } }
@@ -188,7 +188,7 @@ final class DataManagementModel: ObservableObject {
 
     func deleteUnusedFiles(_ files: [DataUnusedFile]) {
         guard !files.isEmpty else { return }
-        run(.deleteUnusedFiles, message: String(localized: "Removing Files...")) {
+        run(.deleteUnusedFiles, message: String(localized: "STORAGE_REMOVING_FILES", defaultValue: "Removing Files...")) {
             // Once deletion starts, always finish reading the actual disk state,
             // including when only part of the selection could be removed.
             let result = await Task.detached(priority: .userInitiated) {
@@ -220,7 +220,7 @@ final class DataManagementModel: ObservableObject {
         case .deleteIssues: .deleteIssues
         case .recoverUnowned: .recoverMessages
         }
-        run(kind, message: String(localized: "Applying Data Changes...")) {
+        run(kind, message: String(localized: "DATA_APPLYING_CHANGES", defaultValue: "Applying Data Changes...")) {
             commitEdits()
             do {
                 try environment.applyDataManagementMutation(mutation, revision: revision)
@@ -230,10 +230,10 @@ final class DataManagementModel: ObservableObject {
                 // Refresh the reviewed data, never replay a destructive operation
                 // against a version that the user has not confirmed.
                 try await self.readStoredData(environment: environment)
-                self.errorMessage = String(localized: "Your data changed. Review the updated list before continuing. No data was deleted.")
+                self.errorMessage = String(localized: "DATA_DELETE_PREVIEW_CHANGED", defaultValue: "Your data changed. Review the updated list before continuing. No data was deleted.")
                 return
             } catch {
-                self.errorMessage = String(localized: "Changes could not be saved. No data was deleted.") + "\n" + error.localizedDescription
+                self.errorMessage = String(localized: "DATA_ERROR_SAVE_NO_DELETION", defaultValue: "Changes could not be saved. No data was deleted.") + "\n" + error.localizedDescription
                 return
             }
             do {
@@ -242,7 +242,7 @@ final class DataManagementModel: ObservableObject {
                 self.usage = try await Self.background { try DataStorageInspector.measure() }
                 completion()
             } catch {
-                self.errorMessage = String(localized: "Changes were saved, but the updated data could not be displayed.") + "\n" + error.localizedDescription
+                self.errorMessage = String(localized: "DATA_ERROR_REFRESH_AFTER_SAVE", defaultValue: "Changes were saved, but the updated data could not be displayed.") + "\n" + error.localizedDescription
             }
         }
     }
@@ -275,7 +275,7 @@ final class DataManagementModel: ObservableObject {
         }
     }
 
-    private func run(_ kind: OperationKind, message: String = String(localized: "Processing Data..."), clearsError: Bool = true, _ work: @escaping @MainActor () async throws -> Void) {
+    private func run(_ kind: OperationKind, message: String = String(localized: "DATA_PROCESSING", defaultValue: "Processing Data..."), clearsError: Bool = true, _ work: @escaping @MainActor () async throws -> Void) {
         guard !isBusy else { return }
         progress = OperationProgress(kind: kind, message: message)
         if clearsError { errorMessage = nil }

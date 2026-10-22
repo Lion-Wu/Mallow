@@ -10,21 +10,21 @@ struct DataRecoveryPreviewView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     if coordinator.isScanningRecovery {
-                        ProgressView("Scanning Recoverable Data...")
+                        ProgressView("RECOVERY_SCANNING")
                             .frame(maxWidth: .infinity, minHeight: 180)
                     } else if let plan = coordinator.recoveryPlan {
                         ForEach(plan.categories) { category in
                             categoryView(category)
                         }
                         if plan.recoveredCount == 0 {
-                            Text("No recoverable records were found. Your original data has not been changed.")
+                            Text("RECOVERY_NO_RECORDS")
                                 .foregroundStyle(.orange)
                         }
                     }
                     if let error = coordinator.recoveryError {
-                        Text("Recovery Could Not Be Completed")
+                        Text("RECOVERY_FAILED")
                             .font(.headline)
-                        Text("Your original data has not been changed.")
+                        Text("DATA_ORIGINAL_UNCHANGED")
                             .foregroundStyle(.secondary)
                         Text(error)
                             .font(.caption.monospaced())
@@ -33,19 +33,19 @@ struct DataRecoveryPreviewView: View {
                 }
                 .padding(20)
             }
-            .navigationTitle("Data Recovery")
+            .navigationTitle("DATA_RECOVERY")
             #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button("COMMON_ACTION_CANCEL") {
                         coordinator.cancelRecovery()
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Restore Recoverable Data") {
+                    Button("RECOVERY_ACTION_RESTORE") {
                         isConfirmingRecovery = true
                     }
                     .disabled(coordinator.isScanningRecovery || (coordinator.recoveryPlan?.recoveredCount ?? 0) == 0)
@@ -55,29 +55,29 @@ struct DataRecoveryPreviewView: View {
         #if os(macOS)
         .frame(minWidth: 540, idealWidth: 620, minHeight: 480, idealHeight: 650)
         #endif
-        .alert("Restore Data?", isPresented: $isConfirmingRecovery) {
-            Button("Cancel", role: .cancel) {}
-            Button("Restore Recoverable Data", role: .destructive) { coordinator.confirmRecovery() }
+        .alert("DATA_RESTORE_CONFIRMATION", isPresented: $isConfirmingRecovery) {
+            Button("COMMON_ACTION_CANCEL", role: .cancel) {}
+            Button("RECOVERY_ACTION_RESTORE", role: .destructive) { coordinator.confirmRecovery() }
         } message: {
-            Text("Only recoverable data will be kept. All other local data will be deleted. This cannot be undone. Export your data first if you want to keep a copy.")
+            Text("RECOVERY_RESET_WARNING")
         }
     }
 
     private func categoryView(_ category: DataRecoveryCategory) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(category.title).font(.headline)
-            LabeledContent("Recoverable", value: category.recovered.formatted())
-            LabeledContent("Unrecoverable", value: category.hasUnknownLoss ? String(localized: "Unknown") : category.skipped.formatted())
+            LabeledContent("RECOVERY_RECOVERABLE", value: category.recovered.formatted())
+            LabeledContent("RECOVERY_UNRECOVERABLE", value: category.hasUnknownLoss ? String(localized: "COMMON_UNKNOWN", defaultValue: "Unknown") : category.skipped.formatted())
             if category.hasPartialLoss {
-                Text("Some content could not be recovered.").foregroundStyle(.orange)
+                Text("RECOVERY_CONTENT_INCOMPLETE").foregroundStyle(.orange)
             }
             if !category.names.isEmpty {
-                DisclosureGroup("Recovered Items") {
+                DisclosureGroup("RECOVERY_RECOVERED_ITEMS") {
                     itemNames(category.names)
                 }
             }
             if !category.skippedNames.isEmpty {
-                DisclosureGroup("Unrecoverable Items") {
+                DisclosureGroup("RECOVERY_UNRECOVERABLE_ITEMS") {
                     itemNames(category.skippedNames)
                 }
             }

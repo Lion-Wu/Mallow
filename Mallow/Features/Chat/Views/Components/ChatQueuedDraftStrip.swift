@@ -93,19 +93,19 @@ struct ChatQueuedDraftStrip: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
-            .accessibilityLabel("Delete")
+            .accessibilityLabel("COMMON_ACTION_DELETE")
 
             Menu {
                 Button {
                     onEdit(draft.id)
                 } label: {
-                    Label("Edit Message", systemImage: "pencil")
+                    Label("MESSAGE_ACTION_EDIT", systemImage: "pencil")
                 }
 
                 Button {
                     onSend(draft.id)
                 } label: {
-                    Label("Send Now", systemImage: "arrow.turn.down.right")
+                    Label("CHAT_ACTION_SEND_NOW", systemImage: "arrow.turn.down.right")
                 }
             } label: {
                 Image(systemName: "ellipsis")

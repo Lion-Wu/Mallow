@@ -60,32 +60,32 @@ struct RealtimeVoiceControlCircle: View {
     private var accessibilityValue: String {
         switch viewModel.state {
         case .connecting:
-            String(localized: "Connecting")
+            String(localized: "NETWORK_CONNECTING", defaultValue: "Connecting")
         case .listening:
-            String(localized: "Listening")
+            String(localized: "VOICE_STATUS_LISTENING", defaultValue: "Listening")
         case .speaking:
-            String(localized: "Speaking")
+            String(localized: "VOICE_STATUS_SPEAKING", defaultValue: "Speaking")
         case .loading:
-            String(localized: "Thinking")
+            String(localized: "THINKING_STATUS", defaultValue: "Thinking")
         case .error:
-            String(localized: "Error")
+            String(localized: "COMMON_ERROR_TITLE", defaultValue: "Error")
         }
     }
 
     private var accessibilityHint: String {
         if viewModel.serviceStatuses.contains(where: { $0.kind == .failed || $0.kind == .longWait }) {
-            return String(localized: "Retry")
+            return String(localized: "COMMON_ACTION_RETRY", defaultValue: "Retry")
         }
         if overlayErrorText != nil {
-            return String(localized: "Double-tap to reconnect.")
+            return String(localized: "VOICE_ACCESSIBILITY_RECONNECT_HINT", defaultValue: "Double-tap to reconnect.")
         }
         if viewModel.state == .connecting {
-            return String(localized: "Wait for the voice session to finish connecting.")
+            return String(localized: "VOICE_CONNECTION_IN_PROGRESS", defaultValue: "Wait for the voice session to finish connecting.")
         }
         if viewModel.state == .loading {
-            return String(localized: "Wait for the model to finish generating a response.")
+            return String(localized: "CHAT_GENERATION_IN_PROGRESS", defaultValue: "Wait for the model to finish generating a response.")
         }
-        return String(localized: "Double-tap to control realtime voice. Use the Hold to talk action for push-to-talk.")
+        return String(localized: "VOICE_ACCESSIBILITY_CONTROL_HINT", defaultValue: "Double-tap to control realtime voice. Use the Hold to talk action for push-to-talk.")
     }
 
     private var defaultBaseSize: CGFloat {
@@ -147,14 +147,14 @@ struct RealtimeVoiceControlCircle: View {
             )
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Realtime voice control")
+        .accessibilityLabel("VOICE_ACCESSIBILITY_CONTROL")
         .accessibilityValue(accessibilityValue)
         .accessibilityHint(accessibilityHint)
         .accessibilityAddTraits(.isButton)
         .accessibilityAction {
             triggerTapAction()
         }
-        .accessibilityAction(named: Text("Hold to talk")) {
+        .accessibilityAction(named: Text("VOICE_ACTION_HOLD_TO_TALK")) {
             viewModel.performHoldToTalkAccessibilityAction()
         }
         .onAppear {

@@ -27,7 +27,7 @@ struct AudioPlayerView: View {
         if audioManager.ttsRequestIssue != nil { return nil }
         if displayedIsRetrying {
             return String(
-                format: NSLocalizedString("Retrying (attempt %d)...", comment: "Shown while auto retry is waiting to reconnect"),
+                format: NSLocalizedString("AUDIO_RETRY_ATTEMPT", value: "Retrying (attempt %d)...", comment: "Shown while auto retry is waiting to reconnect"),
                 max(1, displayedRetryAttempt)
             )
         }
@@ -192,7 +192,7 @@ struct AudioPlayerView: View {
     private func ttsRequestIssueView(_ issue: TTSRequestIssue) -> some View {
         let isFailure = issue.kind == .failed
         return RequestStatusView(
-            title: isFailure ? String(localized: "Request failed") : String(localized: "Taking longer than expected"),
+            title: isFailure ? String(localized: "NETWORK_REQUEST_FAILED", defaultValue: "Request failed") : String(localized: "NETWORK_RESPONSE_DELAYED", defaultValue: "Taking longer than expected"),
             message: issue.message,
             isFailure: isFailure,
             onRetry: { _ = audioManager.retryCurrentTTSRequestIssue() }
@@ -220,7 +220,7 @@ struct AudioPlayerView: View {
                             t.animation = .default
                         }
 
-                    Text("/")
+                    Text(verbatim: "/")
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.secondary.opacity(0.7))
 
@@ -247,7 +247,7 @@ struct AudioPlayerView: View {
     private var controlsRow: some View {
         HStack {
             HStack(spacing: 12) {
-                ControlButton(icon: "gobackward.15", accessibilityLabel: "Back 15 seconds") {
+                ControlButton(icon: "gobackward.15", accessibilityLabel: "AUDIO_ACTION_SKIP_BACK") {
                     audioManager.backward15Seconds()
                 }
                 .disabled(shouldDisableSeekControls)
@@ -262,7 +262,7 @@ struct AudioPlayerView: View {
                 )
                 .disabled(shouldDisableTransportControls)
 
-                ControlButton(icon: "goforward.15", accessibilityLabel: "Forward 15 seconds") {
+                ControlButton(icon: "goforward.15", accessibilityLabel: "AUDIO_ACTION_SKIP_FORWARD") {
                     audioManager.forward15Seconds()
                 }
                 .disabled(shouldDisableSeekControls)
@@ -363,7 +363,7 @@ struct AudioPlayerView: View {
         let action: () -> Void
 
         private var accessibilityLabel: LocalizedStringKey {
-            isPlaying ? "Pause audio" : "Play audio"
+            isPlaying ? "AUDIO_ACTION_PAUSE" : "AUDIO_ACTION_PLAY"
         }
 
         var body: some View {
@@ -411,7 +411,7 @@ struct AudioPlayerView: View {
                     )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Close audio player")
+            .accessibilityLabel("AUDIO_ACTION_CLOSE")
         }
     }
 }

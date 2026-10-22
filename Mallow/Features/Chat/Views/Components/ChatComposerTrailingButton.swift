@@ -43,7 +43,7 @@ struct ChatComposerTrailingButton: View {
                 .font(.system(size: 28, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(isModelReady ? ChatTheme.accent : Color.secondary)
-                .accessibilityLabel("Send Message")
+                .accessibilityLabel("CHAT_ACTION_SEND")
         }
         .buttonStyle(.plain)
         .disabled(!isModelReady)
@@ -56,7 +56,7 @@ struct ChatComposerTrailingButton: View {
                 .font(.system(size: 28, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.red)
-                .accessibilityLabel("Stop Generation")
+                .accessibilityLabel("CHAT_ACTION_STOP_GENERATION")
         }
         .buttonStyle(.plain)
     }
@@ -67,7 +67,7 @@ struct ChatComposerTrailingButton: View {
                 .font(.system(size: 28, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(isModelReady ? ChatTheme.accent : Color.secondary)
-                .accessibilityLabel("Start Realtime Voice Conversation")
+                .accessibilityLabel("VOICE_ACTION_START_REALTIME")
         }
         .buttonStyle(.plain)
         .disabled(!isModelReady)

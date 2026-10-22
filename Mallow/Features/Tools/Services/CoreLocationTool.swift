@@ -39,18 +39,18 @@ struct CoreLocationTool: LocationToolServing {
         let summary: String
         if let displayName = place?.displayName {
             summary = String(
-                format: NSLocalizedString("Current location was read: %@.", comment: "Tool summary"),
+                format: NSLocalizedString("TOOLS_LOCATION_READ_DETAIL", value: "Current location was read: %@.", comment: "Tool summary"),
                 displayName
             )
         } else {
-            summary = NSLocalizedString("Current location was read.", comment: "Tool summary")
+            summary = NSLocalizedString("TOOLS_LOCATION_READ", value: "Current location was read.", comment: "Tool summary")
         }
         return ChatToolExecutionPayload(
             payload: payload,
             summary: summary
         )
         #else
-        throw ChatToolError.unsupported(NSLocalizedString("Location access is not available on this platform.", comment: "Tool-use error"))
+        throw ChatToolError.unsupported(NSLocalizedString("TOOLS_LOCATION_UNSUPPORTED", value: "Location access is not available on this platform.", comment: "Tool-use error"))
         #endif
     }
 
@@ -180,14 +180,14 @@ private final class LocationSnapshotProvider: NSObject, @preconcurrency CLLocati
 
     func currentLocation() async throws -> CLLocation {
         guard CLLocationManager.locationServicesEnabled() else {
-            throw ChatToolError.unsupported(NSLocalizedString("Location services are disabled.", comment: "Tool-use error"))
+            throw ChatToolError.unsupported(NSLocalizedString("TOOLS_LOCATION_SERVICES_DISABLED", value: "Location services are disabled.", comment: "Tool-use error"))
         }
 
         return try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             self.timeoutTask = Task { @MainActor [weak self] in
                 try? await Task.sleep(nanoseconds: 15_000_000_000)
-                self?.finish(.failure(ChatToolError.failed(NSLocalizedString("Location request timed out.", comment: "Tool-use error"))))
+                self?.finish(.failure(ChatToolError.failed(NSLocalizedString("TOOLS_LOCATION_TIMEOUT", value: "Location request timed out.", comment: "Tool-use error"))))
             }
 
             handleAuthorizationStatus(manager.authorizationStatus)
@@ -219,10 +219,10 @@ private final class LocationSnapshotProvider: NSObject, @preconcurrency CLLocati
         case .notDetermined:
             manager.requestWhenInUseAuthorization()
         case .denied, .restricted:
-            finish(.failure(ChatToolError.denied(NSLocalizedString("Location permission was denied.", comment: "Tool-use error"))))
+            finish(.failure(ChatToolError.denied(NSLocalizedString("TOOLS_LOCATION_PERMISSION_DENIED", value: "Location permission was denied.", comment: "Tool-use error"))))
         default:
             guard Self.isAuthorized(status) else {
-                finish(.failure(ChatToolError.denied(NSLocalizedString("Location permission was denied.", comment: "Tool-use error"))))
+                finish(.failure(ChatToolError.denied(NSLocalizedString("TOOLS_LOCATION_PERMISSION_DENIED", value: "Location permission was denied.", comment: "Tool-use error"))))
                 return
             }
             requestSnapshot()

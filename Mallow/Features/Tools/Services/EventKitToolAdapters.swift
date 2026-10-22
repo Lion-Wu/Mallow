@@ -51,7 +51,7 @@ struct EventKitCalendarTool: CalendarToolServing {
         let calendar = Calendar.autoupdatingCurrent
         let requestedRange = try arguments.temporalRange(defaultRange: .today, calendar: calendar)
         guard let requestedRange, requestedRange.isValid else {
-            throw ChatToolError.invalidArguments(NSLocalizedString("Calendar range end must be after start.", comment: "Tool-use error"))
+            throw ChatToolError.invalidArguments(NSLocalizedString("TOOLS_CALENDAR_INVALID_RANGE", value: "Calendar range end must be after start.", comment: "Tool-use error"))
         }
         let cappedEndExclusive = min(calendar.date(byAdding: .day, value: 31, to: requestedRange.start) ?? requestedRange.end, requestedRange.end)
         let rangeTruncated = requestedRange.end > cappedEndExclusive
@@ -76,7 +76,7 @@ struct EventKitCalendarTool: CalendarToolServing {
             payload.merge(ChatToolTimeFormatter.timeZonePayloadFields()) { current, _ in current }
             return ChatToolExecutionPayload(
                 payload: payload,
-                summary: String(format: NSLocalizedString("Found %d calendar event(s).", comment: "Tool summary"), 0)
+                summary: String(format: NSLocalizedString("TOOLS_CALENDAR_FOUND_COUNT", value: "Found %d calendar event(s).", comment: "Tool summary"), 0)
             )
         }
         let predicate = store.predicateForEvents(
@@ -115,10 +115,10 @@ struct EventKitCalendarTool: CalendarToolServing {
         payload.merge(ChatToolTimeFormatter.timeZonePayloadFields()) { current, _ in current }
         return ChatToolExecutionPayload(
             payload: payload,
-            summary: String(format: NSLocalizedString("Found %d calendar event(s).", comment: "Tool summary"), rows.count)
+            summary: String(format: NSLocalizedString("TOOLS_CALENDAR_FOUND_COUNT", value: "Found %d calendar event(s).", comment: "Tool summary"), rows.count)
         )
         #else
-        throw ChatToolError.unsupported(NSLocalizedString("Calendar access is not available on this platform.", comment: "Tool-use error"))
+        throw ChatToolError.unsupported(NSLocalizedString("TOOLS_CALENDAR_UNSUPPORTED", value: "Calendar access is not available on this platform.", comment: "Tool-use error"))
         #endif
     }
 
@@ -131,7 +131,7 @@ struct EventKitCalendarTool: CalendarToolServing {
         let start = try arguments.requiredTemporalDate("start")
         let end = try arguments.requiredTemporalDate("end")
         guard end > start else {
-            throw ChatToolError.invalidArguments(NSLocalizedString("Event end must be after start.", comment: "Tool-use error"))
+            throw ChatToolError.invalidArguments(NSLocalizedString("TOOLS_CALENDAR_EVENT_INVALID_RANGE", value: "Event end must be after start.", comment: "Tool-use error"))
         }
 
         let event = EKEvent(eventStore: store)
@@ -162,9 +162,9 @@ struct EventKitCalendarTool: CalendarToolServing {
         ]
         return ChatToolExecutionPayload(
             payload: payload,
-            summary: NSLocalizedString("Calendar event was created.", comment: "Tool summary"),
+            summary: NSLocalizedString("TOOLS_CALENDAR_EVENT_CREATED", value: "Calendar event was created.", comment: "Tool summary"),
             presentation: ChatToolPresentation(
-                title: NSLocalizedString("Created Calendar Event", comment: "Tool presentation title"),
+                title: NSLocalizedString("TOOLS_CALENDAR_CREATED_ACTIVITY", value: "Created Calendar Event", comment: "Tool presentation title"),
                 subtitle: event.calendar?.title,
                 items: [
                     ChatToolPresentationItem(
@@ -183,7 +183,7 @@ struct EventKitCalendarTool: CalendarToolServing {
             )
         )
         #else
-        throw ChatToolError.unsupported(NSLocalizedString("Calendar access is not available on this platform.", comment: "Tool-use error"))
+        throw ChatToolError.unsupported(NSLocalizedString("TOOLS_CALENDAR_UNSUPPORTED", value: "Calendar access is not available on this platform.", comment: "Tool-use error"))
         #endif
     }
 
@@ -195,7 +195,7 @@ struct EventKitCalendarTool: CalendarToolServing {
         let eventID = try arguments.requiredString("event_id")
         guard let event = store.event(withIdentifier: eventID) else {
             throw ChatToolError.invalidArguments(
-                NSLocalizedString("No calendar event matches the supplied event_id.", comment: "Tool-use error")
+                NSLocalizedString("TOOLS_CALENDAR_EVENT_NOT_FOUND", value: "No calendar event matches the supplied event_id.", comment: "Tool-use error")
             )
         }
         let deleteFutureEvents = try arguments.bool("delete_future_events")
@@ -215,10 +215,10 @@ struct EventKitCalendarTool: CalendarToolServing {
         )
         return ChatToolExecutionPayload(
             payload: payload,
-            summary: NSLocalizedString("Calendar event was deleted.", comment: "Tool summary")
+            summary: NSLocalizedString("TOOLS_CALENDAR_EVENT_DELETED", value: "Calendar event was deleted.", comment: "Tool summary")
         )
         #else
-        throw ChatToolError.unsupported(NSLocalizedString("Calendar access is not available on this platform.", comment: "Tool-use error"))
+        throw ChatToolError.unsupported(NSLocalizedString("TOOLS_CALENDAR_UNSUPPORTED", value: "Calendar access is not available on this platform.", comment: "Tool-use error"))
         #endif
     }
 
@@ -226,7 +226,7 @@ struct EventKitCalendarTool: CalendarToolServing {
         var result = try await listEvents(arguments: arguments)
         let items = Self.presentationItems(fromEventsPayload: result.payload)
         result.presentation = ChatToolPresentation(
-            title: NSLocalizedString("Calendar Events", comment: "Tool presentation title"),
+            title: NSLocalizedString("TOOLS_CALENDAR_EVENTS", value: "Calendar Events", comment: "Tool presentation title"),
             subtitle: result.summary,
             items: items,
             kind: .calendar
@@ -248,7 +248,7 @@ struct EventKitCalendarTool: CalendarToolServing {
     private static func calendar(named name: String?, in store: EKEventStore) throws -> EKCalendar {
         guard let name else {
             guard let calendar = store.defaultCalendarForNewEvents else {
-                throw ChatToolError.failed(NSLocalizedString("No default calendar is available.", comment: "Tool-use error"))
+                throw ChatToolError.failed(NSLocalizedString("TOOLS_CALENDAR_DEFAULT_UNAVAILABLE", value: "No default calendar is available.", comment: "Tool-use error"))
             }
             return calendar
         }
@@ -260,11 +260,11 @@ struct EventKitCalendarTool: CalendarToolServing {
         }
         if exactMatches.count > 1 {
             throw ChatToolError.invalidArguments(
-                String(format: NSLocalizedString("Calendar name is ambiguous: %@", comment: "Tool-use error"), name)
+                String(format: NSLocalizedString("TOOLS_CALENDAR_NAME_AMBIGUOUS", value: "Calendar name is ambiguous: %@", comment: "Tool-use error"), name)
             )
         }
         throw ChatToolError.invalidArguments(
-            String(format: NSLocalizedString("Calendar not found: %@", comment: "Tool-use error"), name)
+            String(format: NSLocalizedString("TOOLS_CALENDAR_NOT_FOUND", value: "Calendar not found: %@", comment: "Tool-use error"), name)
         )
     }
 
@@ -298,7 +298,7 @@ struct EventKitCalendarTool: CalendarToolServing {
         guard case let .array(events)? = payload["events"] else { return [] }
         return events.enumerated().compactMap { index, value in
             guard case let .object(event) = value else { return nil }
-            let title = event.stringValue("title") ?? NSLocalizedString("Untitled Event", comment: "Tool presentation fallback")
+            let title = event.stringValue("title") ?? NSLocalizedString("TOOLS_CALENDAR_UNTITLED_EVENT", value: "Untitled Event", comment: "Tool presentation fallback")
             let start = event.stringValue("start") ?? ""
             let end = event.stringValue("end") ?? ""
             return ChatToolPresentationItem(
@@ -325,14 +325,14 @@ struct EventKitRemindersTool: RemindersToolServing {
 
         let status = arguments.string("status") ?? "incomplete"
         guard ["incomplete", "completed", "all"].contains(status) else {
-            throw ChatToolError.invalidArguments(NSLocalizedString("status must be incomplete, completed, or all.", comment: "Tool-use error"))
+            throw ChatToolError.invalidArguments(NSLocalizedString("TOOLS_REMINDERS_INVALID_STATUS", value: "status must be incomplete, completed, or all.", comment: "Tool-use error"))
         }
         let listName = arguments.string("list_name")?.lowercased()
         let limit = try arguments.int("limit", default: 20, range: 1...50)
         let calendar = Calendar.autoupdatingCurrent
         let requestedRange = try arguments.temporalRange(defaultRange: nil, calendar: calendar)
         if let requestedRange, !requestedRange.isValid {
-            throw ChatToolError.invalidArguments(NSLocalizedString("Reminder range end must be after start.", comment: "Tool-use error"))
+            throw ChatToolError.invalidArguments(NSLocalizedString("TOOLS_REMINDERS_INVALID_RANGE", value: "Reminder range end must be after start.", comment: "Tool-use error"))
         }
         let keywords = try Self.keywords(from: arguments)
 
@@ -352,7 +352,7 @@ struct EventKitRemindersTool: RemindersToolServing {
             payload.merge(ChatToolTimeFormatter.timeZonePayloadFields()) { current, _ in current }
             return ChatToolExecutionPayload(
                 payload: payload,
-                summary: String(format: NSLocalizedString("Found %d reminder(s).", comment: "Tool summary"), 0)
+                summary: String(format: NSLocalizedString("TOOLS_REMINDERS_FOUND_COUNT", value: "Found %d reminder(s).", comment: "Tool summary"), 0)
             )
         }
         let predicate = store.predicateForReminders(in: calendars)
@@ -419,10 +419,10 @@ struct EventKitRemindersTool: RemindersToolServing {
         payload.merge(ChatToolTimeFormatter.timeZonePayloadFields()) { current, _ in current }
         return ChatToolExecutionPayload(
             payload: payload,
-            summary: String(format: NSLocalizedString("Found %d reminder(s).", comment: "Tool summary"), rows.count)
+            summary: String(format: NSLocalizedString("TOOLS_REMINDERS_FOUND_COUNT", value: "Found %d reminder(s).", comment: "Tool summary"), rows.count)
         )
         #else
-        throw ChatToolError.unsupported(NSLocalizedString("Reminders access is not available on this platform.", comment: "Tool-use error"))
+        throw ChatToolError.unsupported(NSLocalizedString("TOOLS_REMINDERS_UNSUPPORTED", value: "Reminders access is not available on this platform.", comment: "Tool-use error"))
         #endif
     }
 
@@ -462,9 +462,9 @@ struct EventKitRemindersTool: RemindersToolServing {
         ]
         return ChatToolExecutionPayload(
             payload: payload,
-            summary: NSLocalizedString("Reminder was created.", comment: "Tool summary"),
+            summary: NSLocalizedString("TOOLS_REMINDERS_CREATED", value: "Reminder was created.", comment: "Tool summary"),
             presentation: ChatToolPresentation(
-                title: NSLocalizedString("Created Reminder", comment: "Tool presentation title"),
+                title: NSLocalizedString("TOOLS_REMINDERS_CREATED_ACTIVITY", value: "Created Reminder", comment: "Tool presentation title"),
                 subtitle: reminder.calendar.title,
                 items: [
                     ChatToolPresentationItem(
@@ -483,7 +483,7 @@ struct EventKitRemindersTool: RemindersToolServing {
             )
         )
         #else
-        throw ChatToolError.unsupported(NSLocalizedString("Reminders access is not available on this platform.", comment: "Tool-use error"))
+        throw ChatToolError.unsupported(NSLocalizedString("TOOLS_REMINDERS_UNSUPPORTED", value: "Reminders access is not available on this platform.", comment: "Tool-use error"))
         #endif
     }
 
@@ -495,7 +495,7 @@ struct EventKitRemindersTool: RemindersToolServing {
         let reminderID = try arguments.requiredString("reminder_id")
         guard let reminder = store.calendarItem(withIdentifier: reminderID) as? EKReminder else {
             throw ChatToolError.invalidArguments(
-                NSLocalizedString("No reminder matches the supplied reminder_id.", comment: "Tool-use error")
+                NSLocalizedString("TOOLS_REMINDERS_NOT_FOUND", value: "No reminder matches the supplied reminder_id.", comment: "Tool-use error")
             )
         }
         let dueDate = reminder.dueDateComponents?.date
@@ -510,17 +510,17 @@ struct EventKitRemindersTool: RemindersToolServing {
         try store.remove(reminder, commit: true)
         return ChatToolExecutionPayload(
             payload: payload,
-            summary: NSLocalizedString("Reminder was deleted.", comment: "Tool summary")
+            summary: NSLocalizedString("TOOLS_REMINDERS_DELETED", value: "Reminder was deleted.", comment: "Tool summary")
         )
         #else
-        throw ChatToolError.unsupported(NSLocalizedString("Reminders access is not available on this platform.", comment: "Tool-use error"))
+        throw ChatToolError.unsupported(NSLocalizedString("TOOLS_REMINDERS_UNSUPPORTED", value: "Reminders access is not available on this platform.", comment: "Tool-use error"))
         #endif
     }
 
     func showReminders(arguments: ChatToolArgumentReader) async throws -> ChatToolExecutionPayload {
         var result = try await listReminders(arguments: arguments)
         result.presentation = ChatToolPresentation(
-            title: NSLocalizedString("Reminders", comment: "Tool presentation title"),
+            title: NSLocalizedString("TOOLS_REMINDERS", value: "Reminders", comment: "Tool presentation title"),
             subtitle: result.summary,
             items: Self.presentationItems(fromRemindersPayload: result.payload),
             kind: .reminders
@@ -532,7 +532,7 @@ struct EventKitRemindersTool: RemindersToolServing {
     private static func calendar(named name: String?, in store: EKEventStore) throws -> EKCalendar {
         guard let name else {
             guard let calendar = store.defaultCalendarForNewReminders() else {
-                throw ChatToolError.failed(NSLocalizedString("No default reminder list is available.", comment: "Tool-use error"))
+                throw ChatToolError.failed(NSLocalizedString("TOOLS_REMINDERS_DEFAULT_LIST_UNAVAILABLE", value: "No default reminder list is available.", comment: "Tool-use error"))
             }
             return calendar
         }
@@ -544,11 +544,11 @@ struct EventKitRemindersTool: RemindersToolServing {
         }
         if exactMatches.count > 1 {
             throw ChatToolError.invalidArguments(
-                String(format: NSLocalizedString("Reminder list name is ambiguous: %@", comment: "Tool-use error"), name)
+                String(format: NSLocalizedString("TOOLS_REMINDERS_LIST_AMBIGUOUS", value: "Reminder list name is ambiguous: %@", comment: "Tool-use error"), name)
             )
         }
         throw ChatToolError.invalidArguments(
-            String(format: NSLocalizedString("Reminder list not found: %@", comment: "Tool-use error"), name)
+            String(format: NSLocalizedString("TOOLS_REMINDERS_LIST_NOT_FOUND", value: "Reminder list not found: %@", comment: "Tool-use error"), name)
         )
     }
 
@@ -581,7 +581,7 @@ struct EventKitRemindersTool: RemindersToolServing {
         guard case let .array(reminders)? = payload["reminders"] else { return [] }
         return reminders.enumerated().compactMap { index, value in
             guard case let .object(reminder) = value else { return nil }
-            let title = reminder.stringValue("title") ?? NSLocalizedString("Untitled Reminder", comment: "Tool presentation fallback")
+            let title = reminder.stringValue("title") ?? NSLocalizedString("TOOLS_REMINDERS_UNTITLED", value: "Untitled Reminder", comment: "Tool presentation fallback")
             return ChatToolPresentationItem(
                 id: reminder.stringValue("reminder_id") ?? "\(index)-\(title)-\(reminder.stringValue("due") ?? "")",
                 title: title,
@@ -620,20 +620,20 @@ private enum EventKitAuthorization {
     static func requestCalendarAccess(store: EKEventStore) async throws {
         if #available(iOS 17.0, macOS 14.0, visionOS 1.0, *) {
             let granted = try await store.requestFullAccessToEvents()
-            guard granted else { throw ChatToolError.denied(NSLocalizedString("Calendar permission was denied.", comment: "Tool-use error")) }
+            guard granted else { throw ChatToolError.denied(NSLocalizedString("TOOLS_CALENDAR_PERMISSION_DENIED", value: "Calendar permission was denied.", comment: "Tool-use error")) }
         } else {
             let granted = try await store.requestAccess(to: .event)
-            guard granted else { throw ChatToolError.denied(NSLocalizedString("Calendar permission was denied.", comment: "Tool-use error")) }
+            guard granted else { throw ChatToolError.denied(NSLocalizedString("TOOLS_CALENDAR_PERMISSION_DENIED", value: "Calendar permission was denied.", comment: "Tool-use error")) }
         }
     }
 
     static func requestReminderAccess(store: EKEventStore) async throws {
         if #available(iOS 17.0, macOS 14.0, visionOS 1.0, *) {
             let granted = try await store.requestFullAccessToReminders()
-            guard granted else { throw ChatToolError.denied(NSLocalizedString("Reminders permission was denied.", comment: "Tool-use error")) }
+            guard granted else { throw ChatToolError.denied(NSLocalizedString("TOOLS_REMINDERS_PERMISSION_DENIED", value: "Reminders permission was denied.", comment: "Tool-use error")) }
         } else {
             let granted = try await store.requestAccess(to: .reminder)
-            guard granted else { throw ChatToolError.denied(NSLocalizedString("Reminders permission was denied.", comment: "Tool-use error")) }
+            guard granted else { throw ChatToolError.denied(NSLocalizedString("TOOLS_REMINDERS_PERMISSION_DENIED", value: "Reminders permission was denied.", comment: "Tool-use error")) }
         }
     }
 }

@@ -21,7 +21,7 @@ struct SettingsAdvancedAPIParameterControls: View {
         switch profile {
         case .openAIResponses:
             SettingsAdvancedAPIIntegerField(
-                title: "max_output_tokens",
+                title: "SETTINGS_PARAMETER_MAX_OUTPUT_TOKENS",
                 value: $viewModel.apiAdvancedSettings.openAIResponsesMaxOutputTokens
             )
             SettingsAdvancedAPISamplingControls(
@@ -33,41 +33,41 @@ struct SettingsAdvancedAPIParameterControls: View {
             )
             SettingsAdvancedAPIVerbosityControl(
                 sampling: $viewModel.apiAdvancedSettings.openAIResponsesSampling,
-                title: "text.verbosity",
+                title: "SETTINGS_PARAMETER_TEXT_VERBOSITY",
                 options: ["low", "medium", "high"]
             )
         case .openAIChat:
             SettingsAdvancedAPIIntegerField(
-                title: "max_completion_tokens",
+                title: "SETTINGS_PARAMETER_MAX_COMPLETION_TOKENS",
                 value: $viewModel.apiAdvancedSettings.openAIChatMaxCompletionTokens
             )
             SettingsAdvancedAPISamplingControls(sampling: $viewModel.apiAdvancedSettings.openAIChatSampling)
         case .anthropic:
             SettingsAdvancedAPIIntegerToggleField(
-                title: "max_tokens",
+                title: "SETTINGS_PARAMETER_MAX_TOKENS",
                 enabled: $viewModel.apiAdvancedSettings.anthropicMaxTokensEnabled,
                 value: $viewModel.apiAdvancedSettings.anthropicMaxTokens
             )
-            Picker("thinking.type", selection: $viewModel.apiAdvancedSettings.anthropicThinkingModeOverride) {
-                Text("Default").tag("")
+            Picker("THINKING_TYPE", selection: $viewModel.apiAdvancedSettings.anthropicThinkingModeOverride) {
+                Text("COMMON_DEFAULT").tag("")
                 Text(verbatim: "disabled").tag("disabled")
                 Text(verbatim: "adaptive").tag("adaptive")
                 Text(verbatim: "enabled").tag("enabled")
             }
             if showsAnthropicFixedBudget {
                 SettingsAdvancedAPIIntegerToggleField(
-                    title: "budget_tokens",
+                    title: "THINKING_BUDGET_TOKENS",
                     enabled: $viewModel.apiAdvancedSettings.anthropicThinkingBudgetEnabled,
                     value: $viewModel.apiAdvancedSettings.anthropicThinkingBudget
                 )
                 if !viewModel.apiAdvancedSettings.anthropicThinkingBudgetEnabled {
-                    Text("Automatic budget")
+                    Text("THINKING_BUDGET_AUTOMATIC")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             } else if viewModel.apiAdvancedSettings.anthropicThinkingModeOverride == "adaptive" {
-                TextField("output_config.effort", text: $viewModel.apiAdvancedSettings.anthropicEffortOverride,
-                          prompt: Text("Default"))
+                TextField("THINKING_OUTPUT_EFFORT", text: $viewModel.apiAdvancedSettings.anthropicEffortOverride,
+                          prompt: Text("COMMON_DEFAULT"))
             }
             SettingsAdvancedAPISamplingControls(
                 sampling: $viewModel.apiAdvancedSettings.anthropicSampling,
@@ -79,11 +79,11 @@ struct SettingsAdvancedAPIParameterControls: View {
             )
         case .lmStudioREST:
             SettingsAdvancedAPIIntegerField(
-                title: "max_output_tokens",
+                title: "SETTINGS_PARAMETER_MAX_OUTPUT_TOKENS",
                 value: $viewModel.apiAdvancedSettings.lmStudioMaxTokens
             )
             SettingsAdvancedAPIIntegerToggleField(
-                title: "context_length",
+                title: "SETTINGS_PARAMETER_CONTEXT_LENGTH",
                 enabled: $viewModel.apiAdvancedSettings.lmStudioSampling.contextLengthEnabled,
                 value: $viewModel.apiAdvancedSettings.lmStudioSampling.contextLength
             )
@@ -93,7 +93,7 @@ struct SettingsAdvancedAPIParameterControls: View {
                 includeMinP: true,
                 includePenalties: false,
                 includeRepetitionPenalty: true,
-                repetitionPenaltyTitle: "repeat_penalty",
+                repetitionPenaltyTitle: "SETTINGS_PARAMETER_REPEAT_PENALTY",
                 includeSeed: false,
                 includeJSONMode: false,
                 includeLogprobs: false
@@ -109,7 +109,7 @@ struct SettingsAdvancedAPISamplingControls: View {
     var includeTopA = false
     var includePenalties = true
     var includeRepetitionPenalty = false
-    var repetitionPenaltyTitle: LocalizedStringKey = "repetition_penalty"
+    var repetitionPenaltyTitle: LocalizedStringKey = "SETTINGS_PARAMETER_REPETITION_PENALTY"
     var includeSeed = true
     var includeJSONMode = true
     var includeStructuredOutputs = false
@@ -117,44 +117,44 @@ struct SettingsAdvancedAPISamplingControls: View {
 
     var body: some View {
         SettingsAdvancedAPIDoubleToggleField(
-            title: "temperature",
+            title: "SETTINGS_PARAMETER_TEMPERATURE",
             enabled: $sampling.temperatureEnabled,
             value: $sampling.temperature
         )
         SettingsAdvancedAPIDoubleToggleField(
-            title: "top_p",
+            title: "SETTINGS_PARAMETER_TOP_P",
             enabled: $sampling.topPEnabled,
             value: $sampling.topP
         )
         if includeTopK {
             SettingsAdvancedAPIIntegerToggleField(
-                title: "top_k",
+                title: "SETTINGS_PARAMETER_TOP_K",
                 enabled: $sampling.topKEnabled,
                 value: $sampling.topK
             )
         }
         if includeMinP {
             SettingsAdvancedAPIDoubleToggleField(
-                title: "min_p",
+                title: "SETTINGS_PARAMETER_MIN_P",
                 enabled: $sampling.minPEnabled,
                 value: $sampling.minP
             )
         }
         if includeTopA {
             SettingsAdvancedAPIDoubleToggleField(
-                title: "top_a",
+                title: "SETTINGS_PARAMETER_TOP_A",
                 enabled: $sampling.topAEnabled,
                 value: $sampling.topA
             )
         }
         if includePenalties {
             SettingsAdvancedAPIDoubleToggleField(
-                title: "presence_penalty",
+                title: "SETTINGS_PARAMETER_PRESENCE_PENALTY",
                 enabled: $sampling.presencePenaltyEnabled,
                 value: $sampling.presencePenalty
             )
             SettingsAdvancedAPIDoubleToggleField(
-                title: "frequency_penalty",
+                title: "SETTINGS_PARAMETER_FREQUENCY_PENALTY",
                 enabled: $sampling.frequencyPenaltyEnabled,
                 value: $sampling.frequencyPenalty
             )
@@ -168,31 +168,31 @@ struct SettingsAdvancedAPISamplingControls: View {
         }
         if includeSeed {
             SettingsAdvancedAPIIntegerToggleField(
-                title: "seed",
+                title: "SETTINGS_PARAMETER_SEED",
                 enabled: $sampling.seedEnabled,
                 value: $sampling.seed
             )
         }
         if includeJSONMode {
             SettingsAdvancedAPIBooleanToggleField(
-                title: "JSON mode",
+                title: "SETTINGS_JSON_MODE",
                 isOn: $sampling.jsonModeEnabled
             )
         }
         if includeStructuredOutputs {
             SettingsAdvancedAPIBooleanToggleField(
-                title: "structured_outputs",
+                title: "SETTINGS_PARAMETER_STRUCTURED_OUTPUTS",
                 isOn: $sampling.structuredOutputsEnabled
             )
         }
         if includeLogprobs {
             SettingsAdvancedAPIBooleanToggleField(
-                title: "logprobs",
+                title: "SETTINGS_PARAMETER_LOGPROBS",
                 isOn: $sampling.logprobsEnabled
             )
             if sampling.logprobsEnabled {
                 SettingsAdvancedAPIIntegerToggleField(
-                    title: "top_logprobs",
+                    title: "SETTINGS_PARAMETER_TOP_LOGPROBS",
                     enabled: $sampling.topLogprobsEnabled,
                     value: $sampling.topLogprobs
                 )

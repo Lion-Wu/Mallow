@@ -19,9 +19,9 @@ enum TTSProvider: String, Codable, CaseIterable, Identifiable, Sendable {
         case .gptSoVITS:
             return "GPT-SoVITS"
         case .appleSpeech:
-            return NSLocalizedString("Apple Speech", comment: "Apple's built-in text-to-speech provider")
+            return NSLocalizedString("VOICE_PROVIDER_APPLE_SPEECH", value: "Apple Speech", comment: "Apple's built-in text-to-speech provider")
         case .personalVoice:
-            return NSLocalizedString("Apple Personal Voice", comment: "Apple accessibility Personal Voice provider")
+            return NSLocalizedString("VOICE_PROVIDER_APPLE_PERSONAL", value: "Apple Personal Voice", comment: "Apple accessibility Personal Voice provider")
         }
     }
 

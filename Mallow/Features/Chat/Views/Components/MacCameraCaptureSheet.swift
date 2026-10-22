@@ -40,12 +40,12 @@ struct MacCameraCaptureSheet: View {
             Divider()
 
             HStack {
-                Button("Cancel") {
+                Button("COMMON_ACTION_CANCEL") {
                     onDismiss()
                 }
 
                 if controller.cameraOptions.count > 1 {
-                    Picker("Camera", selection: cameraSelectionBinding) {
+                    Picker("CAMERA_TITLE", selection: cameraSelectionBinding) {
                         ForEach(controller.cameraOptions) { option in
                             Text(option.name).tag(option.id)
                         }
@@ -56,7 +56,7 @@ struct MacCameraCaptureSheet: View {
 
                 Spacer()
 
-                Button("Take Photo") {
+                Button("CAMERA_ACTION_TAKE_PHOTO") {
                     controller.capturePhoto()
                 }
                 .keyboardShortcut(.defaultAction)
@@ -141,9 +141,9 @@ private enum MacCameraCaptureError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noCameraAvailable:
-            return NSLocalizedString("No camera was found for photo capture.", comment: "Shown in the macOS camera sheet when no camera device is available")
+            return NSLocalizedString("CAMERA_NOT_FOUND", value: "No camera was found for photo capture.", comment: "Shown in the macOS camera sheet when no camera device is available")
         case .unableToCreateInput, .unableToAddInput, .unableToAddOutput:
-            return NSLocalizedString("Camera Capture Failed", comment: "Title shown when the system camera UI returns no usable photo")
+            return NSLocalizedString("CAMERA_CAPTURE_FAILED", value: "Camera Capture Failed", comment: "Title shown when the system camera UI returns no usable photo")
         }
     }
 }
@@ -206,7 +206,7 @@ private final class MacCameraCaptureController: NSObject, ObservableObject, @unc
                 guard !cancellation.isCancelled else { return }
                 updateUI(
                     statusMessage: NSLocalizedString(
-                        "Allow camera access in System Settings and try again.",
+                        "CAMERA_PERMISSION_SYSTEM_SETTINGS", value: "Allow camera access in System Settings and try again.",
                         comment: "Shown in the macOS camera sheet when camera permission has not been granted"
                     ),
                     canCapture: false,

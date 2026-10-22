@@ -45,13 +45,13 @@ struct ChatThinkingControl: View {
 
     private func thinkingControlTitle(for option: ModelThinkingOption?) -> String {
         guard let option else {
-            return NSLocalizedString("Thinking", comment: "Thinking control label")
+            return NSLocalizedString("THINKING_STATUS", value: "Thinking", comment: "Thinking control label")
         }
         if option == .on {
-            return NSLocalizedString("Thinking", comment: "Thinking control label")
+            return NSLocalizedString("THINKING_STATUS", value: "Thinking", comment: "Thinking control label")
         }
         return String(
-            format: NSLocalizedString("Thinking %@", comment: "Thinking control label with effort"),
+            format: NSLocalizedString("THINKING_LEVEL_FORMAT", value: "Thinking %@", comment: "Thinking control label with effort"),
             option.displayName
         )
     }

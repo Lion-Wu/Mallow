@@ -105,7 +105,7 @@ struct ChatComposerPanel: View {
                 text: $userMessage,
                 height: $textFieldHeight.animation(userMessage.isEmpty ? ChatScrollContentMotion.animation : nil),
                 externalTextRevision: externalTextRevision,
-                placeholder: NSLocalizedString("Type your message...", comment: "Chat composer placeholder"),
+                placeholder: NSLocalizedString("CHAT_INPUT_PLACEHOLDER", value: "Type your message...", comment: "Chat composer placeholder"),
                 maxLines: platformMaxLines(),
                 allowsImagePasting: supportsImageInput,
                 maxPastedImages: remainingAttachmentSlots,
@@ -129,7 +129,7 @@ struct ChatComposerPanel: View {
                     }
                     .padding(.top, 4)
                     .padding(.trailing, 8)
-                    .accessibilityLabel("Open full screen editor")
+                    .accessibilityLabel("EDITOR_ACTION_OPEN_FULLSCREEN")
                 }
                 #endif
             }

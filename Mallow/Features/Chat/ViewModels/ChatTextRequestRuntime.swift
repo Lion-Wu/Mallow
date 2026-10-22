@@ -369,8 +369,8 @@ final class ChatTextRequestRuntime {
         let didStartOutput = messageBeforeCancel?.hasAssistantOutput ?? false
         let finishReason = didStartOutput ? "stopped" : "cancelled"
         let displayText = didStartOutput
-            ? NSLocalizedString("Stopped.", comment: "Shown when the user stops an in-progress assistant response")
-            : NSLocalizedString("Cancelled.", comment: "Shown when the user cancels a request before output starts")
+            ? NSLocalizedString("COMMON_STATUS_STOPPED", value: "Stopped.", comment: "Shown when the user stops an in-progress assistant response")
+            : NSLocalizedString("COMMON_STATUS_CANCELLED", value: "Cancelled.", comment: "Shown when the user cancels a request before output starts")
         let pendingParentID = pendingAssistantParentMessageID
 
         cancelScheduledRetry()

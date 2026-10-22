@@ -178,7 +178,7 @@ struct AssistantRetryingBubbleContent: View {
     let lastError: String?
 
     private var title: String {
-        String(format: NSLocalizedString("Retrying (attempt %d)...", comment: "Shown while auto retry is waiting to reconnect"), max(1, attempt))
+        String(format: NSLocalizedString("AUDIO_RETRY_ATTEMPT", value: "Retrying (attempt %d)...", comment: "Shown while auto retry is waiting to reconnect"), max(1, attempt))
     }
 
     private var detail: String? {
@@ -202,12 +202,12 @@ struct AssistantLongWaitBubbleContent: View {
         switch notice {
         case .awaitingFirstToken:
             return NSLocalizedString(
-                "Connected, but the server has not started responding. You can keep waiting or retry.",
+                "VOICE_LOADING_RESPONSE_NOT_STARTED", value: "Connected, but the server has not started responding. You can keep waiting or retry.",
                 comment: "Shown when a connected chat request has not produced its first token for a while"
             )
         case .awaitingNextToken:
             return NSLocalizedString(
-                "Connected, but no new response has arrived. You can keep waiting or retry.",
+                "VOICE_LOADING_RESPONSE_DELAYED", value: "Connected, but no new response has arrived. You can keep waiting or retry.",
                 comment: "Shown when a connected chat stream has stopped producing tokens for a while"
             )
         }
@@ -215,7 +215,7 @@ struct AssistantLongWaitBubbleContent: View {
 
     var body: some View {
         RequestStatusView(
-            title: String(localized: "Taking longer than expected"),
+            title: String(localized: "NETWORK_RESPONSE_DELAYED", defaultValue: "Taking longer than expected"),
             message: detail,
             onRetry: onRetry
         )

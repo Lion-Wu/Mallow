@@ -19,10 +19,10 @@ struct FullScreenComposer: View {
             TextEditor(text: $text)
                 .font(.system(size: 17))
                 .padding()
-                .navigationTitle("Full Screen Editor")
+                .navigationTitle("EDITOR_FULLSCREEN")
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") {
+                        Button("COMMON_ACTION_DONE") {
                             dismiss()
                             onDone()
                         }

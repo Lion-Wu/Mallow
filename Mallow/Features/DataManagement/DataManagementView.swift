@@ -11,14 +11,14 @@ struct DataManagementView: View {
 
     var body: some View {
         overview
-        .navigationTitle("Data Management")
+        .navigationTitle("DATA_MANAGEMENT")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
         #if os(macOS)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button("Close") { dismiss() }.disabled(model.isBusy)
+                Button("COMMON_ACTION_CLOSE") { dismiss() }.disabled(model.isBusy)
             }
         }
         #endif
@@ -44,11 +44,11 @@ struct DataManagementView: View {
             }
             .interactiveDismissDisabled(model.isBusy)
         }
-        .alert("Data Management", isPresented: Binding(
+        .alert("DATA_MANAGEMENT", isPresented: Binding(
             get: { model.errorMessage != nil && model.preview == nil },
             set: { if !$0 { model.errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) { model.errorMessage = nil }
+            Button("COMMON_ACTION_OK", role: .cancel) { model.errorMessage = nil }
         } message: { Text(model.errorMessage ?? "") }
     }
 
@@ -61,17 +61,17 @@ struct DataManagementView: View {
                     storageOverview.padding(12)
                 }
                 HStack(alignment: .top, spacing: 16) {
-                    GroupBox("Chat Management") {
+                    GroupBox("SETTINGS_CHAT_MANAGEMENT") {
                         VStack(spacing: 0) { storageLinks }
                             .padding(.top, 8)
                     }
-                    GroupBox("Data Management") {
+                    GroupBox("DATA_MANAGEMENT") {
                         VStack(spacing: 0) { maintenanceLinks }
                             .padding(.top, 8)
                     }
                 }
                 HStack {
-                    Text("Backup and Restore").font(.headline)
+                    Text("DATA_BACKUP_AND_RESTORE").font(.headline)
                     Spacer()
                     transferButtons
                 }
@@ -84,10 +84,10 @@ struct DataManagementView: View {
         }
         #else
         Form {
-            Section("Storage") { storageOverview }
-            Section("Chat Management") { storageLinks }
-            Section("Data Management") { maintenanceLinks }
-            Section("Backup and Restore") { transferButtons }
+            Section("STORAGE_TITLE") { storageOverview }
+            Section("SETTINGS_CHAT_MANAGEMENT") { storageLinks }
+            Section("DATA_MANAGEMENT") { maintenanceLinks }
+            Section("DATA_BACKUP_AND_RESTORE") { transferButtons }
         }
         .formStyle(.grouped)
         #endif
@@ -101,10 +101,10 @@ struct DataManagementView: View {
         Group {
             NavigationLink {
                 DataChatStorageList(model: model, commitEdits: commitEdits)
-            } label: { navigationRow("By Chat", systemImage: "bubble.left.and.bubble.right") }
+            } label: { navigationRow("STORAGE_GROUP_BY_CHAT", systemImage: "bubble.left.and.bubble.right") }
             NavigationLink {
                 DataAttachmentMessageList(model: model, commitEdits: commitEdits)
-            } label: { navigationRow("Images and Attachments", systemImage: "photo") }
+            } label: { navigationRow("STORAGE_IMAGES_AND_ATTACHMENTS", systemImage: "photo") }
         }
     }
 
@@ -112,21 +112,21 @@ struct DataManagementView: View {
         Group {
             NavigationLink {
                 DataModelBrowser(model: model, commitEdits: commitEdits)
-            } label: { navigationRow("Model Data", systemImage: "cpu") }
+            } label: { navigationRow("DATA_MODEL_DATA", systemImage: "cpu") }
             NavigationLink {
                 DataCleanupView(model: model, commitEdits: commitEdits)
-            } label: { navigationRow("Cache and Cleanup", systemImage: "internaldrive") }
+            } label: { navigationRow("STORAGE_CACHE_AND_CLEANUP", systemImage: "internaldrive") }
         }
     }
 
     private var transferButtons: some View {
         Group {
             Button { model.exportBackup(environment: environment, commitEdits: commitEdits) } label: {
-                DataOperationButtonLabel(title: "Export Data", systemImage: "square.and.arrow.up",
+                DataOperationButtonLabel(title: "DATA_ACTION_EXPORT", systemImage: "square.and.arrow.up",
                     progressMessage: model.progressMessage(for: .exportBackup))
             }
             Button { showingImporter = true } label: {
-                DataOperationButtonLabel(title: "Import Data", systemImage: "square.and.arrow.down",
+                DataOperationButtonLabel(title: "DATA_ACTION_IMPORT", systemImage: "square.and.arrow.down",
                     progressMessage: model.progressMessage(for: .readImport))
             }
         }
@@ -178,22 +178,22 @@ struct DataStorageChart: View {
     }
 
     private var categories: [Category] {
-        [Category(title: "Chats", bytes: usage?.chats ?? 0, color: .blue, id: 0),
-         Category(title: "Images", bytes: usage?.images ?? 0, color: .purple, id: 1),
-         Category(title: "Settings", bytes: usage?.settings ?? 0, color: .teal, id: 2),
-         Category(title: "Documents", bytes: usage?.documents ?? 0, color: .indigo, id: 4),
-         Category(title: "Caches", bytes: usage?.caches ?? 0, color: .pink, id: 5),
-         Category(title: "Temporary Files", bytes: usage?.temporaryFiles ?? 0, color: .yellow, id: 6),
-         Category(title: "Database and Other Data", bytes: usage?.other ?? 0, color: .gray, id: 7)]
+        [Category(title: "CHAT_LIST_TITLE", bytes: usage?.chats ?? 0, color: .blue, id: 0),
+         Category(title: "CHAT_IMAGES", bytes: usage?.images ?? 0, color: .purple, id: 1),
+         Category(title: "SETTINGS_TITLE", bytes: usage?.settings ?? 0, color: .teal, id: 2),
+         Category(title: "STORAGE_DOCUMENTS", bytes: usage?.documents ?? 0, color: .indigo, id: 4),
+         Category(title: "STORAGE_CACHES", bytes: usage?.caches ?? 0, color: .pink, id: 5),
+         Category(title: "STORAGE_TEMPORARY_FILES", bytes: usage?.temporaryFiles ?? 0, color: .yellow, id: 6),
+         Category(title: "STORAGE_DATABASE_AND_OTHER", bytes: usage?.other ?? 0, color: .gray, id: 7)]
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
-                    Text("Storage Used").font(.subheadline).foregroundStyle(.secondary)
+                    Text("STORAGE_USED").font(.subheadline).foregroundStyle(.secondary)
                     if isLoading {
-                        ProgressView().controlSize(.small).accessibilityLabel("Loading…")
+                        ProgressView().controlSize(.small).accessibilityLabel("COMMON_LOADING_ELLIPSIS")
                     }
                 }
                 Text(usage.map { bytes($0.total) } ?? "—").font(.system(.title, design: .rounded).weight(.semibold))
@@ -248,20 +248,20 @@ private struct DataCleanupView: View {
         Form {
             if let usage = model.usage {
                 Section {
-                    LabeledContent("Available to Clean", value: bytes(usage.reclaimable + (model.unusedFiles?.reduce(0) { $0 + $1.bytes } ?? 0)))
+                    LabeledContent("STORAGE_RECLAIMABLE", value: bytes(usage.reclaimable + (model.unusedFiles?.reduce(0) { $0 + $1.bytes } ?? 0)))
                         .font(.headline)
                 }
-                Section("Network Cache") {
-                    LabeledContent("Storage Used", value: bytes(usage.networkCache))
+                Section("STORAGE_NETWORK_CACHE") {
+                    LabeledContent("STORAGE_USED", value: bytes(usage.networkCache))
                     Button { selectedCleanup = .networkCache } label: {
-                        DataOperationButtonLabel(title: "Clear Network Cache", progressMessage: model.progressMessage(for: .cleanNetworkCache))
+                        DataOperationButtonLabel(title: "STORAGE_ACTION_CLEAR_NETWORK_CACHE", progressMessage: model.progressMessage(for: .cleanNetworkCache))
                     }
                     .disabled(usage.networkCache == 0)
                 }
-                Section("Temporary Files") {
-                    LabeledContent("Available to Clean", value: bytes(usage.reclaimableTemporaryFiles))
+                Section("STORAGE_TEMPORARY_FILES") {
+                    LabeledContent("STORAGE_RECLAIMABLE", value: bytes(usage.reclaimableTemporaryFiles))
                     Button { selectedCleanup = .temporaryFiles } label: {
-                        DataOperationButtonLabel(title: "Remove Temporary Files", progressMessage: model.progressMessage(for: .cleanTemporaryFiles))
+                        DataOperationButtonLabel(title: "STORAGE_ACTION_REMOVE_TEMPORARY_FILES", progressMessage: model.progressMessage(for: .cleanTemporaryFiles))
                     }
                     .disabled(usage.reclaimableTemporaryFiles == 0)
                 }
@@ -270,12 +270,12 @@ private struct DataCleanupView: View {
                 NavigationLink {
                     DataCleanupReviewView(model: model, commitEdits: commitEdits)
                 } label: {
-                    Label("Data Cleanup", systemImage: "externaldrive.badge.exclamationmark")
+                    Label("DATA_CLEANUP", systemImage: "externaldrive.badge.exclamationmark")
                 }
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("Cache and Cleanup")
+        .navigationTitle("STORAGE_CACHE_AND_CLEANUP")
         .disabled(model.isBusy)
         .alert(cleanupTitle, isPresented: Binding(
             get: { selectedCleanup != nil }, set: { if !$0 { selectedCleanup = nil } }
@@ -284,19 +284,19 @@ private struct DataCleanupView: View {
                 if let selectedCleanup { model.clean(selectedCleanup) }
                 selectedCleanup = nil
             }
-            Button("Cancel", role: .cancel) { selectedCleanup = nil }
+            Button("COMMON_ACTION_CANCEL", role: .cancel) { selectedCleanup = nil }
         } message: {
-            Text("This action cannot be undone.")
+            Text("COMMON_IRREVERSIBLE_WARNING")
         }
-        .alert("Cache and Cleanup", isPresented: Binding(
+        .alert("STORAGE_CACHE_AND_CLEANUP", isPresented: Binding(
             get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) { model.errorMessage = nil }
+            Button("COMMON_ACTION_OK", role: .cancel) { model.errorMessage = nil }
         } message: { Text(model.errorMessage ?? "") }
     }
 
     private var cleanupTitle: String {
-        selectedCleanup == .networkCache ? String(localized: "Clear Network Cache") : String(localized: "Remove Temporary Files")
+        selectedCleanup == .networkCache ? String(localized: "STORAGE_ACTION_CLEAR_NETWORK_CACHE", defaultValue: "Clear Network Cache") : String(localized: "STORAGE_ACTION_REMOVE_TEMPORARY_FILES", defaultValue: "Remove Temporary Files")
     }
 
     private func bytes(_ count: Int64) -> String {
@@ -370,12 +370,12 @@ struct DataImportPreviewView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
-            .navigationTitle("Import Preview")
+            .navigationTitle("DATA_IMPORT_PREVIEW")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel", action: cancel).disabled(isBusy) }
+                ToolbarItem(placement: .cancellationAction) { Button("COMMON_ACTION_CANCEL", action: cancel).disabled(isBusy) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: confirm) {
-                        DataOperationButtonLabel(title: "Merge Data", progressMessage: progressMessage)
+                        DataOperationButtonLabel(title: "DATA_ACTION_MERGE", progressMessage: progressMessage)
                     }
                     .disabled(isBusy || preview.count(.added) + preview.count(.updated) + preview.count(.branch) == 0)
                 }
@@ -405,9 +405,9 @@ struct DataImportPreviewView: View {
 
     @ViewBuilder
     private var statistics: some View {
-        statistic("New Messages", count: messageChanges.filter { $0.kind == .added || $0.kind == .branch }.count)
-        statistic("Updated Messages", count: messageChanges.filter { $0.kind == .updated }.count)
-        statistic("Issues Found", count: skippedCategories.contains { $0.hasUnknownLoss } ? nil : skippedCategories.reduce(0) { $0 + max($1.skipped, $1.issues.count) })
+        statistic("DATA_NEW_MESSAGES", count: messageChanges.filter { $0.kind == .added || $0.kind == .branch }.count)
+        statistic("DATA_UPDATED_MESSAGES", count: messageChanges.filter { $0.kind == .updated }.count)
+        statistic("DATA_ISSUES_FOUND", count: skippedCategories.contains { $0.hasUnknownLoss } ? nil : skippedCategories.reduce(0) { $0 + max($1.skipped, $1.issues.count) })
     }
 
     @ViewBuilder
@@ -420,36 +420,36 @@ struct DataImportPreviewView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(session.title).lineLimit(2)
-                        Text(String(localized: "Changed Messages") + " · " + (messageChangesBySession[session.id]?.count ?? 0).formatted())
+                        Text(String(localized: "DATA_CHANGED_MESSAGES", defaultValue: "Changed Messages") + " · " + (messageChangesBySession[session.id]?.count ?? 0).formatted())
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
             .overlay {
                 if affectedSessions.isEmpty {
-                    ContentUnavailableView("No Data", systemImage: "bubble.left.and.bubble.right")
+                    ContentUnavailableView("DATA_EMPTY", systemImage: "bubble.left.and.bubble.right")
                 }
             }
-            .navigationTitle("Chat Changes")
-        } label: { previewRow("Chat Changes", count: affectedSessions.count) }
+            .navigationTitle("DATA_CHAT_CHANGES")
+        } label: { previewRow("DATA_CHAT_CHANGES", count: affectedSessions.count) }
         if !otherChanges.isEmpty {
             NavigationLink {
                 List(otherChanges) { change in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(change.category == change.name ? change.name : change.category + " · " + change.name)
-                        Text(change.kind == .added ? LocalizedStringKey("Will be added from the import file.") : LocalizedStringKey("Will use the version from the import file."))
+                        Text(change.kind == .added ? LocalizedStringKey("DATA_IMPORT_ADD_DESCRIPTION") : LocalizedStringKey("DATA_IMPORT_REPLACE_DESCRIPTION"))
                             .font(.callout).foregroundStyle(.secondary)
                     }
-                }.navigationTitle("Settings and Presets")
-            } label: { previewRow("Settings and Presets", count: otherChanges.count) }
+                }.navigationTitle("DATA_SETTINGS_AND_PRESETS")
+            } label: { previewRow("DATA_SETTINGS_AND_PRESETS", count: otherChanges.count) }
         }
         if affectedSessions.isEmpty && otherChanges.isEmpty {
-            Text("Your data already contains all recognizable items in this file.")
+            Text("DATA_IMPORT_ALREADY_PRESENT")
         }
         if !skippedCategories.isEmpty {
             NavigationLink {
-                skippedItems.navigationTitle("Issues Found")
-            } label: { previewRow("Issues Found", count: skippedCategories.contains { $0.hasUnknownLoss } ? nil : skippedCategories.reduce(0) { $0 + max($1.skipped, $1.issues.count) }) }
+                skippedItems.navigationTitle("DATA_ISSUES_FOUND")
+            } label: { previewRow("DATA_ISSUES_FOUND", count: skippedCategories.contains { $0.hasUnknownLoss } ? nil : skippedCategories.reduce(0) { $0 + max($1.skipped, $1.issues.count) }) }
         }
     }
 
@@ -457,13 +457,13 @@ struct DataImportPreviewView: View {
         HStack {
             Text(title)
             Spacer()
-            Text(count?.formatted() ?? String(localized: "Unknown")).foregroundStyle(.secondary)
+            Text(count?.formatted() ?? String(localized: "COMMON_UNKNOWN", defaultValue: "Unknown")).foregroundStyle(.secondary)
         }
     }
 
     private func statistic(_ title: LocalizedStringKey, count: Int?) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(count?.formatted() ?? String(localized: "Unknown")).font(.title.bold())
+            Text(count?.formatted() ?? String(localized: "COMMON_UNKNOWN", defaultValue: "Unknown")).font(.title.bold())
             Text(title).font(.callout).foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -477,31 +477,31 @@ struct DataImportPreviewView: View {
         return Form {
             if original == nil || original?.title != session.title {
                 Section {
-                    if original == nil { Text("New Chat") }
+                    if original == nil { Text("CHAT_TITLE_NEW") }
                     if let original, original.title != session.title {
                         Text(original.title + " → " + session.title).foregroundStyle(.secondary)
                     }
                 }
             }
             if !changes.isEmpty {
-                Section("Changed Messages") {
+                Section("DATA_CHANGED_MESSAGES") {
                     ForEach(changes) { change in
                         if let id = change.messageID, let message = messages[id] {
                             NavigationLink {
                                 messageChange(change, message: message)
-                                    .navigationTitle(change.kind == .updated ? "Update Message Data" : "New Messages")
+                                    .navigationTitle(change.kind == .updated ? LocalizedStringKey("DATA_ACTION_UPDATE_MESSAGE") : LocalizedStringKey("DATA_NEW_MESSAGES"))
                             } label: {
                                 VStack(alignment: .leading, spacing: 5) {
                                     if !message.content.isEmpty {
                                         Text(message.content).lineLimit(2)
                                     } else if message.imageAttachmentsData != nil {
-                                        Label("Images", systemImage: "photo")
+                                        Label("CHAT_IMAGES", systemImage: "photo")
                                     } else {
-                                        Text("No Data").foregroundStyle(.secondary)
+                                        Text("DATA_EMPTY").foregroundStyle(.secondary)
                                     }
                                     HStack {
                                         if let createdAt = message.createdAt { Text(createdAt, style: .date) }
-                                        Text(change.kind == .updated ? LocalizedStringKey("Update Message Data") : change.kind == .branch ? LocalizedStringKey("New Branch") : LocalizedStringKey("New Messages"))
+                                        Text(change.kind == .updated ? LocalizedStringKey("DATA_ACTION_UPDATE_MESSAGE") : change.kind == .branch ? LocalizedStringKey("CHAT_BRANCH_NEW") : LocalizedStringKey("DATA_NEW_MESSAGES"))
                                     }.font(.caption).foregroundStyle(.secondary)
                                 }
                             }
@@ -515,7 +515,7 @@ struct DataImportPreviewView: View {
                 Section {
                     DataImportMessageView(message: selected)
                 } header: {
-                    Text("After importing, this chat opens on this branch:")
+                    Text("DATA_IMPORT_BRANCH_PREVIEW")
                 }
             }
         }
@@ -528,16 +528,16 @@ struct DataImportPreviewView: View {
     private func messageChange(_ change: DataImportChange, message: ChatMessageBackup) -> some View {
         Form {
             if change.kind == .updated {
-                Section("Message") { DataImportMessageView(message: message) }
+                Section("MESSAGE_TITLE") { DataImportMessageView(message: message) }
                 if let old = originalMessages[message.id] {
                     Section {
-                        Text("The following data will be filled in or replaced:")
+                        Text("DATA_IMPORT_REPLACED_FIELDS")
                             .foregroundStyle(.secondary)
                         ForEach(updatedFields(from: old, to: message), id: \.self) { field in
                             Text(field)
                         }
                     } header: {
-                        Text("Update Message Data")
+                        Text("DATA_ACTION_UPDATE_MESSAGE")
                     }
                 }
             } else {
@@ -545,17 +545,17 @@ struct DataImportPreviewView: View {
                     Section {
                         DataImportMessageView(message: parent)
                     } header: {
-                        Text("After this message:")
+                        Text("DATA_IMPORT_AFTER_MESSAGE")
                     }
                 } else {
-                    Section { Text("At the start of this chat").foregroundStyle(.secondary) }
+                    Section { Text("DATA_IMPORT_CHAT_START").foregroundStyle(.secondary) }
                 }
                 if change.kind == .branch {
                     let existing = preview.original.snapshot.messages.filter {
                         $0.sessionID == message.sessionID && $0.parentID == message.parentID
                     }.sorted { ($0.createdAt ?? .distantPast) < ($1.createdAt ?? .distantPast) }
                     if !existing.isEmpty {
-                        Section("Existing branch — kept") {
+                        Section("DATA_IMPORT_EXISTING_BRANCH") {
                             ForEach(existing, id: \.id) { DataImportMessageView(message: $0) }
                         }
                     }
@@ -563,7 +563,7 @@ struct DataImportPreviewView: View {
                 Section {
                     DataImportMessageView(message: message)
                 } header: {
-                    Text(change.kind == .branch ? LocalizedStringKey("Imported branch — added alongside it") : LocalizedStringKey("This message will be added:"))
+                    Text(change.kind == .branch ? LocalizedStringKey("DATA_IMPORT_ADDED_BRANCH") : LocalizedStringKey("DATA_IMPORT_ADDED_MESSAGE"))
                 }
             }
         }
@@ -607,10 +607,10 @@ struct DataImportPreviewView: View {
                 Text(category.problems[index])
             }
             if category.hasUnknownLoss && category.problems.isEmpty {
-                Text("The records in this category could not be fully read. The number of affected records is unknown.")
+                Text("RECOVERY_CATEGORY_UNREADABLE")
                     .foregroundStyle(.secondary)
             }
-            if category.hasPartialLoss { Text("Some content could not be recovered.").foregroundStyle(.secondary) }
+            if category.hasPartialLoss { Text("RECOVERY_CONTENT_INCOMPLETE").foregroundStyle(.secondary) }
             ForEach(category.issues) { issue in
                 NavigationLink {
                     Form {
@@ -625,13 +625,13 @@ struct DataImportPreviewView: View {
                                 }
                             }
                         }
-                        Section("Message") {
+                        Section("MESSAGE_TITLE") {
                             if let date = issue.date { Text(date, format: .dateTime).font(.caption).foregroundStyle(.secondary) }
                             Text(issue.name).textSelection(.enabled)
                         }
                     }
                     .formStyle(.grouped)
-                    .navigationTitle("Issue Details")
+                    .navigationTitle("DATA_ISSUE_DETAILS")
                     #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
                     #endif
@@ -649,11 +649,11 @@ struct DataImportPreviewView: View {
             }
         } header: {
             VStack(alignment: .leading, spacing: 4) {
-                Text(isLocal ? LocalizedStringKey("Data Not Fully Merged") : LocalizedStringKey("Import File Records Not Fully Merged"))
+                Text(isLocal ? LocalizedStringKey("DATA_MERGE_INCOMPLETE") : LocalizedStringKey("DATA_IMPORT_RECORDS_UNMERGED"))
                 HStack {
                     Text(category.title)
                     Spacer()
-                    Text(category.hasUnknownLoss ? String(localized: "Unknown") : max(category.skipped, category.issues.count).formatted())
+                    Text(category.hasUnknownLoss ? String(localized: "COMMON_UNKNOWN", defaultValue: "Unknown") : max(category.skipped, category.issues.count).formatted())
                 }
             }
         }
@@ -664,21 +664,21 @@ struct DataImportPreviewView: View {
         func changed<T: Equatable>(_ title: String, _ before: T, _ after: T) {
             if before != after { result.append(title) }
         }
-        changed(String(localized: "Model"), old.modelIdentifier, new.modelIdentifier)
-        changed(String(localized: "Server Address"), old.apiBaseURL, new.apiBaseURL)
-        changed(String(localized: "Message Date"), old.createdAt, new.createdAt)
-        changed(String(localized: "Response Content"), old.assistantSegmentsData, new.assistantSegmentsData)
-        changed(String(localized: "Conversation Context"), old.openAIResponsesConversationItemsData, new.openAIResponsesConversationItemsData)
-        changed(String(localized: "Tool Activity"), old.toolActivityPlacementsData, new.toolActivityPlacementsData)
-        changed(String(localized: "Thinking Settings"), old.thinkingOptionRawValue, new.thinkingOptionRawValue)
+        changed(String(localized: "MODEL_TITLE", defaultValue: "Model"), old.modelIdentifier, new.modelIdentifier)
+        changed(String(localized: "SETTINGS_SERVER_ADDRESS", defaultValue: "Server Address"), old.apiBaseURL, new.apiBaseURL)
+        changed(String(localized: "MESSAGE_DATE", defaultValue: "Message Date"), old.createdAt, new.createdAt)
+        changed(String(localized: "MESSAGE_RESPONSE_CONTENT", defaultValue: "Response Content"), old.assistantSegmentsData, new.assistantSegmentsData)
+        changed(String(localized: "CHAT_CONVERSATION_CONTEXT", defaultValue: "Conversation Context"), old.openAIResponsesConversationItemsData, new.openAIResponsesConversationItemsData)
+        changed(String(localized: "TOOLS_ACTIVITY", defaultValue: "Tool Activity"), old.toolActivityPlacementsData, new.toolActivityPlacementsData)
+        changed(String(localized: "THINKING_SETTINGS", defaultValue: "Thinking Settings"), old.thinkingOptionRawValue, new.thinkingOptionRawValue)
         if old.requestID != new.requestID || old.providerResponseID != new.providerResponseID || old.requestContextFingerprint != new.requestContextFingerprint || old.requestUsedPreviousResponseID != new.requestUsedPreviousResponseID || old.requestPreviousResponseID != new.requestPreviousResponseID {
-            result.append(String(localized: "Request and Response Records"))
+            result.append(String(localized: "DATA_REQUEST_RESPONSE_RECORDS", defaultValue: "Request and Response Records"))
         }
         if old.generationRounds != new.generationRounds || old.streamStartedAt != new.streamStartedAt || old.streamFirstTokenAt != new.streamFirstTokenAt || old.streamFirstTokenAtSource != new.streamFirstTokenAtSource || old.streamCompletedAt != new.streamCompletedAt || old.timeToFirstToken != new.timeToFirstToken || old.outputTokenCount != new.outputTokenCount || old.reasoningOutputTokenCount != new.reasoningOutputTokenCount || old.tokensPerSecond != new.tokensPerSecond || old.tokenCount != new.tokenCount || old.tokenCountSource != new.tokenCountSource || old.timeToFirstTokenSource != new.timeToFirstTokenSource || old.tokensPerSecondSource != new.tokensPerSecondSource || old.promptMessageCount != new.promptMessageCount || old.promptCharacterCount != new.promptCharacterCount {
-            result.append(String(localized: "Generation Statistics"))
+            result.append(String(localized: "MESSAGE_GENERATION_STATISTICS", defaultValue: "Generation Statistics"))
         }
         if old.finishReason != new.finishReason || old.finishReasonSource != new.finishReasonSource || old.errorDescription != new.errorDescription || old.isActive != new.isActive {
-            result.append(String(localized: "Completion Status"))
+            result.append(String(localized: "MESSAGE_COMPLETION_STATUS", defaultValue: "Completion Status"))
         }
         return result
     }
@@ -690,7 +690,7 @@ private struct DataImportMessageView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                Text(message.isUser ? LocalizedStringKey("You") : LocalizedStringKey("Assistant")).font(.subheadline.weight(.semibold))
+                Text(message.isUser ? LocalizedStringKey("CHAT_ROLE_YOU") : LocalizedStringKey("CHAT_ROLE_ASSISTANT")).font(.subheadline.weight(.semibold))
                 Spacer()
                 if let createdAt = message.createdAt {
                     Text(createdAt, format: .dateTime).font(.caption).foregroundStyle(.secondary)
@@ -699,9 +699,9 @@ private struct DataImportMessageView: View {
             if !message.content.isEmpty {
                 RichMarkdownView(markdown: message.content)
             } else if message.imageAttachmentsData == nil {
-                Text("No Data").foregroundStyle(.secondary)
+                Text("DATA_EMPTY").foregroundStyle(.secondary)
             }
-            if message.imageAttachmentsData != nil { Label("Images", systemImage: "photo").font(.caption).foregroundStyle(.secondary) }
+            if message.imageAttachmentsData != nil { Label("CHAT_IMAGES", systemImage: "photo").font(.caption).foregroundStyle(.secondary) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

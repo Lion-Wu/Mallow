@@ -172,12 +172,12 @@ extension MallowOverlayViewModel {
                     switch notice {
                     case .awaitingFirstToken:
                         message = NSLocalizedString(
-                            "Connected, but the text service has not started responding. You can keep waiting or retry.",
+                            "CHAT_LOADING_RESPONSE_NOT_STARTED", value: "Connected, but the text service has not started responding. You can keep waiting or retry.",
                             comment: "Shown in realtime voice mode when text generation has no first token"
                         )
                     case .awaitingNextToken:
                         message = NSLocalizedString(
-                            "Connected, but the text service has not returned anything new. You can keep waiting or retry.",
+                            "CHAT_LOADING_RESPONSE_DELAYED", value: "Connected, but the text service has not returned anything new. You can keep waiting or retry.",
                             comment: "Shown in realtime voice mode when text generation stalls between tokens"
                         )
                     }

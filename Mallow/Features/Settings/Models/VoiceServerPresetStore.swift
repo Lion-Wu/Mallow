@@ -26,7 +26,7 @@ enum VoiceServerPresetStore {
     ) -> UUID? {
         if presets.isEmpty {
             let fallback = VoiceServerPreset(
-                name: String(localized: "Default"),
+                name: String(localized: "COMMON_DEFAULT", defaultValue: "Default"),
                 serverAddress: appSettings.serverAddress
             )
             context.insert(fallback)

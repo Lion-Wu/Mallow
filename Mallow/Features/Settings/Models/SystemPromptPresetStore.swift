@@ -226,7 +226,7 @@ enum SystemPromptPresetStore {
 
     private static func defaultPreset(mode: String) -> SystemPromptPreset {
         SystemPromptPreset(
-            name: String(localized: "Default"),
+            name: String(localized: "COMMON_DEFAULT", defaultValue: "Default"),
             mode: mode
         )
     }

@@ -38,7 +38,7 @@ enum ChatServerPresetStore {
     ) -> UUID? {
         if presets.isEmpty {
             let fallback = ChatServerPreset(
-                name: String(localized: "Default"),
+                name: String(localized: "COMMON_DEFAULT", defaultValue: "Default"),
                 apiURL: appSettings.apiURL,
                 selectedModel: appSettings.selectedModel
             )

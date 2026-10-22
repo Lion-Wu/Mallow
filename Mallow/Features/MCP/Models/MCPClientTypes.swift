@@ -76,9 +76,9 @@ enum MCPClientError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .disabled:
-            return NSLocalizedString("MCP server is disabled.", comment: "MCP client error")
+            return NSLocalizedString("MCP_SERVER_DISABLED", value: "MCP server is disabled.", comment: "MCP client error")
         case let .unsupportedTransport(transport):
-            return String(format: NSLocalizedString("Unsupported MCP transport: %@", comment: "MCP client error"), transport)
+            return String(format: NSLocalizedString("MCP_TRANSPORT_UNSUPPORTED", value: "Unsupported MCP transport: %@", comment: "MCP client error"), transport)
         case let .invalidConfiguration(message),
              let .connectionFailed(message),
              let .protocolFailure(message):

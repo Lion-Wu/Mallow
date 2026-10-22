@@ -436,20 +436,20 @@ extension ChatNetworkError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return NSLocalizedString("Invalid API URL", comment: "Shown when the configured chat API URL is invalid")
+            return NSLocalizedString("NETWORK_INVALID_API_URL", value: "Invalid API URL", comment: "Shown when the configured chat API URL is invalid")
         case .invalidRequestHistory:
             return NSLocalizedString(
-                "Unable to build a request from the selected conversation branch.",
+                "CHAT_BRANCH_REQUEST_FAILED", value: "Unable to build a request from the selected conversation branch.",
                 comment: "Shown when a chat branch does not end with the intended user message"
             )
         case .unsupportedImageInput:
             return NSLocalizedString(
-                "The selected model does not support image input.",
+                "MODEL_IMAGE_INPUT_UNSUPPORTED", value: "The selected model does not support image input.",
                 comment: "Shown when retry settings cannot preserve the request's image inputs"
             )
         case .modelInformationUnavailable:
             return NSLocalizedString(
-                "Model information is not ready. Wait for loading to finish, or fetch models again in Settings.",
+                "MODEL_INFO_NOT_READY", value: "Model information is not ready. Wait for loading to finish, or fetch models again in Settings.",
                 comment: "Shown when sending is blocked until model metadata is available"
             )
         case .serverError(_, let message):
@@ -458,7 +458,7 @@ extension ChatNetworkError: LocalizedError {
             return message
         case .emptyResponse:
             return NSLocalizedString(
-                "Server returned an empty response",
+                "PROVIDER_EMPTY_RESPONSE", value: "Server returned an empty response",
                 comment: "Shown when the request completes without any assistant output"
             )
         }

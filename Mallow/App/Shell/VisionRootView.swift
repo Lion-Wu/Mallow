@@ -69,7 +69,7 @@ struct VisionRootView: View {
                         } label: {
                             Image(systemName: "sidebar.left")
                         }
-                        .accessibilityLabel("Toggle sidebar")
+                        .accessibilityLabel("SIDEBAR_ACTION_TOGGLE")
                     }
 
                     ToolbarItemGroup(placement: .topBarTrailing) {
@@ -77,7 +77,7 @@ struct VisionRootView: View {
                             guard chatSessionsViewModel.canStartNewSession else { return }
                             chatSessionsViewModel.startNewSession()
                         } label: {
-                            Label("New Chat", systemImage: "plus")
+                            Label("CHAT_TITLE_NEW", systemImage: "plus")
                         }
                         .disabled(!chatSessionsViewModel.canStartNewSession)
                     }

@@ -24,18 +24,18 @@ struct SettingsVoicePresetSection: View {
             if hideHeader {
                 EmptyView()
             } else {
-                SettingsSectionHeader("Voice Model")
+                SettingsSectionHeader("SETTINGS_VOICE_MODEL")
             }
         }
     }
 
     @ViewBuilder
     private var appleSpeechSettings: some View {
-        Picker("Apple Speech", selection: $viewModel.appleSpeechVoiceIdentifier) {
-            Text("System Default").tag(String?.none)
+        Picker("VOICE_PROVIDER_APPLE_SPEECH", selection: $viewModel.appleSpeechVoiceIdentifier) {
+            Text("SETTINGS_SYSTEM_DEFAULT").tag(String?.none)
             if let selectedIdentifier = viewModel.appleSpeechVoiceIdentifier,
                !viewModel.availableSystemVoices.contains(where: { $0.id == selectedIdentifier }) {
-                Text("Selected voice is not installed").tag(Optional.some(selectedIdentifier))
+                Text("VOICE_SELECTED_VOICE_NOT_INSTALLED").tag(Optional.some(selectedIdentifier))
             }
             ForEach(viewModel.availableSystemVoices) { voice in
                 Text(voice.displayName).tag(Optional.some(voice.id))
@@ -51,29 +51,29 @@ struct SettingsVoicePresetSection: View {
                 HStack(spacing: 8) {
                     ProgressView()
                         .controlSize(.small)
-                    Text("Requesting Apple Personal Voice access…")
+                    Text("VOICE_PERSONAL_REQUESTING_ACCESS")
                 }
                 .foregroundStyle(.secondary)
             } else {
-                Text("Apple Personal Voice access is not authorized.")
+                Text("VOICE_PERSONAL_ACCESS_UNAUTHORIZED")
                     .foregroundStyle(.secondary)
             }
         case .authorized:
             if viewModel.availablePersonalVoices.isEmpty {
-                Text("No Apple Personal Voice is available.")
+                Text("VOICE_PERSONAL_NO_VOICE")
                     .foregroundStyle(.secondary)
             } else {
-                Picker("Apple Personal Voice", selection: $viewModel.personalVoiceIdentifier) {
+                Picker("VOICE_PROVIDER_APPLE_PERSONAL", selection: $viewModel.personalVoiceIdentifier) {
                     ForEach(viewModel.availablePersonalVoices) { voice in
                         Text(voice.displayName).tag(Optional.some(voice.id))
                     }
                 }
             }
         case .denied:
-            Text("Apple Personal Voice access is not authorized.")
+            Text("VOICE_PERSONAL_ACCESS_UNAUTHORIZED")
                 .foregroundStyle(.secondary)
         case .unsupported:
-            Text("Apple Personal Voice is not supported on this device.")
+            Text("VOICE_PERSONAL_UNSUPPORTED")
                 .foregroundStyle(.secondary)
         @unknown default:
             EmptyView()
@@ -83,7 +83,7 @@ struct SettingsVoicePresetSection: View {
     @ViewBuilder
     private var presetPickerRow: some View {
         #if os(macOS)
-        LabeledContent("Preset") {
+        LabeledContent("PRESET_TITLE") {
             Picker("", selection: $viewModel.selectedPresetID) {
                 ForEach(viewModel.presetList) { p in
                     Text(p.name).tag(Optional.some(p.id))
@@ -92,7 +92,7 @@ struct SettingsVoicePresetSection: View {
             .labelsHidden()
         }
         #else
-        Picker("Preset", selection: $viewModel.selectedPresetID) {
+        Picker("PRESET_TITLE", selection: $viewModel.selectedPresetID) {
             ForEach(viewModel.presetList) { p in
                 Text(p.name).tag(Optional.some(p.id))
             }
@@ -110,22 +110,22 @@ struct SettingsVoicePresetSection: View {
                 Button {
                     viewModel.addPreset()
                 } label: {
-                    Label("Add", systemImage: "plus.circle.fill")
+                    Label("COMMON_ACTION_ADD", systemImage: "plus.circle.fill")
                         .foregroundStyle(.blue)
                 }
                 .buttonStyle(.plain)
                 .controlSize(.small)
-                .help("Add preset")
+                .help("PRESET_ACTION_ADD")
 
                 Button(role: .destructive) {
                     requestDeletion(.voicePreset)
                 } label: {
-                    Label("Delete", systemImage: "trash")
+                    Label("COMMON_ACTION_DELETE", systemImage: "trash")
                         .foregroundStyle(.red)
                 }
                 .buttonStyle(.plain)
                 .controlSize(.small)
-                .help("Delete selected preset")
+                .help("PRESET_ACTION_DELETE_SELECTED")
                 .disabled(viewModel.presetList.count <= 1 || viewModel.selectedPresetID == nil)
             }
         }
@@ -134,7 +134,7 @@ struct SettingsVoicePresetSection: View {
             Button {
                 viewModel.addPreset()
             } label: {
-                Label("Add", systemImage: "plus.circle.fill")
+                Label("COMMON_ACTION_ADD", systemImage: "plus.circle.fill")
                     .foregroundStyle(.blue)
             }
             .buttonStyle(.plain)
@@ -143,7 +143,7 @@ struct SettingsVoicePresetSection: View {
             Button(role: .destructive) {
                 requestDeletion(.voicePreset)
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label("COMMON_ACTION_DELETE", systemImage: "trash")
                     .foregroundStyle(.red)
             }
             .buttonStyle(.plain)
@@ -155,30 +155,30 @@ struct SettingsVoicePresetSection: View {
 
     private var presetDetailFields: some View {
         Group {
-            LabeledTextField(label: "Preset Name",
-                             placeholder: "Enter preset name",
+            LabeledTextField(label: "PRESET_NAME",
+                             placeholder: "PRESET_NAME_PLACEHOLDER",
                              text: $viewModel.presetName,
                              onCommit: viewModel.commitVoicePresetEdits)
 
-            LabeledTextField(label: "Reference Audio Path",
-                             placeholder: "GPT_SoVITS/refs/xxx.wav",
+            LabeledTextField(label: "PRESET_REFERENCE_AUDIO_PATH",
+                             placeholder: "PRESET_REFERENCE_AUDIO_PATH_PLACEHOLDER",
                              text: $viewModel.presetRefAudioPath,
                              onCommit: viewModel.commitVoicePresetEdits)
-            LabeledTextField(label: "Reference Text",
-                             placeholder: "Reference text (optional)",
+            LabeledTextField(label: "PRESET_REFERENCE_TEXT",
+                             placeholder: "PRESET_REFERENCE_TEXT_PLACEHOLDER",
                              text: $viewModel.presetPromptText,
                              onCommit: viewModel.commitVoicePresetEdits)
-            LabeledTextField(label: "Reference Language",
-                             placeholder: "e.g. auto/zh/en",
+            LabeledTextField(label: "PRESET_REFERENCE_LANGUAGE",
+                             placeholder: "VOICE_LANGUAGE_PLACEHOLDER",
                              text: $viewModel.presetPromptLang,
                              onCommit: viewModel.commitVoicePresetEdits)
 
-            LabeledTextField(label: "GPT weights path",
-                             placeholder: "GPT_SoVITS/pretrained_models/s1xxx.ckpt",
+            LabeledTextField(label: "PRESET_GPT_WEIGHTS_PATH",
+                             placeholder: "PRESET_GPT_WEIGHTS_PATH_PLACEHOLDER",
                              text: $viewModel.presetGPTWeightsPath,
                              onCommit: viewModel.commitVoicePresetEdits)
-            LabeledTextField(label: "SoVITS weights path",
-                             placeholder: "GPT_SoVITS/pretrained_models/s2xxx.pth",
+            LabeledTextField(label: "PRESET_SOVITS_WEIGHTS_PATH",
+                             placeholder: "PRESET_SOVITS_WEIGHTS_PATH_PLACEHOLDER",
                              text: $viewModel.presetSoVITSWeightsPath,
                              onCommit: viewModel.commitVoicePresetEdits)
         }
@@ -190,11 +190,11 @@ struct SettingsVoicePresetSection: View {
             Button {
                 viewModel.applySelectedPresetNow()
             } label: {
-                Label("Apply Preset Now", systemImage: "arrow.triangle.2.circlepath.circle")
+                Label("PRESET_ACTION_APPLY_NOW", systemImage: "arrow.triangle.2.circlepath.circle")
             }
             .settingsActionButtonStyle()
             #if os(macOS)
-            .help("Apply selected preset now")
+            .help("PRESET_ACCESSIBILITY_APPLY")
             #endif
             .disabled(settingsManager.isApplyingPreset || viewModel.selectedPresetID == nil)
         }
@@ -213,12 +213,12 @@ struct SettingsVoicePresetSection: View {
                         .controlSize(.small)
                         #endif
                     if settingsManager.isRetryingPresetApply {
-                        Text(String(format: NSLocalizedString("Retrying (attempt %d)...", comment: "Shown while auto retry is waiting to reconnect"), max(1, settingsManager.presetApplyRetryAttempt)))
+                        Text(String(format: NSLocalizedString("AUDIO_RETRY_ATTEMPT", value: "Retrying (attempt %d)...", comment: "Shown while auto retry is waiting to reconnect"), max(1, settingsManager.presetApplyRetryAttempt)))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.tail)
                     } else {
-                        Text("Applying preset...")
+                        Text("PRESET_APPLYING")
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.tail)
@@ -248,7 +248,7 @@ struct SettingsVoicePresetSection: View {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
-                    Text("Preset applied successfully.")
+                    Text("PRESET_APPLIED")
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.tail)

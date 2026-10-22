@@ -160,7 +160,7 @@ extension GlobalAudioManager {
             prepareNextAudioChunk(at: index + 1)
             return true
         } catch {
-            let message = String(format: NSLocalizedString("Failed to start audio playback: %@", comment: "Shown when AVAudioPlayer fails to start"), error.localizedDescription)
+            let message = String(format: NSLocalizedString("AUDIO_ERROR_PLAYBACK_START", value: "Failed to start audio playback: %@", comment: "Shown when AVAudioPlayer fails to start"), error.localizedDescription)
             self.surfaceTTSIssue(message, autoDismiss: 12)
             isBuffering = true
             startStallWatchdog()

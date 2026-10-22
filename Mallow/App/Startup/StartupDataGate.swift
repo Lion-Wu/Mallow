@@ -82,7 +82,7 @@ final class StartupDataCoordinator: ObservableObject {
             case .success:
                 beginPersistentContainerLoad()
             case .failure(let error):
-                let template = String(localized: "Reset data failed.\n%@")
+                let template = String(localized: "RECOVERY_RESET_FAILED", defaultValue: "Reset data failed.\n%@")
                 launchState = .failed(String.localizedStringWithFormat(template, Self.formatErrorMessage(error)))
             }
         }
@@ -323,11 +323,11 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
                     VStack(spacing: 18) {
                         Image(systemName: "externaldrive.badge.person.crop")
                             .font(.system(size: 34))
-                        Text("Data Is Unavailable").font(.title3.weight(.semibold))
+                        Text("DATA_UNAVAILABLE").font(.title3.weight(.semibold))
                         Text(message).foregroundStyle(.secondary).multilineTextAlignment(.center)
                         HStack {
-                            Button("Exit") { coordinator.exitApplication() }.buttonStyle(.bordered)
-                            Button("Try Again") { coordinator.retryStoreAccess() }.buttonStyle(.borderedProminent)
+                            Button("COMMON_ACTION_EXIT") { coordinator.exitApplication() }.buttonStyle(.bordered)
+                            Button("COMMON_ACTION_TRY_AGAIN") { coordinator.retryStoreAccess() }.buttonStyle(.borderedProminent)
                         }
                     }
                     .padding(24)
@@ -368,8 +368,8 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
             }
             .frame(width: 1, height: 1)
         }
-        .alert("Data Export", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
-            Button("OK", role: .cancel) { exportError = nil }
+        .alert("DATA_EXPORT", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
+            Button("COMMON_ACTION_OK", role: .cancel) { exportError = nil }
         } message: { Text(exportError ?? "") }
         .sheet(isPresented: $isShowingRecovery, onDismiss: {
             coordinator.cancelRecovery()
@@ -377,10 +377,10 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
         }) {
             DataRecoveryPreviewView(coordinator: coordinator)
         }
-        .alert("Import Cleanup Failed", isPresented: $isShowingCleanupError) {
-            Button("OK", role: .cancel) {}
+        .alert("DATA_IMPORT_CLEANUP_FAILED", isPresented: $isShowingCleanupError) {
+            Button("COMMON_ACTION_OK", role: .cancel) {}
         } message: {
-            Text("The data was imported, but the temporary import journal could not be removed.")
+            Text("DATA_IMPORT_JOURNAL_CLEANUP_FAILED")
             Text(coordinator.importCleanupError ?? "")
         }
         .onChange(of: coordinator.importCleanupError, initial: true) { _, error in
@@ -398,7 +398,7 @@ struct StartupChatLoadingView: View {
     var body: some View {
         ZStack {
             AppBackgroundView()
-            ProgressView("Loading chats...")
+            ProgressView("CHAT_LOADING")
                 .foregroundStyle(.secondary)
         }
     }
@@ -408,7 +408,7 @@ struct StartupSettingsLoadingView: View {
     var body: some View {
         ZStack {
             AppBackgroundView()
-            ProgressView("Loading settings...")
+            ProgressView("SETTINGS_LOADING")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -435,10 +435,10 @@ struct StartupDataErrorView: View {
                     .font(.system(size: 34, weight: .semibold))
                     .foregroundStyle(.red)
 
-                Text("Data Error")
+                Text("DATA_ERROR")
                     .font(.title3.weight(.semibold))
 
-                Text("The app could not read local data at launch.")
+                Text("STORAGE_STARTUP_READ_FAILED")
                     .foregroundStyle(.secondary)
 
                 ScrollView {
@@ -461,18 +461,18 @@ struct StartupDataErrorView: View {
             .appChromedContainer(cornerRadius: 28, shadowOpacity: 0.32)
             .padding(.horizontal, 24)
         }
-        .alert("Reset Data?", isPresented: $isConfirmingReset) {
-            Button("Cancel", role: .cancel) {}
-            Button("Reset Data and Continue", role: .destructive, action: onReset)
+        .alert("RECOVERY_RESET_CONFIRMATION", isPresented: $isConfirmingReset) {
+            Button("COMMON_ACTION_CANCEL", role: .cancel) {}
+            Button("RECOVERY_ACTION_RESET_CONTINUE", role: .destructive, action: onReset)
                 .disabled(isResetting || isRecoveryActive || isExporting)
         } message: {
-            Text("This will delete your current local chats, messages, settings, and presets. This action cannot be undone.")
+            Text("DATA_RESTORE_OVERWRITE_WARNING")
         }
     }
 
     @ViewBuilder
     private var actions: some View {
-        Button("Exit", action: onExit)
+        Button("COMMON_ACTION_EXIT", action: onExit)
             .buttonStyle(.bordered)
             .disabled(isResetting || isRecoveryActive || isExporting)
 
@@ -481,7 +481,7 @@ struct StartupDataErrorView: View {
         } label: {
             HStack(spacing: 8) {
                 if isResetting { ProgressView().controlSize(.small) }
-                Text(isResetting ? LocalizedStringKey("Resetting...") : LocalizedStringKey("Reset Data and Continue"))
+                Text(isResetting ? LocalizedStringKey("RECOVERY_RESETTING") : LocalizedStringKey("RECOVERY_ACTION_RESET_CONTINUE"))
             }
         }
         .buttonStyle(.bordered)
@@ -490,18 +490,18 @@ struct StartupDataErrorView: View {
         .disabled(isResetting || isRecoveryActive || isExporting)
 
         Button(action: onExport) {
-            Text("Export Data")
+            Text("DATA_ACTION_EXPORT")
                 .opacity(isExporting ? 0 : 1)
                 .overlay {
                     if isExporting { ProgressView().controlSize(.small) }
                 }
         }
         .buttonStyle(.bordered)
-        .accessibilityLabel(Text("Export Data"))
-        .accessibilityValue(isExporting ? Text("Loading...") : Text(""))
+        .accessibilityLabel(Text("DATA_ACTION_EXPORT"))
+        .accessibilityValue(isExporting ? Text("COMMON_LOADING") : Text(""))
         .disabled(isResetting || isRecoveryActive || isExporting)
 
-        Button("Recover Data", action: onRecover)
+        Button("RECOVERY_ACTION_RECOVER", action: onRecover)
             .buttonStyle(.borderedProminent)
             .disabled(isResetting || isRecoveryActive || isExporting)
     }

@@ -14,8 +14,8 @@ struct SettingsSystemPromptSection: View {
 
     var body: some View {
         SettingsPromptPresetSection(
-            title: "Chat Prompt",
-            promptPlaceholder: "Used for chat mode",
+            title: "SETTINGS_CHAT_PROMPT",
+            promptPlaceholder: "SETTINGS_USED_FOR_CHAT",
             presets: viewModel.normalSystemPromptPresetList,
             selectedPresetID: $viewModel.selectedNormalSystemPromptPresetID,
             presetName: $viewModel.normalSystemPromptPresetName,
@@ -26,8 +26,8 @@ struct SettingsSystemPromptSection: View {
         )
 
         SettingsPromptPresetSection(
-            title: "Voice Prompt",
-            promptPlaceholder: "Used for voice mode",
+            title: "SETTINGS_VOICE_PROMPT",
+            promptPlaceholder: "SETTINGS_USED_FOR_VOICE",
             presets: viewModel.voiceSystemPromptPresetList,
             selectedPresetID: $viewModel.selectedVoiceSystemPromptPresetID,
             presetName: $viewModel.voiceSystemPromptPresetName,
@@ -41,7 +41,7 @@ struct SettingsSystemPromptSection: View {
 
 private struct SettingsPromptPresetSection: View {
     let title: LocalizedStringKey
-    let promptPlaceholder: String
+    let promptPlaceholder: LocalizedStringKey
     let presets: [SettingsViewModel.PresetSummary]
     @Binding var selectedPresetID: UUID?
     @Binding var presetName: String
@@ -60,13 +60,13 @@ private struct SettingsPromptPresetSection: View {
             presetActionRow
 
             LabeledTextField(
-                label: "Preset Name",
-                placeholder: "Enter preset name",
+                label: "PRESET_NAME",
+                placeholder: "PRESET_NAME_PLACEHOLDER",
                 text: $presetName,
                 onCommit: onCommit
             )
             LabeledTextEditor(
-                label: "Prompt",
+                label: "PROMPT_TITLE",
                 placeholder: promptPlaceholder,
                 text: $prompt,
                 onCommit: onCommit
@@ -79,7 +79,7 @@ private struct SettingsPromptPresetSection: View {
     @ViewBuilder
     private var presetPickerRow: some View {
         #if os(macOS)
-        LabeledContent("Preset") {
+        LabeledContent("PRESET_TITLE") {
             Picker("", selection: $selectedPresetID) {
                 ForEach(presets) { preset in
                     Text(preset.name).tag(Optional.some(preset.id))
@@ -88,7 +88,7 @@ private struct SettingsPromptPresetSection: View {
             .labelsHidden()
         }
         #else
-        Picker("Preset", selection: $selectedPresetID) {
+        Picker("PRESET_TITLE", selection: $selectedPresetID) {
             ForEach(presets) { preset in
                 Text(preset.name).tag(Optional.some(preset.id))
             }
@@ -105,11 +105,11 @@ private struct SettingsPromptPresetSection: View {
             HStack(spacing: 8) {
                 addButton
                     .controlSize(.small)
-                    .help("Add prompt preset")
+                    .help("PROMPT_PRESET_ACTION_ADD")
 
                 deleteButton
                     .controlSize(.small)
-                    .help("Delete selected prompt preset")
+                    .help("PROMPT_PRESET_ACTION_DELETE_SELECTED")
             }
         }
         #else
@@ -127,7 +127,7 @@ private struct SettingsPromptPresetSection: View {
         Button {
             onAdd()
         } label: {
-            Label("Add", systemImage: "plus.circle.fill")
+            Label("COMMON_ACTION_ADD", systemImage: "plus.circle.fill")
                 .foregroundStyle(.blue)
         }
         .buttonStyle(.plain)
@@ -137,7 +137,7 @@ private struct SettingsPromptPresetSection: View {
         Button(role: .destructive) {
             onDelete()
         } label: {
-            Label("Delete", systemImage: "trash")
+            Label("COMMON_ACTION_DELETE", systemImage: "trash")
                 .foregroundStyle(.red)
         }
         .buttonStyle(.plain)

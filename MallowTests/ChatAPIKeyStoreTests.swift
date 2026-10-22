@@ -111,7 +111,7 @@ final class ChatAPIKeyStoreTests: XCTestCase {
         }
         XCTAssertTrue(
             failure.localizedDescription.hasPrefix(
-                String(localized: "The API key could not be saved.")
+                String(localized: "DATA_API_KEY_SAVE_FAILED", defaultValue: "The API key could not be saved.")
             )
         )
         XCTAssertEqual(

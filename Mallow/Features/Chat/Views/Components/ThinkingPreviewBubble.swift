@@ -28,7 +28,7 @@ struct ThinkingPreviewBubble: View {
     }
 
     private var statusTextKey: LocalizedStringKey {
-        isComplete ? "Thinking Complete" : "Thinking"
+        isComplete ? "THINKING_COMPLETE" : "THINKING_STATUS"
     }
 
     private var shouldShowTextPreview: Bool {
@@ -83,7 +83,7 @@ struct ThinkingPreviewBubble: View {
         .clipped()
         .accessibilityElement(children: .contain)
         .accessibilityLabel(statusTextKey)
-        .accessibilityHint("Open full reasoning")
+        .accessibilityHint("MESSAGE_ACTION_OPEN_REASONING")
         .padding(.vertical, 4)
         .padding(.horizontal, 4)
         .bubbleStyle(
@@ -256,7 +256,7 @@ private struct ThinkingDetailView: View {
             #if os(visionOS)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
+                    Button("COMMON_ACTION_CLOSE") {
                         dismiss()
                     }
                 }

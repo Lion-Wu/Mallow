@@ -18,13 +18,13 @@ struct TextSelectionSheet: View {
     var body: some View {
         NavigationStack {
             selectionBody
-            .navigationTitle("Select Text")
+            .navigationTitle("MESSAGE_ACTION_SELECT_TEXT")
 #if os(iOS) || os(tvOS)
             .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("COMMON_ACTION_DONE") { dismiss() }
                 }
             }
         }

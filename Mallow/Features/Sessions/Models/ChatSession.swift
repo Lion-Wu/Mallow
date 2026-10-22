@@ -33,7 +33,7 @@ final class ChatSession {
     @Transient private var didInitializeTransientPersistenceTracking = false
 
     // MARK: - Init
-    init(title: String = String(localized: "New Chat")) {
+    init(title: String = String(localized: "CHAT_TITLE_NEW", defaultValue: "New Chat")) {
         self.id = UUID()
         self.title = title
         self.createdAt = Date()

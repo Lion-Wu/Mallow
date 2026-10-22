@@ -23,7 +23,7 @@ struct ChatToolArgumentReader {
         guard let data = trimmed.data(using: .utf8),
               let object = try? JSONSerialization.jsonObject(with: data),
               let dictionary = object as? [String: Any] else {
-            throw ChatToolError.invalidArguments(NSLocalizedString("Tool arguments were not valid JSON.", comment: "Tool-use error"))
+            throw ChatToolError.invalidArguments(NSLocalizedString("TOOLS_ARGUMENTS_INVALID_JSON", value: "Tool arguments were not valid JSON.", comment: "Tool-use error"))
         }
         values = dictionary
     }
@@ -37,7 +37,7 @@ struct ChatToolArgumentReader {
     func requiredString(_ key: String) throws -> String {
         guard let value = string(key) else {
             throw ChatToolError.invalidArguments(
-                String(format: NSLocalizedString("%@ is required.", comment: "Tool-use error"), key)
+                String(format: NSLocalizedString("VALIDATION_REQUIRED_FIELD", value: "%@ is required.", comment: "Tool-use error"), key)
             )
         }
         return value
@@ -46,7 +46,7 @@ struct ChatToolArgumentReader {
     func requiredRawString(_ key: String) throws -> String {
         guard let value = values[key] as? String, !value.isEmpty else {
             throw ChatToolError.invalidArguments(
-                String(format: NSLocalizedString("%@ is required.", comment: "Tool-use error"), key)
+                String(format: NSLocalizedString("VALIDATION_REQUIRED_FIELD", value: "%@ is required.", comment: "Tool-use error"), key)
             )
         }
         return value
@@ -122,7 +122,7 @@ struct ChatToolArgumentReader {
     func requiredTemporalDate(_ key: String, calendar: Calendar = .autoupdatingCurrent) throws -> Date {
         guard let date = try temporalDate(key, calendar: calendar) else {
             throw ChatToolError.invalidArguments(
-                String(format: NSLocalizedString("%@ is required.", comment: "Tool-use error"), key)
+                String(format: NSLocalizedString("VALIDATION_REQUIRED_FIELD", value: "%@ is required.", comment: "Tool-use error"), key)
             )
         }
         return date

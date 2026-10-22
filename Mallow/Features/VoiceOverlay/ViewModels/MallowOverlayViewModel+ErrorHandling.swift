@@ -94,7 +94,7 @@ extension MallowOverlayViewModel {
     func pushRealtimeVoiceError(_ message: String) {
         guard !message.isEmpty else { return }
         errorCenter.publish(
-            title: NSLocalizedString("Realtime voice unavailable", comment: "Shown when realtime voice dictation/playback encounters an error"),
+            title: NSLocalizedString("VOICE_REALTIME_UNAVAILABLE", value: "Realtime voice unavailable", comment: "Shown when realtime voice dictation/playback encounters an error"),
             message: message,
             category: .realtimeVoice,
             autoDismiss: 12

@@ -229,7 +229,7 @@ final class RecoveryRow {
 
     func invalid(_ field: String) -> NSError {
         if fieldProblems[field] == nil {
-            fieldProblems[field] = String(localized: "The stored value is missing or has an invalid type.")
+            fieldProblems[field] = String(localized: "RECOVERY_FIELD_MISSING_OR_INVALID", defaultValue: "The stored value is missing or has an invalid type.")
         }
         return NSError(domain: "RecoveryRecord", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unreadable field: \(field)", "field": field])
     }
@@ -246,19 +246,19 @@ final class RecoveryRow {
         switch error {
         case DecodingError.keyNotFound(let key, let value):
             context = value
-            reason = String(localized: "A required value is missing.") + " (" + key.stringValue + ")"
+            reason = String(localized: "RECOVERY_ERROR_REQUIRED_VALUE_MISSING", defaultValue: "A required value is missing.") + " (" + key.stringValue + ")"
         case DecodingError.valueNotFound(_, let value):
             context = value
-            reason = String(localized: "A required value is missing.")
+            reason = String(localized: "RECOVERY_ERROR_REQUIRED_VALUE_MISSING", defaultValue: "A required value is missing.")
         case DecodingError.typeMismatch(_, let value):
             context = value
-            reason = String(localized: "The stored value has the wrong type.")
+            reason = String(localized: "RECOVERY_FIELD_WRONG_TYPE", defaultValue: "The stored value has the wrong type.")
         case DecodingError.dataCorrupted(let value):
             context = value
-            reason = String(localized: "The stored data is not valid for this field.")
+            reason = String(localized: "RECOVERY_FIELD_INVALID_DATA", defaultValue: "The stored data is not valid for this field.")
         default:
             context = nil
-            reason = String(localized: "The stored data is not valid for this field.")
+            reason = String(localized: "RECOVERY_FIELD_INVALID_DATA", defaultValue: "The stored data is not valid for this field.")
         }
         let path = context?.codingPath.map(\.stringValue).joined(separator: ".") ?? ""
         noteLoss(field, explanation: path.isEmpty ? reason : path + ": " + reason)

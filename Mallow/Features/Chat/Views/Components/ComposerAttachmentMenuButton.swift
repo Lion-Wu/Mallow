@@ -29,7 +29,7 @@ struct ComposerAttachmentMenuButton: UIViewRepresentable {
         button.buttonSize = buttonSize
         button.showsMenuAsPrimaryAction = true
         button.changesSelectionAsPrimaryAction = false
-        button.accessibilityLabel = NSLocalizedString("Add image", comment: "Composer attachment button")
+        button.accessibilityLabel = NSLocalizedString("CHAT_ACTION_ADD_IMAGE", value: "Add image", comment: "Composer attachment button")
         applyButtonAppearance(to: button)
         button.menu = context.coordinator.makeMenu()
         return button
@@ -120,19 +120,19 @@ struct ComposerAttachmentMenuButton: UIViewRepresentable {
         func makeMenu() -> UIMenu {
             UIMenu(children: [
                 UIAction(
-                    title: String(localized: "Take Photo", comment: "Attachment menu action"),
+                    title: String(localized: "CAMERA_ACTION_TAKE_PHOTO", defaultValue: "Take Photo", comment: "Attachment menu action"),
                     image: UIImage(systemName: "camera")
                 ) { [weak self] _ in
                     self?.parent.onTakePhoto()
                 },
                 UIAction(
-                    title: String(localized: "Choose Photos", comment: "Attachment menu action"),
+                    title: String(localized: "CHAT_ACTION_CHOOSE_PHOTOS", defaultValue: "Choose Photos", comment: "Attachment menu action"),
                     image: UIImage(systemName: "photo.on.rectangle.angled")
                 ) { [weak self] _ in
                     self?.parent.onChoosePhotos()
                 },
                 UIAction(
-                    title: String(localized: "Choose Files", comment: "Attachment menu action"),
+                    title: String(localized: "CHAT_ACTION_CHOOSE_FILES", defaultValue: "Choose Files", comment: "Attachment menu action"),
                     image: UIImage(systemName: "folder")
                 ) { [weak self] _ in
                     self?.parent.onChooseFiles()
@@ -164,7 +164,7 @@ struct ComposerAttachmentMenuButton: NSViewRepresentable {
         let hostView = AttachmentMenuButtonHostView()
         hostView.button.target = context.coordinator
         hostView.button.action = #selector(Coordinator.showMenu(_:))
-        hostView.button.setAccessibilityLabel(NSLocalizedString("Add image", comment: "Composer attachment button"))
+        hostView.button.setAccessibilityLabel(NSLocalizedString("CHAT_ACTION_ADD_IMAGE", value: "Add image", comment: "Composer attachment button"))
         context.coordinator.button = hostView.button
         applyAppearance(to: hostView)
         return hostView
@@ -244,7 +244,7 @@ struct ComposerAttachmentMenuButton: NSViewRepresentable {
             let menu = NSMenu()
 
             let takePhotoItem = NSMenuItem(
-                title: String(localized: "Take Photo", comment: "Attachment menu action"),
+                title: String(localized: "CAMERA_ACTION_TAKE_PHOTO", defaultValue: "Take Photo", comment: "Attachment menu action"),
                 action: #selector(handleTakePhoto),
                 keyEquivalent: ""
             )
@@ -253,7 +253,7 @@ struct ComposerAttachmentMenuButton: NSViewRepresentable {
             menu.addItem(takePhotoItem)
 
             let choosePhotosItem = NSMenuItem(
-                title: String(localized: "Choose Photos", comment: "Attachment menu action"),
+                title: String(localized: "CHAT_ACTION_CHOOSE_PHOTOS", defaultValue: "Choose Photos", comment: "Attachment menu action"),
                 action: #selector(handleChoosePhotos),
                 keyEquivalent: ""
             )
@@ -262,7 +262,7 @@ struct ComposerAttachmentMenuButton: NSViewRepresentable {
             menu.addItem(choosePhotosItem)
 
             let chooseFilesItem = NSMenuItem(
-                title: String(localized: "Choose Files", comment: "Attachment menu action"),
+                title: String(localized: "CHAT_ACTION_CHOOSE_FILES", defaultValue: "Choose Files", comment: "Attachment menu action"),
                 action: #selector(handleChooseFiles),
                 keyEquivalent: ""
             )

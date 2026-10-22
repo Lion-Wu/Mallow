@@ -94,7 +94,7 @@ struct VoiceVisionCameraView: View {
         .buttonStyle(.plain)
         .foregroundStyle(.white)
         .background(.ultraThinMaterial, in: Circle())
-        .accessibilityLabel("Close camera")
+        .accessibilityLabel("CAMERA_ACTION_CLOSE")
     }
 
     private var cameraAdjustmentControls: some View {
@@ -116,7 +116,7 @@ struct VoiceVisionCameraView: View {
                 .menuStyle(.button)
                 .buttonStyle(.plain)
                 .foregroundStyle(.white)
-                .accessibilityLabel("Camera")
+                .accessibilityLabel("CAMERA_TITLE")
             }
             #else
             Button {
@@ -130,7 +130,7 @@ struct VoiceVisionCameraView: View {
             .buttonStyle(.plain)
             .foregroundStyle(controller.canFlipCamera ? .white : .white.opacity(0.35))
             .disabled(!controller.canFlipCamera)
-            .accessibilityLabel("Flip camera")
+            .accessibilityLabel("CAMERA_ACTION_FLIP")
 
             #if os(iOS)
             Button {
@@ -145,8 +145,8 @@ struct VoiceVisionCameraView: View {
             .foregroundStyle(controller.canUseFlash ? .white : .white.opacity(0.35))
             .disabled(!controller.canUseFlash)
             .accessibilityLabel(Text(controller.isFlashEnabled
-                ? LocalizedStringKey("Turn flash off")
-                : LocalizedStringKey("Turn flash on")))
+                ? LocalizedStringKey("CAMERA_ACTION_FLASH_OFF")
+                : LocalizedStringKey("CAMERA_ACTION_FLASH_ON")))
             #endif
             #endif
         }

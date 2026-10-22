@@ -16,35 +16,35 @@ struct SettingsToolUseSection: View {
     var body: some View {
         Group {
             Section {
-                Toggle("Enable Tool Use", isOn: toolUseEnabledBinding)
-                    .alert("Enable Tool Use?", isPresented: $isConfirmingToolUse) {
-                        Button("Cancel", role: .cancel) {}
-                        Button("Enable") {
+                Toggle("TOOLS_ACTION_ENABLE", isOn: toolUseEnabledBinding)
+                    .alert("TOOLS_ENABLE_CONFIRMATION", isPresented: $isConfirmingToolUse) {
+                        Button("COMMON_ACTION_CANCEL", role: .cancel) {}
+                        Button("COMMON_ACTION_ENABLE") {
                             setToolUseEnabled(true)
                         }
                     } message: {
-                        Text("Not all models support tool use. Enabling it may increase token usage.")
+                        Text("TOOLS_ENABLE_DESCRIPTION")
                     }
 
                 if viewModel.toolUseSettings.isEnabled {
-                    Picker("Authorization", selection: toolBinding(\.authorizationMode)) {
-                        Text("Ask Every Time").tag(ToolAuthorizationMode.askEveryTime)
-                        Text("Read Only").tag(ToolAuthorizationMode.readOnly)
-                        Text("Read and Write").tag(ToolAuthorizationMode.readWrite)
+                    Picker("TOOLS_AUTHORIZATION", selection: toolBinding(\.authorizationMode)) {
+                        Text("TOOLS_AUTHORIZATION_ASK_EVERY_TIME").tag(ToolAuthorizationMode.askEveryTime)
+                        Text("TOOLS_ACCESS_READ_ONLY").tag(ToolAuthorizationMode.readOnly)
+                        Text("TOOLS_ACCESS_READ_WRITE").tag(ToolAuthorizationMode.readWrite)
                     }
 
                     Toggle(isOn: highRiskAutoExecutionBinding) {
-                        Text("Allow Automatic High-Risk Tools")
+                        Text("TOOLS_ALLOW_AUTOMATIC_HIGH_RISK")
                             .foregroundStyle(.red)
                     }
                     .tint(.red)
-                    .alert("Allow Automatic High-Risk Tools?", isPresented: $isConfirmingHighRiskAutoExecution) {
-                        Button("Cancel", role: .cancel) {}
-                        Button("Allow", role: .destructive) {
+                    .alert("TOOLS_ALLOW_AUTOMATIC_HIGH_RISK_CONFIRMATION", isPresented: $isConfirmingHighRiskAutoExecution) {
+                        Button("COMMON_ACTION_CANCEL", role: .cancel) {}
+                        Button("COMMON_ACTION_ALLOW", role: .destructive) {
                             setHighRiskAutoExecution(true)
                         }
                     } message: {
-                        Text("This will allow location, clipboard, URL, and JavaScript Runtime tools to run automatically when permitted by the authorization mode. This may increase the risk of privacy exposure.")
+                        Text("TOOLS_HIGH_RISK_AUTOMATIC_WARNING")
                     }
                 }
             } header: {
@@ -59,23 +59,23 @@ struct SettingsToolUseSection: View {
                             setAllToolsEnabled(!allToolsEnabled)
                         } label: {
                             Label(
-                                allToolsEnabled ? "Disable All Tools" : "Enable All Tools",
+                                allToolsEnabled ? LocalizedStringKey("TOOLS_ACTION_DISABLE_ALL") : LocalizedStringKey("TOOLS_ACTION_ENABLE_ALL"),
                                 systemImage: allToolsEnabled ? "xmark.circle" : "checkmark.circle"
                             )
                         }
                         .settingsActionButtonStyle()
                     }
 
-                    Toggle("Calendar", isOn: toolBinding(\.calendarEnabled))
-                    Toggle("Reminders", isOn: toolBinding(\.remindersEnabled))
-                    Toggle("Location", isOn: toolBinding(\.locationEnabled))
-                    Toggle("Motion", isOn: toolBinding(\.motionEnabled))
-                    Toggle("Device Context", isOn: toolBinding(\.deviceContextEnabled))
-                    Toggle("Time", isOn: toolBinding(\.timeEnabled))
+                    Toggle("TOOLS_CALENDAR", isOn: toolBinding(\.calendarEnabled))
+                    Toggle("TOOLS_REMINDERS", isOn: toolBinding(\.remindersEnabled))
+                    Toggle("TOOLS_LOCATION", isOn: toolBinding(\.locationEnabled))
+                    Toggle("TOOLS_MOTION", isOn: toolBinding(\.motionEnabled))
+                    Toggle("TOOLS_DEVICE_CONTEXT", isOn: toolBinding(\.deviceContextEnabled))
+                    Toggle("TOOLS_TIME", isOn: toolBinding(\.timeEnabled))
                         .disabled(viewModel.toolUseSettings.requiresTimeTool)
-                    Toggle("Clipboard", isOn: toolBinding(\.clipboardEnabled))
-                    Toggle("URL Actions", isOn: toolBinding(\.urlActionsEnabled))
-                    Toggle("JavaScript Runtime", isOn: toolBinding(\.javaScriptRuntimeEnabled))
+                    Toggle("TOOLS_CLIPBOARD", isOn: toolBinding(\.clipboardEnabled))
+                    Toggle("TOOLS_URL_ACTIONS", isOn: toolBinding(\.urlActionsEnabled))
+                    Toggle("TOOLS_JAVASCRIPT_RUNTIME", isOn: toolBinding(\.javaScriptRuntimeEnabled))
 
                     if let status = viewModel.toolUseStatusMessage {
                         Text(status)
@@ -182,11 +182,11 @@ struct SettingsToolUseSection: View {
             EmptyView()
         } else {
             #if os(macOS)
-            Text("Tool Use")
+            Text("TOOLS_USE")
                 .font(.headline)
                 .textCase(.none)
             #else
-            Text("Tool Use")
+            Text("TOOLS_USE")
             #endif
         }
     }
@@ -198,20 +198,20 @@ struct SettingsDeveloperRequestPolicySection: View {
 
     var body: some View {
         Section {
-            Toggle("Enable Stateful Chat for LM Studio", isOn: toolBoolBinding(\.useProviderContinuationIDs))
+            Toggle("SETTINGS_LM_STUDIO_STATEFUL_CHAT", isOn: toolBoolBinding(\.useProviderContinuationIDs))
 
-            Text("Enables Stateful Chat for conversations that support it.")
+            Text("SETTINGS_STATEFUL_CHAT_DESCRIPTION")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("OpenAI Responses Stateful Chat")
+                Text("SETTINGS_OPENAI_RESPONSES_STATEFUL_CHAT")
                     .font(.subheadline.weight(.semibold))
 
                 if let currentEndpointURL = viewModel.currentOpenAIResponsesStatefulEndpointURL {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Current Endpoint")
+                        Text("SETTINGS_CURRENT_ENDPOINT")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Text(currentEndpointURL)
@@ -222,7 +222,7 @@ struct SettingsDeveloperRequestPolicySection: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     if viewModel.isCurrentOpenAIResponsesStatefulEndpointEnabled {
-                        Label("Stateful chat is enabled for this backend.", systemImage: "checkmark.circle.fill")
+                        Label("SETTINGS_STATEFUL_CHAT_ENABLED", systemImage: "checkmark.circle.fill")
                             .font(.footnote)
                             .foregroundStyle(.green)
                     } else {
@@ -231,29 +231,29 @@ struct SettingsDeveloperRequestPolicySection: View {
                             Button {
                                 viewModel.enableStatefulChatForCurrentOpenAIResponsesEndpoint()
                             } label: {
-                                Label("Enable for This Backend", systemImage: "plus.circle")
+                                Label("SETTINGS_ENABLE_CURRENT_BACKEND", systemImage: "plus.circle")
                             }
                             .settingsActionButtonStyle()
                         }
                     }
                 } else {
-                    Text("Select or auto-detect an OpenAI Responses API endpoint to enable the current backend.")
+                    Text("SETTINGS_STATEFUL_ENDPOINT_REQUIRED")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Text("Enabled Endpoints")
+                Text("SETTINGS_ENABLED_ENDPOINTS")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                Text("Only the endpoint URLs listed below may continue from an OpenAI Responses response ID.")
+                Text("SETTINGS_STATEFUL_ENDPOINTS_DESCRIPTION")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if viewModel.openAIResponsesStatefulEndpointURLs.isEmpty {
-                    Text("No endpoint URLs are enabled.")
+                    Text("SETTINGS_NO_ENABLED_ENDPOINTS")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 } else {
@@ -266,27 +266,27 @@ struct SettingsDeveloperRequestPolicySection: View {
 
         } header: {
             #if os(macOS)
-            Text("Request Policy")
+            Text("MESSAGE_REQUEST_POLICY")
                 .font(.headline)
                 .textCase(.none)
             #else
-            Text("Request Policy")
+            Text("MESSAGE_REQUEST_POLICY")
             #endif
         }
         .alert(
-            "Delete Stateful Endpoint?",
+            "SETTINGS_STATEFUL_ENDPOINT_DELETE_CONFIRMATION",
             isPresented: isConfirmingStatefulEndpointRemoval
         ) {
-            Button("Cancel", role: .cancel) {
+            Button("COMMON_ACTION_CANCEL", role: .cancel) {
                 statefulEndpointPendingRemoval = nil
             }
-            Button("Delete", role: .destructive) {
+            Button("COMMON_ACTION_DELETE", role: .destructive) {
                 guard let endpointURL = statefulEndpointPendingRemoval else { return }
                 viewModel.removeOpenAIResponsesStatefulEndpointURL(endpointURL)
                 statefulEndpointPendingRemoval = nil
             }
         } message: {
-            Text("This endpoint will no longer continue chats from an OpenAI Responses response ID.")
+            Text("SETTINGS_DELETE_STATEFUL_ENDPOINT_DESCRIPTION")
         }
     }
 
@@ -328,13 +328,13 @@ struct SettingsDeveloperRequestPolicySection: View {
             Button(role: .destructive) {
                 statefulEndpointPendingRemoval = endpointURL
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label("COMMON_ACTION_DELETE", systemImage: "trash")
                     .labelStyle(.iconOnly)
                     .foregroundStyle(.red)
             }
             .buttonStyle(.plain)
             .controlSize(.small)
-            .help("Remove endpoint")
+            .help("SETTINGS_ACTION_REMOVE_ENDPOINT")
         }
         .padding(.vertical, 3)
     }
@@ -349,15 +349,15 @@ struct SettingsDeveloperToolUseSection: View {
 
     var body: some View {
         Section {
-            LabeledContent("Global State") {
+            LabeledContent("DATA_GLOBAL_STATE") {
                 Text(viewModel.toolUseSettings.isEnabled
-                    ? LocalizedStringKey("Enabled")
-                    : LocalizedStringKey("Disabled"))
+                    ? LocalizedStringKey("COMMON_STATUS_ENABLED")
+                    : LocalizedStringKey("COMMON_STATUS_DISABLED"))
                     .foregroundStyle(viewModel.toolUseSettings.isEnabled ? .green : .secondary)
             }
 
-            LabeledContent("Enabled Tools") {
-                Text("\(viewModel.toolUseSettings.enabledToolIDs.count) / \(ChatToolID.allCases.count)")
+            LabeledContent("TOOLS_ENABLED_LIST") {
+                Text(LocalizedStringResource("TOOLS_ENABLED_COUNT_RATIO", defaultValue: "\(viewModel.toolUseSettings.enabledToolIDs.count) / \(ChatToolID.allCases.count)"))
                     .monospacedDigit()
             }
 
@@ -368,15 +368,15 @@ struct SettingsDeveloperToolUseSection: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            LabeledContent("Authorization Mode") {
+            LabeledContent("TOOLS_AUTHORIZATION_MODE") {
                 Text(viewModel.toolUseSettings.authorizationMode.rawValue)
                     .font(.system(.footnote, design: .monospaced))
                     .textSelection(.enabled)
             }
-            LabeledContent("Automatic High-Risk Tools") {
+            LabeledContent("TOOLS_AUTOMATIC_HIGH_RISK") {
                 Text(viewModel.toolUseSettings.allowHighRiskToolAutoExecution
-                    ? LocalizedStringKey("Enabled")
-                    : LocalizedStringKey("Disabled"))
+                    ? LocalizedStringKey("COMMON_STATUS_ENABLED")
+                    : LocalizedStringKey("COMMON_STATUS_DISABLED"))
                     .font(.system(.footnote, design: .monospaced))
                     .foregroundStyle(viewModel.toolUseSettings.allowHighRiskToolAutoExecution ? .red : .secondary)
                     .textSelection(.enabled)
@@ -385,16 +385,16 @@ struct SettingsDeveloperToolUseSection: View {
             ForEach(allDefinitions, id: \.id) { definition in
                 DisclosureGroup {
                     VStack(alignment: .leading, spacing: 12) {
-                        toolSectionTitle("Description")
+                        toolSectionTitle("COMMON_DESCRIPTION")
                         Text(definition.description)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        toolSectionTitle("Parameters")
+                        toolSectionTitle("TOOLS_PARAMETERS")
                         parameterFieldsView(for: definition.parametersSchema)
 
-                        toolSectionTitle("Metadata")
+                        toolSectionTitle("COMMON_METADATA")
                         rawDefinitionView(for: definition)
                     }
                     .padding(.top, 6)
@@ -411,11 +411,11 @@ struct SettingsDeveloperToolUseSection: View {
             }
         } header: {
             #if os(macOS)
-            Text("Tool Use Details")
+            Text("TOOLS_USE_DETAILS")
                 .font(.headline)
                 .textCase(.none)
             #else
-            Text("Tool Use Details")
+            Text("TOOLS_USE_DETAILS")
             #endif
         }
     }
@@ -425,7 +425,7 @@ struct SettingsDeveloperToolUseSection: View {
     }
 
     private func stateText(for id: ChatToolID) -> String {
-        isEnabled(id) ? String(localized: "Enabled") : String(localized: "Disabled")
+        isEnabled(id) ? String(localized: "COMMON_STATUS_ENABLED", defaultValue: "Enabled") : String(localized: "COMMON_STATUS_DISABLED", defaultValue: "Disabled")
     }
 
     private func iconName(for id: ChatToolID) -> String {
@@ -469,7 +469,7 @@ struct SettingsDeveloperToolUseSection: View {
     private func parameterFieldsView(for schema: JSONValue) -> some View {
         let fields = parameterFields(from: schema)
         if fields.isEmpty {
-            Text("No parameters")
+            Text("TOOLS_NO_PARAMETERS")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         } else {
@@ -481,8 +481,8 @@ struct SettingsDeveloperToolUseSection: View {
                                 .font(.system(.footnote, design: .monospaced).weight(.semibold))
                                 .textSelection(.enabled)
                             Text(field.required
-                                ? LocalizedStringKey("required")
-                                : LocalizedStringKey("optional"))
+                                ? LocalizedStringKey("COMMON_REQUIRED")
+                                : LocalizedStringKey("COMMON_OPTIONAL"))
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 6)

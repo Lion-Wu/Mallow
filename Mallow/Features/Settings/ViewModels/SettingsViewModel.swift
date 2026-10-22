@@ -19,7 +19,7 @@ struct AppleSpeechVoiceOption: Identifiable, Equatable {
 
     var displayName: String {
         let kind = isPersonalVoice
-            ? NSLocalizedString("Apple Personal Voice", comment: "Apple accessibility Personal Voice label")
+            ? NSLocalizedString("VOICE_PROVIDER_APPLE_PERSONAL", value: "Apple Personal Voice", comment: "Apple accessibility Personal Voice label")
             : quality
         return "\(name) — \(localizedLanguage) · \(kind)"
     }
@@ -51,11 +51,11 @@ struct AppleSpeechVoiceOption: Identifiable, Equatable {
     private static func qualityName(for quality: AVSpeechSynthesisVoiceQuality) -> String {
         switch quality {
         case .premium:
-            return NSLocalizedString("Premium", comment: "Premium quality Apple speech voice")
+            return NSLocalizedString("VOICE_QUALITY_PREMIUM", value: "Premium", comment: "Premium quality Apple speech voice")
         case .enhanced:
-            return NSLocalizedString("Enhanced", comment: "Enhanced quality Apple speech voice")
+            return NSLocalizedString("THINKING_LEVEL_ENHANCED", value: "Enhanced", comment: "Enhanced quality Apple speech voice")
         default:
-            return NSLocalizedString("Standard", comment: "Standard quality Apple speech voice")
+            return NSLocalizedString("VOICE_QUALITY_STANDARD", value: "Standard", comment: "Standard quality Apple speech voice")
         }
     }
 }

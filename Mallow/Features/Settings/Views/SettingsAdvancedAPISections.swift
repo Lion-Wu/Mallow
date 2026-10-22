@@ -25,9 +25,9 @@ struct SettingsAdvancedAPICurrentBackendSection: View {
                 profile: .init(current: context)
             )
         } header: {
-            SettingsAdvancedAPISectionHeader(title: "Current Backend Parameters")
+            SettingsAdvancedAPISectionHeader(title: "SETTINGS_CURRENT_BACKEND_PARAMETERS")
         } footer: {
-            Text("Only enabled sampling fields are added to requests.")
+            Text("SETTINGS_SAMPLING_DESCRIPTION")
         }
     }
 }
@@ -46,7 +46,7 @@ struct SettingsAdvancedAPIBackendOverridesSection: View {
                 }
             }
         } header: {
-            SettingsAdvancedAPISectionHeader(title: "Backend Request Overrides")
+            SettingsAdvancedAPISectionHeader(title: "SETTINGS_BACKEND_OVERRIDES")
         }
     }
 }
@@ -62,25 +62,25 @@ struct SettingsAdvancedAPIDefaultsSection: View {
                 Button(role: .destructive) {
                     showingResetConfirmation = true
                 } label: {
-                    Label("Restore Defaults", systemImage: "arrow.counterclockwise")
+                    Label("SETTINGS_ACTION_RESTORE_DEFAULTS", systemImage: "arrow.counterclockwise")
                 }
                 .settingsActionButtonStyle()
                 .tint(.red)
             }
             .confirmationDialog(
-                "Restore defaults?",
+                "SETTINGS_RESTORE_DEFAULTS_CONFIRMATION",
                 isPresented: $showingResetConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Restore Defaults", role: .destructive) {
+                Button("SETTINGS_ACTION_RESTORE_DEFAULTS", role: .destructive) {
                     viewModel.resetAPIAdvancedSettingsToDefaults()
                 }
-                Button("Cancel", role: .cancel) {}
+                Button("COMMON_ACTION_CANCEL", role: .cancel) {}
             } message: {
-                Text("This will reset all options to defaults.")
+                Text("SETTINGS_RESET_DEFAULTS_DESCRIPTION")
             }
         } header: {
-            SettingsAdvancedAPISectionHeader(title: "Defaults")
+            SettingsAdvancedAPISectionHeader(title: "SETTINGS_DEFAULTS")
         }
     }
 }
@@ -94,22 +94,22 @@ struct SettingsDeveloperDefaultsSection: View {
             Button(role: .destructive) {
                 showingResetConfirmation = true
             } label: {
-                Label("Restore Developer Defaults", systemImage: "arrow.counterclockwise")
+                Label("SETTINGS_ACTION_RESTORE_DEVELOPER_DEFAULTS", systemImage: "arrow.counterclockwise")
             }
             .confirmationDialog(
-                "Restore developer defaults?",
+                "SETTINGS_RESTORE_DEVELOPER_DEFAULTS_CONFIRMATION",
                 isPresented: $showingResetConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("Restore Developer Defaults", role: .destructive) {
+                Button("SETTINGS_ACTION_RESTORE_DEVELOPER_DEFAULTS", role: .destructive) {
                     viewModel.resetDeveloperSettingsToDefaults()
                 }
-                Button("Cancel", role: .cancel) {}
+                Button("COMMON_ACTION_CANCEL", role: .cancel) {}
             } message: {
-                Text("This will reset all developer options to their default values.")
+                Text("SETTINGS_RESET_DEVELOPER_DEFAULTS_DESCRIPTION")
             }
         } header: {
-            SettingsAdvancedAPISectionHeader(title: "Developer Defaults")
+            SettingsAdvancedAPISectionHeader(title: "SETTINGS_DEVELOPER_DEFAULTS")
         }
     }
 }

@@ -77,7 +77,7 @@ extension ChatService {
         guard case let .frames(frames) = parserResult else {
             failCurrentStream(with: ChatNetworkError.serverError(
                 statusCode: nil,
-                message: NSLocalizedString("Stream payload exceeded safety limit", comment: "Shown when streamed SSE data exceeds the configured memory safety cap")
+                message: NSLocalizedString("PROVIDER_STREAM_PAYLOAD_TOO_LARGE", value: "Stream payload exceeded safety limit", comment: "Shown when streamed SSE data exceeds the configured memory safety cap")
             ))
             return
         }

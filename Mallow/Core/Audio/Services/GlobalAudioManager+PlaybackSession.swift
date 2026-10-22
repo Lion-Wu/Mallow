@@ -345,7 +345,7 @@ extension GlobalAudioManager {
             deactivateSystemPlaybackSession()
             let message = String(
                 format: NSLocalizedString(
-                    "Unable to set up audio session: %@",
+                    "AUDIO_SESSION_SETUP_FAILED", value: "Unable to set up audio session: %@",
                     comment: "Shown when the playback audio session cannot be activated"
                 ),
                 error.localizedDescription

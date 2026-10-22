@@ -57,7 +57,7 @@ struct AnthropicStreamEventReducer {
         case "error":
             let message = event.error?.message?.trimmingCharacters(in: .whitespacesAndNewlines)
             let resolvedMessage = (message?.isEmpty == false) ? message! : NSLocalizedString(
-                "Anthropic API error",
+                "PROVIDER_ANTHROPIC_ERROR", value: "Anthropic API error",
                 comment: "Fallback error shown when Anthropic stream returns an error event without a message"
             )
             if let statusCode = ChatStreamErrorRetryClassifier.statusCode(for: [event.error?.type]) {

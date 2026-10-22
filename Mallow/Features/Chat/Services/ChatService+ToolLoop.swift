@@ -228,8 +228,8 @@ extension ChatService {
                 callID: call.callID,
                 name: call.name,
                 status: .denied,
-                payload: ["error": .string(NSLocalizedString("This tool is disabled for the current endpoint.", comment: "Tool-use error"))],
-                summary: NSLocalizedString("This tool is disabled for the current endpoint.", comment: "Tool-use error")
+                payload: ["error": .string(NSLocalizedString("TOOLS_DISABLED_FOR_ENDPOINT", value: "This tool is disabled for the current endpoint.", comment: "Tool-use error"))],
+                summary: NSLocalizedString("TOOLS_DISABLED_FOR_ENDPOINT", value: "This tool is disabled for the current endpoint.", comment: "Tool-use error")
             )
         }
         let decision = ChatToolAuthorizationPolicy.decision(
@@ -266,7 +266,7 @@ extension ChatService {
             phase: .authorizing,
             summary: ChatToolDefinitions.activitySummary(
                 for: call,
-                resultSummary: NSLocalizedString("Waiting for approval.", comment: "Tool activity summary")
+                resultSummary: NSLocalizedString("TOOLS_WAITING_APPROVAL", value: "Waiting for approval.", comment: "Tool activity summary")
             ),
             authorizationRequest: request,
             modelRequestPayload: modelRequestPayload(for: call)
@@ -277,8 +277,8 @@ extension ChatService {
                 callID: call.callID,
                 name: call.name,
                 status: .denied,
-                payload: ["error": .string(NSLocalizedString("Tool call was denied by the user.", comment: "Tool-use error"))],
-                summary: NSLocalizedString("Tool call was denied by the user.", comment: "Tool-use error")
+                payload: ["error": .string(NSLocalizedString("TOOLS_CALL_DENIED", value: "Tool call was denied by the user.", comment: "Tool-use error"))],
+                summary: NSLocalizedString("TOOLS_CALL_DENIED", value: "Tool call was denied by the user.", comment: "Tool-use error")
             )
         }
         return nil

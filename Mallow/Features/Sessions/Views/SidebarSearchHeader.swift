@@ -58,7 +58,7 @@ struct SidebarSearchHeader: View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            TextField("Search Chats", text: $searchText)
+            TextField("CHAT_SEARCH_PLACEHOLDER", text: $searchText)
                 .textFieldStyle(.plain)
                 #if os(iOS) || os(tvOS)
                 .textInputAutocapitalization(.never)
@@ -73,7 +73,7 @@ struct SidebarSearchHeader: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Text("Clear Search"))
+                .accessibilityLabel(Text("SEARCH_ACTION_CLEAR"))
             }
         }
     }

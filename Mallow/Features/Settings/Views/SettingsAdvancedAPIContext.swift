@@ -35,25 +35,25 @@ struct SettingsAdvancedAPIContext {
         switch currentRequestStyle {
         case .openAIResponses:
             return currentProvider == .unknown
-                ? String(localized: "Unknown, using OpenAI Responses")
-                : String(localized: "OpenAI Responses")
+                ? String(localized: "SETTINGS_UNKNOWN_OPENAI_RESPONSES", defaultValue: "Unknown, using OpenAI Responses")
+                : String(localized: "API_FORMAT_OPENAI_RESPONSES", defaultValue: "OpenAI Responses")
         case .openAIChatCompletions:
-            return String(localized: "OpenAI Chat Completions")
+            return String(localized: "API_FORMAT_OPENAI_CHAT_COMPLETIONS", defaultValue: "OpenAI Chat Completions")
         case .lmStudioRESTV1:
-            return String(localized: "LM Studio REST v1")
+            return String(localized: "API_FORMAT_LM_STUDIO_REST_V1", defaultValue: "LM Studio REST v1")
         case .anthropicMessages:
-            return String(localized: "Anthropic Messages")
+            return String(localized: "API_FORMAT_ANTHROPIC_MESSAGES", defaultValue: "Anthropic Messages")
         }
     }
 
     var selectedAPIFormatDisplayName: String {
         switch viewModel.selectedChatAPIFormatPreference {
         case .automatic:
-            return String(localized: "Automatic")
+            return String(localized: "COMMON_AUTOMATIC", defaultValue: "Automatic")
         case .openAIResponses:
-            return String(localized: "OpenAI Responses")
+            return String(localized: "API_FORMAT_OPENAI_RESPONSES", defaultValue: "OpenAI Responses")
         case .openAIChatCompletions:
-            return String(localized: "OpenAI Chat Completions")
+            return String(localized: "API_FORMAT_OPENAI_CHAT_COMPLETIONS", defaultValue: "OpenAI Chat Completions")
         case .anthropic:
             return ChatProvider.anthropic.displayName
         case .lmStudio:
@@ -66,17 +66,17 @@ struct SettingsAdvancedAPIContext {
     }
 
     var localizedUnknown: String {
-        String(localized: "Unknown")
+        String(localized: "COMMON_UNKNOWN", defaultValue: "Unknown")
     }
 
     func joined(_ values: [String]?) -> String {
-        guard let values, !values.isEmpty else { return String(localized: "None") }
+        guard let values, !values.isEmpty else { return String(localized: "COMMON_NONE", defaultValue: "None") }
         return values.joined(separator: ", ")
     }
 
     func optionalBool(_ value: Bool?) -> String {
         guard let value else { return localizedUnknown }
-        return value ? String(localized: "Yes") : String(localized: "No")
+        return value ? String(localized: "COMMON_YES", defaultValue: "Yes") : String(localized: "COMMON_NO", defaultValue: "No")
     }
 }
 

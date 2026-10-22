@@ -13,8 +13,8 @@ import AppKit
 // MARK: - LabeledTextField
 
 struct LabeledTextField: View {
-    var label: String
-    var placeholder: String
+    var label: LocalizedStringKey
+    var placeholder: LocalizedStringKey
     @Binding var text: String
     var onCommit: () -> Void = {}
     @FocusState private var isFocused: Bool
@@ -22,18 +22,18 @@ struct LabeledTextField: View {
     var body: some View {
         Group {
         #if os(macOS)
-        LabeledContent(LocalizedStringKey(label)) {
-            TextField("", text: $text, prompt: Text(LocalizedStringKey(placeholder)))
+        LabeledContent(label) {
+            TextField("", text: $text, prompt: Text(placeholder))
                 .textFieldStyle(.roundedBorder)
                 .frame(maxWidth: .infinity)
                 .focused($isFocused)
         }
         #else
         VStack(alignment: .leading, spacing: 6) {
-            Text(LocalizedStringKey(label))
+            Text(label)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-            TextField(LocalizedStringKey(placeholder), text: $text)
+            TextField(placeholder, text: $text)
                 .textInputAutocapitalization(.never)
                 .focused($isFocused)
         }
@@ -52,8 +52,8 @@ struct LabeledTextField: View {
 // MARK: - LabeledTextEditor
 
 struct LabeledTextEditor: View {
-    var label: String
-    var placeholder: String
+    var label: LocalizedStringKey
+    var placeholder: LocalizedStringKey
     @Binding var text: String
     var onCommit: () -> Void = {}
     @FocusState private var isFocused: Bool
@@ -61,7 +61,7 @@ struct LabeledTextEditor: View {
     var body: some View {
         Group {
         #if os(macOS)
-        LabeledContent(LocalizedStringKey(label)) {
+        LabeledContent(label) {
             TextEditor(text: $text)
                 .font(.body)
                 .frame(minHeight: 120)
@@ -74,7 +74,7 @@ struct LabeledTextEditor: View {
         }
         #else
         VStack(alignment: .leading, spacing: 6) {
-            Text(LocalizedStringKey(label))
+            Text(label)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             TextEditor(text: $text)
@@ -86,7 +86,7 @@ struct LabeledTextEditor: View {
                 .background(Color(.secondarySystemBackground))
                 .overlay(alignment: .topLeading) {
                     if text.isEmpty {
-                        Text(LocalizedStringKey(placeholder))
+                        Text(placeholder)
                             .foregroundColor(.secondary)
                             .padding(.top, 10)
                             .padding(.leading, 6)
@@ -108,8 +108,8 @@ struct LabeledTextEditor: View {
 // MARK: - LabeledSecureField
 
 struct LabeledSecureField: View {
-    var label: String
-    var placeholder: String
+    var label: LocalizedStringKey
+    var placeholder: LocalizedStringKey
     @Binding var text: String
     var onCommit: () -> Void = {}
     @FocusState private var isFocused: Bool
@@ -117,7 +117,7 @@ struct LabeledSecureField: View {
     var body: some View {
         Group {
         #if os(macOS)
-        LabeledContent(LocalizedStringKey(label)) {
+        LabeledContent(label) {
             SecureField("", text: $text)
                 .textFieldStyle(.roundedBorder)
                 .privacySensitive()
@@ -126,10 +126,10 @@ struct LabeledSecureField: View {
         }
         #else
         VStack(alignment: .leading, spacing: 6) {
-            Text(LocalizedStringKey(label))
+            Text(label)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-            SecureField(LocalizedStringKey(placeholder), text: $text)
+            SecureField(placeholder, text: $text)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .privacySensitive()

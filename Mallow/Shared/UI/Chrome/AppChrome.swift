@@ -198,10 +198,10 @@ extension View {
     ZStack {
         AppBackgroundView()
         VStack(alignment: .leading, spacing: 14) {
-            Text("Section")
+            Text(verbatim: "Section")
                 .appSectionLabelStyle()
 
-            Text("This is a preview of shared app chrome styles.")
+            Text(verbatim: "This is a preview of shared app chrome styles.")
                 .font(.body)
         }
         .padding(18)

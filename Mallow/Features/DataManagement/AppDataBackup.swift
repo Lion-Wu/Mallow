@@ -15,13 +15,13 @@ nonisolated enum DataBackupError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .integrityCheckFailed: String(localized: "The database structure check failed. Export the original data before attempting recovery.")
-        case .unsupportedFormat: String(localized: "This file is not a supported Mallow backup.")
-        case .duplicateIdentity: String(localized: "The backup contains ambiguous duplicate records.")
-        case .invalidRelationships: String(localized: "The backup contains invalid conversation relationships.")
-        case .activityInProgress: String(localized: "Finish active chat and voice tasks before importing data.")
-        case .dataChanged: String(localized: "Your data changed. Review the updated import preview before continuing.")
-        case .credentialRollback(let detail): String(localized: "Some API keys could not be restored after the import failed.") + "\n" + detail
+        case .integrityCheckFailed: String(localized: "RECOVERY_DATABASE_CHECK_FAILED", defaultValue: "The database structure check failed. Export the original data before attempting recovery.")
+        case .unsupportedFormat: String(localized: "DATA_BACKUP_UNSUPPORTED", defaultValue: "This file is not a supported Mallow backup.")
+        case .duplicateIdentity: String(localized: "DATA_BACKUP_DUPLICATE_RECORDS", defaultValue: "The backup contains ambiguous duplicate records.")
+        case .invalidRelationships: String(localized: "DATA_BACKUP_INVALID_RELATIONSHIPS", defaultValue: "The backup contains invalid conversation relationships.")
+        case .activityInProgress: String(localized: "DATA_IMPORT_ACTIVE_TASKS_ERROR", defaultValue: "Finish active chat and voice tasks before importing data.")
+        case .dataChanged: String(localized: "DATA_IMPORT_PREVIEW_CHANGED", defaultValue: "Your data changed. Review the updated import preview before continuing.")
+        case .credentialRollback(let detail): String(localized: "DATA_IMPORT_API_KEY_ROLLBACK_FAILED", defaultValue: "Some API keys could not be restored after the import failed.") + "\n" + detail
         }
     }
 }

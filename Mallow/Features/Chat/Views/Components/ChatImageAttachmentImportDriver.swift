@@ -170,7 +170,7 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
         case .failure(let error):
             guard !ChatImageAttachmentImporter.isUserCancelledImageImport(error) else { return }
             errorCenter.publish(
-                title: NSLocalizedString("Image Import Failed", comment: "Title shown when importing selected image files fails"),
+                title: NSLocalizedString("CHAT_IMAGE_IMPORT_FAILED", value: "Image Import Failed", comment: "Title shown when importing selected image files fails"),
                 message: error.localizedDescription,
                 category: .textModel
             )
@@ -264,10 +264,10 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
 
     func presentImageAttachmentLimitNotice(errorCenter: AppErrorCenter) {
         errorCenter.publish(
-            title: NSLocalizedString("Too Many Images", comment: "Title shown when no more image attachments can be added"),
+            title: NSLocalizedString("CHAT_TOO_MANY_IMAGES", value: "Too Many Images", comment: "Title shown when no more image attachments can be added"),
             message: String(
                 format: NSLocalizedString(
-                    "A message can include up to %lld image attachments.",
+                    "CHAT_IMAGE_LIMIT", value: "A message can include up to %lld image attachments.",
                     comment: "Shown when the user reaches the per-message image attachment cap"
                 ),
                 Int64(ChatImageAttachmentImportCoordinator.maximumAttachmentCount)
@@ -283,10 +283,10 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
         }
 
         errorCenter.publish(
-            title: NSLocalizedString("Too Many Images", comment: "Title shown when the user imports more images than the current draft can accept"),
+            title: NSLocalizedString("CHAT_TOO_MANY_IMAGES", value: "Too Many Images", comment: "Title shown when the user imports more images than the current draft can accept"),
             message: String(
                 format: NSLocalizedString(
-                    "This message can include %lld additional image attachments. Extra images were ignored.",
+                    "CHAT_ADDITIONAL_IMAGE_LIMIT", value: "This message can include %lld additional image attachments. Extra images were ignored.",
                     comment: "Shown when imported images exceed the remaining attachment slots in the current draft"
                 ),
                 Int64(remainingSlots)
@@ -297,16 +297,16 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
 
     func presentCameraUnavailableNotice(errorCenter: AppErrorCenter) {
         errorCenter.publish(
-            title: NSLocalizedString("Camera Unavailable", comment: "Title shown when the device cannot present the system camera UI"),
-            message: NSLocalizedString("This device does not support photo capture.", comment: "Shown when the current device cannot take photos with the system camera UI"),
+            title: NSLocalizedString("CAMERA_UNAVAILABLE", value: "Camera Unavailable", comment: "Title shown when the device cannot present the system camera UI"),
+            message: NSLocalizedString("CAMERA_CAPTURE_UNSUPPORTED", value: "This device does not support photo capture.", comment: "Shown when the current device cannot take photos with the system camera UI"),
             category: .textModel
         )
     }
 
     func presentCameraCaptureFailureNotice(errorCenter: AppErrorCenter) {
         errorCenter.publish(
-            title: NSLocalizedString("Camera Capture Failed", comment: "Title shown when the system camera UI returns no usable photo"),
-            message: NSLocalizedString("The captured photo could not be imported.", comment: "Shown when a captured photo cannot be converted into an attachment"),
+            title: NSLocalizedString("CAMERA_CAPTURE_FAILED", value: "Camera Capture Failed", comment: "Title shown when the system camera UI returns no usable photo"),
+            message: NSLocalizedString("CAMERA_PHOTO_IMPORT_FAILED", value: "The captured photo could not be imported.", comment: "Shown when a captured photo cannot be converted into an attachment"),
             category: .textModel
         )
     }

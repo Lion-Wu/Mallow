@@ -19,12 +19,12 @@ struct AppMenuCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
-            Button("About \(ApplicationInformation.name)") {
+            Button(LocalizedStringResource("ABOUT_TITLE", defaultValue: "About \(ApplicationInformation.name)")) {
                 openWindow(id: AboutView.windowID)
             }
         }
         CommandGroup(replacing: .newItem) {
-            Button("New Chat") {
+            Button("CHAT_TITLE_NEW") {
                 guard chatSessionsViewModel.canStartNewSession else { return }
                 chatSessionsViewModel.startNewSession()
             }

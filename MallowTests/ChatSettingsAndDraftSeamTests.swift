@@ -75,7 +75,7 @@ final class ChatSettingsAndDraftSeamTests: XCTestCase {
         XCTAssertEqual(ModelThinkingOption(rawValue: "none"), .off)
         XCTAssertEqual(ModelThinkingOption(rawValue: "disabled"), .off)
         XCTAssertEqual(ModelThinkingOption.normalized("ultra"), .ultra)
-        XCTAssertEqual(ModelThinkingOption.ultra.displayName, NSLocalizedString("Ultra", comment: ""))
+        XCTAssertEqual(ModelThinkingOption.ultra.displayName, NSLocalizedString("THINKING_LEVEL_ULTRA", value: "Ultra", comment: ""))
 
         let capability = ModelThinkingCapability(
             options: [.off, ModelThinkingOption.none, ModelThinkingOption(rawValue: "disabled"), .low],
@@ -598,14 +598,14 @@ final class ChatSettingsAndDraftSeamTests: XCTestCase {
         XCTAssertEqual(
             TTSPresetApplyError.invalidServerAddress(stage: .gptWeights).settingsMessage,
             NSLocalizedString(
-                "Invalid server address for GPT weights",
+                "PRESET_GPT_INVALID_SERVER_ADDRESS", value: "Invalid server address for GPT weights",
                 comment: "Shown when the GPT weights endpoint cannot be constructed"
             )
         )
         XCTAssertEqual(
             TTSPresetApplyError.invalidServerAddress(stage: .sovitsWeights).settingsMessage,
             NSLocalizedString(
-                "Invalid server address for SoVITS weights",
+                "PRESET_SOVITS_INVALID_SERVER_ADDRESS", value: "Invalid server address for SoVITS weights",
                 comment: "Shown when the SoVITS weights endpoint cannot be constructed"
             )
         )
@@ -617,7 +617,7 @@ final class ChatSettingsAndDraftSeamTests: XCTestCase {
             ).settingsMessage,
             String(
                 format: NSLocalizedString(
-                    "Set SoVITS weights failed (HTTP %d)",
+                    "PRESET_SOVITS_WEIGHTS_HTTP_ERROR", value: "Set SoVITS weights failed (HTTP %d)",
                     comment: "Shown when setting SoVITS weights fails with an HTTP status."
                 ),
                 503
@@ -631,7 +631,7 @@ final class ChatSettingsAndDraftSeamTests: XCTestCase {
             ).settingsMessage,
             String(
                 format: NSLocalizedString(
-                    "Set GPT weights failed: %@",
+                    "PRESET_GPT_WEIGHTS_ERROR", value: "Set GPT weights failed: %@",
                     comment: "Shown when setting GPT weights fails with an error."
                 ),
                 "offline"

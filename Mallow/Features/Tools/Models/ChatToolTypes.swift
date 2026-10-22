@@ -289,9 +289,9 @@ enum ChatToolError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .disabled:
-            return NSLocalizedString("Tool use is disabled.", comment: "Tool-use error")
+            return NSLocalizedString("TOOLS_USE_DISABLED", value: "Tool use is disabled.", comment: "Tool-use error")
         case let .unknownTool(name):
-            return String(format: NSLocalizedString("Unknown tool: %@", comment: "Tool-use error"), name)
+            return String(format: NSLocalizedString("TOOLS_UNKNOWN_TOOL", value: "Unknown tool: %@", comment: "Tool-use error"), name)
         case let .invalidArguments(message),
              let .denied(message),
              let .unsupported(message),

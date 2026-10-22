@@ -18,7 +18,7 @@ struct AboutView: View {
                 switch OpenSourceNotices.bundled {
                 case .success(let notices):
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("\(ApplicationInformation.name) License")
+                        Text(LocalizedStringResource("ABOUT_LICENSE_TITLE", defaultValue: "\(ApplicationInformation.name) License"))
                             .font(.title2.bold())
                         licenseText(notices.applicationLicense)
                             .padding(24)
@@ -27,7 +27,7 @@ struct AboutView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Open Source Software")
+                        Text("ABOUT_OPEN_SOURCE")
                             .font(.title2.bold())
 
                         VStack(spacing: 0) {
@@ -38,7 +38,7 @@ struct AboutView: View {
                                 DisclosureGroup(isExpanded: expansionBinding(for: component)) {
                                     VStack(alignment: .leading, spacing: 16) {
                                         Link(destination: component.url) {
-                                            Label("Project Website", systemImage: "arrow.up.right")
+                                            Label("ABOUT_PROJECT_WEBSITE", systemImage: "arrow.up.right")
                                         }
                                         licenseText(component.notice)
                                     }
@@ -59,7 +59,7 @@ struct AboutView: View {
                         .background(licenseBackground, in: RoundedRectangle(cornerRadius: 12))
                     }
                 case .failure:
-                    ContentUnavailableView("Unable to load license information.", systemImage: "doc.text.magnifyingglass")
+                    ContentUnavailableView("ABOUT_LICENSE_LOAD_FAILED", systemImage: "doc.text.magnifyingglass")
                 }
             }
             .frame(maxWidth: 760)
@@ -70,7 +70,7 @@ struct AboutView: View {
         #if os(macOS)
         .frame(minWidth: 640, minHeight: 600)
         #else
-        .navigationTitle(Text("About \(ApplicationInformation.name)"))
+        .navigationTitle(Text(LocalizedStringResource("ABOUT_TITLE", defaultValue: "About \(ApplicationInformation.name)")))
         .navigationBarTitleDisplayMode(.inline)
         #endif
     }
@@ -130,22 +130,22 @@ struct AboutView: View {
                         .font(.largeTitle.bold())
                     if let version = ApplicationInformation.version {
                         HStack(spacing: 4) {
-                            Text("Version")
+                            Text("ABOUT_VERSION")
                             Text(verbatim: version)
                             if let build = ApplicationInformation.build {
                                 Text(verbatim: "(\(build))")
-                                    .accessibilityLabel(Text("Build"))
+                                    .accessibilityLabel(Text("ABOUT_BUILD"))
                                     .accessibilityValue(Text(verbatim: build))
                             }
                         }
                         .foregroundStyle(.secondary)
                     }
                 }
-                Text("\(ApplicationInformation.name) is open source software, released under the MIT License.")
+                Text(LocalizedStringResource("ABOUT_OPEN_SOURCE_DESCRIPTION", defaultValue: "\(ApplicationInformation.name) is open source software, released under the MIT License."))
                     .fixedSize(horizontal: false, vertical: true)
                 if let url = URL(string: "https://github.com/Lion-Wu/Mallow") {
                     Link(destination: url) {
-                        Label("View Source on GitHub", systemImage: "arrow.up.right")
+                        Label("ABOUT_ACTION_VIEW_SOURCE", systemImage: "arrow.up.right")
                     }
                 }
             }

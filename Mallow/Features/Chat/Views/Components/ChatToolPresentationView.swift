@@ -192,10 +192,10 @@ struct ChatToolPresentationView: View {
 
     private func itemCountText(_ count: Int) -> String {
         if count == 1 {
-            return NSLocalizedString("1 item", comment: "Tool presentation item count")
+            return NSLocalizedString("DATA_SINGLE_ITEM", value: "1 item", comment: "Tool presentation item count")
         }
         return String.localizedStringWithFormat(
-            NSLocalizedString("%d items", comment: "Tool presentation item count"),
+            NSLocalizedString("DATA_ITEM_COUNT", value: "%d items", comment: "Tool presentation item count"),
             count
         )
     }
@@ -267,7 +267,7 @@ private struct CalendarCompactPresentationRow: View {
 
     private var compactDateBadge: some View {
         VStack(spacing: 0) {
-            Text(dateInfo.monthText ?? String(localized: "Event"))
+            Text(dateInfo.monthText ?? String(localized: "TOOLS_CALENDAR_EVENT", defaultValue: "Event"))
                 .font(.system(size: 8, weight: .bold, design: .rounded))
                 .foregroundStyle(.red)
                 .textCase(.uppercase)
@@ -292,12 +292,12 @@ private struct CalendarCompactPresentationRow: View {
 
     private var timeText: String {
         if item.metadata["all_day"] == "true" {
-            return String(localized: "All day")
+            return String(localized: "TOOLS_CALENDAR_ALL_DAY", defaultValue: "All day")
         }
         if let range = dateInfo.timeRangeText, !range.isEmpty {
             return range
         }
-        return item.subtitle ?? String(localized: "Time unavailable")
+        return item.subtitle ?? String(localized: "COMMON_TIME_UNAVAILABLE", defaultValue: "Time unavailable")
     }
 }
 
@@ -426,12 +426,12 @@ private struct CalendarPresentationRow: View {
 
     private var timeText: String {
         if item.metadata["all_day"] == "true" {
-            return String(localized: "All day")
+            return String(localized: "TOOLS_CALENDAR_ALL_DAY", defaultValue: "All day")
         }
         if let range = dateInfo.timeRangeText, !range.isEmpty {
             return range
         }
-        return item.subtitle ?? String(localized: "Time unavailable")
+        return item.subtitle ?? String(localized: "COMMON_TIME_UNAVAILABLE", defaultValue: "Time unavailable")
     }
 }
 
@@ -460,7 +460,7 @@ private struct ReminderPresentationRow: View {
                     Spacer(minLength: 0)
 
                     ToolPresentationChip(
-                        text: isCompleted ? String(localized: "Done") : String(localized: "Open"),
+                        text: isCompleted ? String(localized: "COMMON_ACTION_DONE", defaultValue: "Done") : String(localized: "COMMON_ACTION_OPEN", defaultValue: "Open"),
                         systemImage: isCompleted ? "checkmark" : "circle",
                         tint: isCompleted ? .green : .blue
                     )
@@ -521,7 +521,7 @@ private struct CalendarDateBadge: View {
 
     var body: some View {
         VStack(spacing: 1) {
-            Text(info.monthText ?? String(localized: "Event"))
+            Text(info.monthText ?? String(localized: "TOOLS_CALENDAR_EVENT", defaultValue: "Event"))
                 .font(.system(size: 9, weight: .bold, design: .rounded))
                 .foregroundStyle(.red)
                 .textCase(.uppercase)

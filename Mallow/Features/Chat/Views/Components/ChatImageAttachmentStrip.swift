@@ -119,7 +119,7 @@ private struct ChatImageAttachmentItem: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(Text("Remove image"))
+                .accessibilityLabel(Text("CHAT_ACTION_REMOVE_IMAGE"))
             }
         }
     }

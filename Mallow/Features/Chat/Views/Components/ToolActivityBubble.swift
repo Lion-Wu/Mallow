@@ -32,7 +32,7 @@ struct ToolActivityBubble: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(!activity.hasInspectableDetails)
-                        .help(activity.hasInspectableDetails ? String(localized: "View tool details") : "")
+                        .help(activity.hasInspectableDetails ? String(localized: "TOOLS_ACTION_VIEW_DETAILS", defaultValue: "View tool details") : "")
                         authorizationControls(for: activity)
                         presentationView(for: activity.presentation)
                     }
@@ -79,13 +79,13 @@ struct ToolActivityBubble: View {
                     .textSelection(.enabled)
 
                 HStack(spacing: 8) {
-                    Button("Allow") {
+                    Button("COMMON_ACTION_ALLOW") {
                         onAuthorize(request.id, true)
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
 
-                    Button("Deny") {
+                    Button("COMMON_ACTION_DENY") {
                         onAuthorize(request.id, false)
                     }
                     .buttonStyle(.bordered)
@@ -263,7 +263,7 @@ private struct ToolActivityDetailView: View {
     private var detailContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let summary = activity.summary?.nilIfBlank {
-                detailSection(String(localized: "Summary")) {
+                detailSection(String(localized: "COMMON_SUMMARY", defaultValue: "Summary")) {
                     Text(summary)
                         .font(.callout)
                         .foregroundStyle(.primary)
@@ -273,10 +273,10 @@ private struct ToolActivityDetailView: View {
             }
 
             if let request = activity.authorizationRequest {
-                detailSection(String(localized: "Requested Action")) {
+                detailSection(String(localized: "TOOLS_REQUESTED_ACTION", defaultValue: "Requested Action")) {
                     VStack(alignment: .leading, spacing: 8) {
                         labeledValue(
-                            title: String(localized: "Operation"),
+                            title: String(localized: "TOOLS_OPERATION", defaultValue: "Operation"),
                             value: request.operationKind.rawValue
                         )
                         wrappedCodeText(request.argumentsSummary)
@@ -294,7 +294,7 @@ private struct ToolActivityDetailView: View {
             if developerModeEnabled,
                let payload = activity.modelRequestPayload,
                !payload.isEmpty {
-                detailSection(String(localized: "Model Request Data")) {
+                detailSection(String(localized: "MODEL_REQUEST_DATA", defaultValue: "Model Request Data")) {
                     scrollableCodeBlock(JSONValue.object(payload).debugPreviewJSONString(
                         maxCharacters: 10_000,
                         maxDepth: 8,
@@ -306,7 +306,7 @@ private struct ToolActivityDetailView: View {
             if developerModeEnabled,
                let payload = activity.resultPayload,
                !payload.isEmpty {
-                detailSection(String(localized: "Result Data")) {
+                detailSection(String(localized: "TOOLS_RESULT_DATA", defaultValue: "Result Data")) {
                     scrollableCodeBlock(JSONValue.object(payload).debugPreviewJSONString(
                         maxCharacters: 10_000,
                         maxDepth: 8,
@@ -441,23 +441,23 @@ private struct ToolActivityDetailView: View {
     private var phaseText: String {
         switch activity.phase {
         case .generating:
-            return String(localized: "Generating")
+            return String(localized: "CHAT_STATUS_GENERATING", defaultValue: "Generating")
         case .requested:
-            return String(localized: "Requested")
+            return String(localized: "COMMON_REQUESTED", defaultValue: "Requested")
         case .authorizing:
-            return String(localized: "Needs Approval")
+            return String(localized: "TOOLS_STATUS_NEEDS_APPROVAL", defaultValue: "Needs Approval")
         case .running:
-            return String(localized: "Running")
+            return String(localized: "COMMON_STATUS_RUNNING", defaultValue: "Running")
         case .processing:
-            return String(localized: "Processing")
+            return String(localized: "COMMON_PROCESSING", defaultValue: "Processing")
         case .succeeded:
-            return String(localized: "Done")
+            return String(localized: "COMMON_ACTION_DONE", defaultValue: "Done")
         case .failed:
-            return String(localized: "Failed")
+            return String(localized: "COMMON_STATUS_FAILED", defaultValue: "Failed")
         case .denied:
-            return String(localized: "Denied")
+            return String(localized: "TOOLS_STATUS_DENIED", defaultValue: "Denied")
         case .unsupported:
-            return String(localized: "Unsupported")
+            return String(localized: "COMMON_UNSUPPORTED", defaultValue: "Unsupported")
         }
     }
 

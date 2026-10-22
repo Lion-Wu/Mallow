@@ -25,14 +25,14 @@ enum ChatProviderDescriptorRegistry {
     static func displayName(for preference: ChatAPIFormatPreference) -> String {
         switch preference {
         case .automatic:
-            return NSLocalizedString("Automatic", comment: "Automatic API format preference")
+            return NSLocalizedString("COMMON_AUTOMATIC", value: "Automatic", comment: "Automatic API format preference")
         case .openAIResponses:
-            return NSLocalizedString("OpenAI Responses", comment: "API format preference")
+            return NSLocalizedString("API_FORMAT_OPENAI_RESPONSES", value: "OpenAI Responses", comment: "API format preference")
         case .openAIChatCompletions:
-            return NSLocalizedString("OpenAI Chat Completions", comment: "API format preference")
+            return NSLocalizedString("API_FORMAT_OPENAI_CHAT_COMPLETIONS", value: "OpenAI Chat Completions", comment: "API format preference")
         case .anthropic, .lmStudio:
             guard let provider = preference.providerHint else {
-                return NSLocalizedString("Automatic", comment: "Automatic API format preference")
+                return NSLocalizedString("COMMON_AUTOMATIC", value: "Automatic", comment: "Automatic API format preference")
             }
             return displayName(for: provider)
         }
@@ -41,13 +41,13 @@ enum ChatProviderDescriptorRegistry {
     static func displayName(for provider: ChatProvider) -> String {
         switch provider {
         case .openAI:
-            return NSLocalizedString("OpenAI", comment: "Provider display name")
+            return NSLocalizedString("PROVIDER_OPENAI", value: "OpenAI", comment: "Provider display name")
         case .anthropic:
-            return NSLocalizedString("Anthropic", comment: "Provider display name")
+            return NSLocalizedString("PROVIDER_ANTHROPIC", value: "Anthropic", comment: "Provider display name")
         case .lmStudio:
-            return NSLocalizedString("LM Studio", comment: "Provider display name")
+            return NSLocalizedString("PROVIDER_LM_STUDIO", value: "LM Studio", comment: "Provider display name")
         case .unknown:
-            return NSLocalizedString("Unknown", comment: "Provider display name")
+            return NSLocalizedString("COMMON_UNKNOWN", value: "Unknown", comment: "Provider display name")
         }
     }
 }

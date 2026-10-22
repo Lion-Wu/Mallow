@@ -86,7 +86,7 @@ struct ChatComposerAttachmentButton: View {
         Menu {
             attachmentMenuActions
         } label: {
-            Label("Add image", systemImage: "plus.circle.fill")
+            Label("CHAT_ACTION_ADD_IMAGE", systemImage: "plus.circle.fill")
                 .labelStyle(.iconOnly)
                 .font(.system(size: 26, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
@@ -100,18 +100,18 @@ struct ChatComposerAttachmentButton: View {
     @ViewBuilder
     private var attachmentMenuActions: some View {
         #if !os(visionOS)
-        Button("Take Photo", systemImage: "camera") {
+        Button("CAMERA_ACTION_TAKE_PHOTO", systemImage: "camera") {
             performIfCapacityAvailable(onTakePhoto)
         }
 
         Divider()
         #endif
 
-        Button("Choose Photos", systemImage: "photo.on.rectangle.angled") {
+        Button("CHAT_ACTION_CHOOSE_PHOTOS", systemImage: "photo.on.rectangle.angled") {
             performIfCapacityAvailable(onChoosePhotos)
         }
 
-        Button("Choose Files", systemImage: "folder") {
+        Button("CHAT_ACTION_CHOOSE_FILES", systemImage: "folder") {
             performIfCapacityAvailable(onChooseFiles)
         }
     }

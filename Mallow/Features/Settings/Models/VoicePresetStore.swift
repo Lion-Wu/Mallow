@@ -26,7 +26,7 @@ enum VoicePresetStore {
         save: (String) -> Void
     ) -> UUID? {
         if presets.isEmpty {
-            let fallback = makePreset(name: String(localized: "Default"), promptLang: promptLang)
+            let fallback = makePreset(name: String(localized: "COMMON_DEFAULT", defaultValue: "Default"), promptLang: promptLang)
             context.insert(fallback)
             save("insert default voice preset")
             presets = [fallback]

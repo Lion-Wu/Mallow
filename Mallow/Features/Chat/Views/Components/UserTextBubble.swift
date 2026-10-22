@@ -44,7 +44,7 @@ struct UserTextBubble: View {
             }
 
             if text.count > maxCharacters {
-                Button(expanded ? "Collapse" : "Show Full Message") {
+                Button(expanded ? LocalizedStringKey("COMMON_ACTION_COLLAPSE") : LocalizedStringKey("MESSAGE_ACTION_SHOW_FULL")) {
                     withAnimation(.easeInOut) { expanded.toggle() }
                 }
                 .font(.caption)

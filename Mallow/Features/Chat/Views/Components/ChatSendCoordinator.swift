@@ -64,8 +64,8 @@ struct ChatSendCoordinator {
 
     func publishNothingToSendAfterDroppingImages() {
         errorCenter.publish(
-            title: NSLocalizedString("Nothing to send", comment: "Shown when sending is skipped because no text remains after removing unsupported image inputs"),
-            message: NSLocalizedString("All selected images were ignored because this model only accepts text input.", comment: "Shown when selected images are dropped for a text-only model"),
+            title: NSLocalizedString("CHAT_NOTHING_TO_SEND", value: "Nothing to send", comment: "Shown when sending is skipped because no text remains after removing unsupported image inputs"),
+            message: NSLocalizedString("CHAT_IMAGES_IGNORED", value: "All selected images were ignored because this model only accepts text input.", comment: "Shown when selected images are dropped for a text-only model"),
             category: .textModel
         )
     }

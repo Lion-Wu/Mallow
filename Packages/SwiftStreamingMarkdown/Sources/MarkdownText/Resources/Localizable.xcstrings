@@ -1,7 +1,7 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "a11y_image": {
+    "A11Y_IMAGE": {
       "comment": "Accessibility label for a block image that has no alt text",
       "extractionState": "manual",
       "localizations": {
@@ -61,7 +61,7 @@
         }
       }
     },
-    "a11y_item_position_in_table": {
+    "A11Y_ITEM_POSITION_IN_TABLE": {
       "comment": "a11y understand their position in the table",
       "extractionState": "manual",
       "localizations": {
@@ -289,7 +289,7 @@
         }
       }
     },
-    "a11y_open_citation": {
+    "A11Y_OPEN_CITATION": {
       "comment": "Accessibility action to open a citation link",
       "extractionState": "manual",
       "localizations": {
@@ -517,7 +517,7 @@
         }
       }
     },
-    "a11y_task_list_item_checked": {
+    "A11Y_TASK_LIST_ITEM_CHECKED": {
       "comment": "Accessibility suffix for a completed task list item",
       "extractionState": "extracted_with_value",
       "localizations": {
@@ -577,7 +577,7 @@
         }
       }
     },
-    "a11y_task_list_item_unchecked": {
+    "A11Y_TASK_LIST_ITEM_UNCHECKED": {
       "comment": "Accessibility suffix for an incomplete task list item",
       "extractionState": "extracted_with_value",
       "localizations": {
@@ -637,7 +637,7 @@
         }
       }
     },
-    "a11y_text_selection_close": {
+    "A11Y_TEXT_SELECTION_CLOSE": {
       "comment": "Accessibility label for the button that dismisses the text selection modal",
       "extractionState": "extracted_with_value",
       "localizations": {
@@ -865,7 +865,7 @@
         }
       }
     },
-    "code_block_copied": {
+    "CODE_BLOCK_COPIED": {
       "comment": "Button label shown after a code block has been copied to clipboard",
       "extractionState": "extracted_with_value",
       "localizations": {
@@ -1093,7 +1093,7 @@
         }
       }
     },
-    "code_block_copy": {
+    "CODE_BLOCK_COPY": {
       "comment": "Button label to copy a code block to clipboard",
       "extractionState": "extracted_with_value",
       "localizations": {
@@ -1321,7 +1321,7 @@
         }
       }
     },
-    "markdown_list": {
+    "MARKDOWN_LIST": {
       "comment": "Description for a list with some items",
       "extractionState": "extracted_with_value",
       "localizations": {
@@ -1549,7 +1549,7 @@
         }
       }
     },
-    "select_more_text": {
+    "SELECT_MORE_TEXT": {
       "comment": "Edit-menu action and modal title for selecting the full document text",
       "extractionState": "extracted_with_value",
       "localizations": {
@@ -1777,7 +1777,7 @@
         }
       }
     },
-    "a11y_image_viewer_close": {
+    "A11Y_IMAGE_VIEWER_CLOSE": {
       "comment": "Accessibility label for the button that dismisses the fullscreen image viewer",
       "extractionState": "manual",
       "localizations": {

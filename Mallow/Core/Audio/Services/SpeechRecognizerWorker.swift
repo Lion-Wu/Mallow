@@ -114,7 +114,7 @@ private final class SpeechRecognitionAudioSessionController: @unchecked Sendable
 
         var errorDescription: String? {
             NSLocalizedString(
-                "The system did not activate the audio session.",
+                "AUDIO_SESSION_NOT_ACTIVATED", value: "The system did not activate the audio session.",
                 comment: "Speech recognition audio-session activation error"
             )
         }
@@ -202,9 +202,9 @@ actor SpeechRecognizerWorker {
         var errorDescription: String? {
             switch self {
             case .recognizerUnavailable:
-                return NSLocalizedString("Speech recognition is unavailable. Check network connectivity and system settings.", comment: "Speech recognition unavailable error")
+                return NSLocalizedString("VOICE_RECOGNITION_UNAVAILABLE", value: "Speech recognition is unavailable. Check network connectivity and system settings.", comment: "Speech recognition unavailable error")
             case .engineStartFailed(let message):
-                return String(format: NSLocalizedString("Audio engine failed to start: %@", comment: "Audio engine start failure"), message)
+                return String(format: NSLocalizedString("AUDIO_ERROR_ENGINE_START", value: "Audio engine failed to start: %@", comment: "Audio engine start failure"), message)
             }
         }
     }

@@ -19,17 +19,17 @@ enum AppleSpeechSynthesisError: LocalizedError, Equatable, Sendable {
     var errorDescription: String? {
         switch self {
         case .cancelled:
-            return NSLocalizedString("Apple Speech synthesis was cancelled.", comment: "Apple speech synthesis cancellation")
+            return NSLocalizedString("VOICE_SPEECH_CANCELLED", value: "Apple Speech synthesis was cancelled.", comment: "Apple speech synthesis cancellation")
         case .emptyText:
-            return NSLocalizedString("There is no text to speak.", comment: "Apple speech synthesis received empty text")
+            return NSLocalizedString("VOICE_SPEECH_NO_TEXT", value: "There is no text to speak.", comment: "Apple speech synthesis received empty text")
         case .voiceUnavailable:
-            return NSLocalizedString("The selected Apple voice is not installed or is unavailable.", comment: "Selected Apple speech voice cannot be used")
+            return NSLocalizedString("VOICE_APPLE_VOICE_UNAVAILABLE", value: "The selected Apple voice is not installed or is unavailable.", comment: "Selected Apple speech voice cannot be used")
         case .unexpectedBuffer:
-            return NSLocalizedString("Apple Speech returned an unsupported audio format.", comment: "Apple speech returned a non-PCM audio buffer")
+            return NSLocalizedString("VOICE_SPEECH_UNSUPPORTED_AUDIO_FORMAT", value: "Apple Speech returned an unsupported audio format.", comment: "Apple speech returned a non-PCM audio buffer")
         case .audioFileFailure:
-            return NSLocalizedString("Apple Speech audio could not be prepared for playback.", comment: "Apple speech audio file conversion failed")
+            return NSLocalizedString("VOICE_SPEECH_AUDIO_PREPARATION_FAILED", value: "Apple Speech audio could not be prepared for playback.", comment: "Apple speech audio file conversion failed")
         case .emptyAudio:
-            return NSLocalizedString("Apple Speech did not produce any audio.", comment: "Apple speech synthesis returned no audio frames")
+            return NSLocalizedString("VOICE_SPEECH_NO_AUDIO", value: "Apple Speech did not produce any audio.", comment: "Apple speech synthesis returned no audio frames")
         }
     }
 

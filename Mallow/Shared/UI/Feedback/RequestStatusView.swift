@@ -31,7 +31,7 @@ struct RequestStatusView: View {
 
             if let onRetry {
                 Button(action: onRetry) {
-                    Label(String(localized: "Retry"), systemImage: "arrow.clockwise")
+                    Label(String(localized: "COMMON_ACTION_RETRY", defaultValue: "Retry"), systemImage: "arrow.clockwise")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)

@@ -12,7 +12,7 @@ extension MallowOverlayViewModel {
         guard isPresented else { return }
         guard isVisionCaptureAvailable else {
             pushRealtimeVoiceError(NSLocalizedString(
-                "The selected model does not support image input.",
+                "MODEL_IMAGE_INPUT_UNSUPPORTED", value: "The selected model does not support image input.",
                 comment: "Shown when voice vision is requested with a text-only model"
             ))
             return

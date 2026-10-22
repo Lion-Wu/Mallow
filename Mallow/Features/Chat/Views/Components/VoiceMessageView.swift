@@ -405,12 +405,12 @@ struct VoiceMessageView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(isShowingCopyFeedback ? Color.green : .secondary)
-            .accessibilityLabel(isShowingCopyFeedback ? Text("Copied") : Text("Copy"))
+            .accessibilityLabel(isShowingCopyFeedback ? Text("COMMON_STATUS_COPIED") : Text("COMMON_ACTION_COPY"))
 
             Button { onRegenerate(message) } label: {
                 Image(systemName: "arrow.clockwise")
                     .messageControlIconStyle()
-                    .accessibilityLabel("Regenerate")
+                    .accessibilityLabel("MESSAGE_ACTION_REGENERATE")
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
@@ -420,7 +420,7 @@ struct VoiceMessageView: View {
             } label: {
                 Image(systemName: "speaker.wave.2.fill")
                     .messageControlIconStyle()
-                    .accessibilityLabel("Read Aloud")
+                    .accessibilityLabel("MESSAGE_ACTION_READ_ALOUD")
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
@@ -429,7 +429,7 @@ struct VoiceMessageView: View {
                 Button { isShowingMessageDetails = true } label: {
                     Image(systemName: "info.circle")
                         .messageControlIconStyle()
-                        .accessibilityLabel("Details")
+                        .accessibilityLabel("COMMON_DETAILS")
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)

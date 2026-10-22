@@ -47,7 +47,7 @@ struct SystemDeviceContextTool: DeviceContextToolServing {
 
         return ChatToolExecutionPayload(
             payload: payload,
-            summary: NSLocalizedString("Device context was read.", comment: "Tool summary")
+            summary: NSLocalizedString("TOOLS_DEVICE_CONTEXT_READ", value: "Device context was read.", comment: "Tool summary")
         )
     }
 }

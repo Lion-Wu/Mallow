@@ -23,7 +23,7 @@ struct ChatRealtimeVoiceDraftPlanner {
         let capturedAttachments = Array(imageAttachments.prefix(maxImageAttachments))
         if !supportsImageInputs && (!capturedAttachments.isEmpty || hasExistingImageContext) {
             return .rejected(userFacingError: NSLocalizedString(
-                "Voice mode cannot send this conversation because it contains images, but the selected model only accepts text.",
+                "VOICE_IMAGE_CONVERSATION_UNSUPPORTED", value: "Voice mode cannot send this conversation because it contains images, but the selected model only accepts text.",
                 comment: "Shown when realtime voice mode cannot send because the selected model does not support image input"
             ))
         }

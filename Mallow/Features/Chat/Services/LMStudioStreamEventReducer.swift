@@ -118,7 +118,7 @@ struct LMStudioStreamEventReducer {
         case "chat.error", "error":
             let message = event.error?.message?.trimmingCharacters(in: .whitespacesAndNewlines)
             let resolvedMessage = message.flatMap { $0.isEmpty ? nil : $0 }
-                ?? NSLocalizedString("LM Studio stream error.", comment: "Fallback error shown for an LM Studio error event")
+                ?? NSLocalizedString("PROVIDER_LM_STUDIO_STREAM_ERROR", value: "LM Studio stream error.", comment: "Fallback error shown for an LM Studio error event")
             if let statusCode = event.error?.retryableStatusCode {
                 actions.append(.retryableFailure(resolvedMessage, statusCode: statusCode))
             } else {
@@ -200,12 +200,12 @@ struct LMStudioStreamEventReducer {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         if let toolName, !toolName.isEmpty {
             return String.localizedStringWithFormat(
-                NSLocalizedString("Tool call failed: %@", comment: "LM Studio tool-call failure with tool name"),
+                NSLocalizedString("TOOLS_CALL_FAILED_DETAIL", value: "Tool call failed: %@", comment: "LM Studio tool-call failure with tool name"),
                 toolName
             )
         }
         return NSLocalizedString(
-            "Tool call failed.",
+            "TOOLS_CALL_FAILED", value: "Tool call failed.",
             comment: "Fallback error shown when LM Studio reports a tool-call failure without details"
         )
     }

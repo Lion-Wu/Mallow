@@ -15,11 +15,11 @@ enum TTSRequestBuilderError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .serializationFailed:
-            return NSLocalizedString("Unable to serialize JSON", comment: "Shown when encoding the TTS request body fails")
+            return NSLocalizedString("NETWORK_JSON_SERIALIZATION_FAILED", value: "Unable to serialize JSON", comment: "Shown when encoding the TTS request body fails")
         case .unsupportedProvider:
-            return NSLocalizedString("The selected speech provider does not use an HTTP request.", comment: "Shown when an HTTP request is incorrectly requested for a local speech provider")
+            return NSLocalizedString("VOICE_PROVIDER_NOT_HTTP", value: "The selected speech provider does not use an HTTP request.", comment: "Shown when an HTTP request is incorrectly requested for a local speech provider")
         case .missingEndpoint:
-            return NSLocalizedString("The GPT-SoVITS endpoint is not configured.", comment: "Shown when the GPT-SoVITS endpoint is missing")
+            return NSLocalizedString("VOICE_GPT_SOVITS_ENDPOINT_MISSING", value: "The GPT-SoVITS endpoint is not configured.", comment: "Shown when the GPT-SoVITS endpoint is missing")
         }
     }
 }

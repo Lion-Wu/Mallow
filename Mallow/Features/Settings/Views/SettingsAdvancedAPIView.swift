@@ -42,7 +42,7 @@ struct SettingsAdvancedAPIView: View {
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("Advanced Options")
+        .navigationTitle("SETTINGS_ADVANCED_OPTIONS")
     }
 }
 

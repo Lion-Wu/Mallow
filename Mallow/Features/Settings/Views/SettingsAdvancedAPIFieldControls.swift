@@ -35,7 +35,7 @@ struct SettingsAdvancedAPIMetadataRow: View {
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(value.isEmpty ? String(localized: "None") : value)
+            Text(value.isEmpty ? String(localized: "COMMON_NONE", defaultValue: "None") : value)
                 .font(.callout)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
@@ -283,7 +283,7 @@ struct SettingsAdvancedAPIVerbosityControl: View {
                     .toggleStyle(.switch)
 
                 if sampling.verbosityEnabled {
-                    Picker("verbosity", selection: $sampling.verbosity) {
+                    Picker("SETTINGS_VERBOSITY", selection: $sampling.verbosity) {
                         ForEach(options, id: \.self) { option in
                             Text(option).tag(option)
                         }
@@ -298,7 +298,7 @@ struct SettingsAdvancedAPIVerbosityControl: View {
         VStack(alignment: .leading, spacing: 6) {
             Toggle(title, isOn: $sampling.verbosityEnabled)
             if sampling.verbosityEnabled {
-                Picker("verbosity", selection: $sampling.verbosity) {
+                Picker("SETTINGS_VERBOSITY", selection: $sampling.verbosity) {
                     ForEach(options, id: \.self) { option in
                         Text(option).tag(option)
                     }

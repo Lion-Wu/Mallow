@@ -918,12 +918,12 @@ final class ChatViewModel: ObservableObject {
     private func interruptionErrorText(for finishReason: String?) -> String {
         if finishReason == "stopped" {
             return NSLocalizedString(
-                "Stopped.",
+                "COMMON_STATUS_STOPPED", value: "Stopped.",
                 comment: "Shown when an assistant response is stopped after output starts"
             )
         }
         return NSLocalizedString(
-            "Cancelled.",
+            "COMMON_STATUS_CANCELLED", value: "Cancelled.",
             comment: "Shown when an assistant response is cancelled before output starts"
         )
     }

@@ -50,13 +50,13 @@ enum TTSHTTPResponseValidator {
         let preview = bodyPreview(from: data)
         if preview.isEmpty {
             return String(
-                format: NSLocalizedString("TTS server error: %d", comment: "Shown when the TTS server returns a non-success status"),
+                format: NSLocalizedString("VOICE_TTS_HTTP_ERROR", value: "TTS server error: %d", comment: "Shown when the TTS server returns a non-success status"),
                 statusCode
             )
         }
 
         return String(
-            format: NSLocalizedString("TTS server error: %d (%@)", comment: "Shown when the TTS server returns a non-success status plus body"),
+            format: NSLocalizedString("VOICE_TTS_HTTP_ERROR_DETAIL", value: "TTS server error: %d (%@)", comment: "Shown when the TTS server returns a non-success status plus body"),
             statusCode,
             preview
         )
@@ -65,11 +65,11 @@ enum TTSHTTPResponseValidator {
     private static func nonAudioMessage(data: Data?) -> String {
         let preview = bodyPreview(from: data)
         if preview.isEmpty {
-            return NSLocalizedString("TTS response was not audio data.", comment: "Shown when TTS returns a non-audio MIME type")
+            return NSLocalizedString("VOICE_TTS_RESPONSE_NOT_AUDIO", value: "TTS response was not audio data.", comment: "Shown when TTS returns a non-audio MIME type")
         }
 
         return String(
-            format: NSLocalizedString("TTS response was not audio: %@", comment: "Shown when TTS returns non-audio body"),
+            format: NSLocalizedString("VOICE_TTS_RESPONSE_NOT_AUDIO_DETAIL", value: "TTS response was not audio: %@", comment: "Shown when TTS returns non-audio body"),
             preview
         )
     }

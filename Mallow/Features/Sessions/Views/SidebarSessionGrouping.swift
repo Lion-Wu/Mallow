@@ -8,10 +8,10 @@ struct SidebarDaySection: Identifiable, Hashable {
     var title: Text {
         let calendar = Calendar.autoupdatingCurrent
         if calendar.isDateInToday(startDate) {
-            return Text("Today")
+            return Text("DATE_TODAY")
         }
         if calendar.isDateInYesterday(startDate) {
-            return Text("Yesterday")
+            return Text("DATE_YESTERDAY")
         }
         return Text(startDate, format: Self.dateFormatStyle(calendar: calendar))
     }

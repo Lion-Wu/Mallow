@@ -39,11 +39,11 @@ extension View {
     ZStack {
         AppBackgroundView()
         VStack(alignment: .leading, spacing: 12) {
-            Text("Assistant bubble")
+            Text(verbatim: "Assistant bubble")
                 .foregroundStyle(.primary)
                 .bubbleStyle(isUser: false)
 
-            Text("User bubble")
+            Text(verbatim: "User bubble")
                 .foregroundStyle(.white)
                 .bubbleStyle(isUser: true)
         }

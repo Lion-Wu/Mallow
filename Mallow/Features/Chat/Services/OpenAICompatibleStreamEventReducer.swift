@@ -207,7 +207,7 @@ struct OpenAICompatibleStreamEventReducer {
 
         case "response.failed", "error":
             let message = payloadExtractor.openAICompatibleStreamErrorMessage(from: dictionary) ?? NSLocalizedString(
-                "OpenAI API error",
+                "PROVIDER_OPENAI_ERROR", value: "OpenAI API error",
                 comment: "Fallback error shown when OpenAI-compatible stream returns an error event without a message"
             )
             if let statusCode = ChatStreamErrorRetryClassifier.statusCode(from: dictionary) {

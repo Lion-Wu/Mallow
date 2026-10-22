@@ -89,7 +89,7 @@ enum ChatToolTemporalResolver {
 
         if endComponent != nil {
             throw ChatToolError.invalidArguments(
-                NSLocalizedString("start is required when end is provided.", comment: "Tool-use error")
+                NSLocalizedString("TOOLS_TIME_START_REQUIRED", value: "start is required when end is provided.", comment: "Tool-use error")
             )
         }
 
@@ -312,7 +312,7 @@ enum ChatToolTemporalResolver {
     ) throws -> Component {
         let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else {
-            throw ChatToolError.invalidArguments(NSLocalizedString("Time value cannot be empty.", comment: "Tool-use error"))
+            throw ChatToolError.invalidArguments(NSLocalizedString("TOOLS_TIME_EMPTY", value: "Time value cannot be empty.", comment: "Tool-use error"))
         }
         if let date = parseDateTime(value, calendar: calendar) {
             return Component(date: date, isDateOnly: false)

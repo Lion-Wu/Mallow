@@ -16,7 +16,7 @@ struct ChatAPIKeyStore {
         let reason: String?
 
         var errorDescription: String? {
-            let base = String(localized: "The API key could not be saved.")
+            let base = String(localized: "DATA_API_KEY_SAVE_FAILED", defaultValue: "The API key could not be saved.")
             guard let reason, !reason.isEmpty else { return base }
             return "\(base)\n\(reason)"
         }

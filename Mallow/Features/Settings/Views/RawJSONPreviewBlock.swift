@@ -35,7 +35,7 @@ struct RawJSONPreviewBlock: View {
             } else {
                 HStack(spacing: 8) {
                     ProgressView()
-                    Text("Loading...")
+                    Text("COMMON_LOADING")
                         .foregroundStyle(.secondary)
                 }
                 .task {

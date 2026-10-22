@@ -55,7 +55,7 @@ extension MallowOverlayViewModel {
                 guard !self.speechInputManager.isRecording else { return }
                 guard !self.speechInputManager.isRequestingPermissions else { return }
                 guard self.recordingStartCoordinator.failStart(attemptID: attemptID) else { return }
-                self.handleError(NSLocalizedString("Microphone is unavailable.", comment: "Shown when starting speech recognition takes too long"))
+                self.handleError(NSLocalizedString("VOICE_MICROPHONE_UNAVAILABLE", value: "Microphone is unavailable.", comment: "Shown when starting speech recognition takes too long"))
             }
         }
         recordingStartCoordinator.registerStartWatchdogTask(watchdogTask)
@@ -188,7 +188,7 @@ extension MallowOverlayViewModel {
     func handleLoadingWatchdogTimeout() {
         activeChatSession?.cancelRealtimeVoiceRequest()
         closeAudioIfVoiceWorkIsActive()
-        handleError(NSLocalizedString("Connection timed out", comment: "Shown when voice mode stalls without progress"))
+        handleError(NSLocalizedString("NETWORK_TIMEOUT", value: "Connection timed out", comment: "Shown when voice mode stalls without progress"))
     }
 
     func interruptActiveWorkOnDismiss() {

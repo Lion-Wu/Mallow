@@ -109,7 +109,7 @@ final class ChatServiceBackgroundExecutionCoordinator: @unchecked Sendable {
     private func handleUnavailableOnMain(for currentGeneration: UInt64) {
         guard currentGeneration >= generationOnMain else { return }
         onInterruption(NSLocalizedString(
-            "Background execution unavailable",
+            "BACKGROUND_ERROR_UNAVAILABLE", value: "Background execution unavailable",
             comment: "Shown when iOS cannot grant background runtime for an active text generation stream"
         ))
     }
@@ -130,7 +130,7 @@ final class ChatServiceBackgroundExecutionCoordinator: @unchecked Sendable {
         }
 
         onInterruption(NSLocalizedString(
-            "Background execution time expired",
+            "BACKGROUND_ERROR_TIME_EXPIRED", value: "Background execution time expired",
             comment: "Shown when iOS ends background time for an active text generation stream"
         ))
     }

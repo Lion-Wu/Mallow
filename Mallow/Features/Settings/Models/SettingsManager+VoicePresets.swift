@@ -8,7 +8,7 @@
 import Foundation
 
 extension SettingsManager {
-    func createPreset(name: String = String(localized: "New Preset")) -> VoicePreset? {
+    func createPreset(name: String = String(localized: "PRESET_TITLE_NEW", defaultValue: "New Preset")) -> VoicePreset? {
         guard let context else { return nil }
         let preset = SettingsPresetMutationController.createVoicePreset(
             name: name,

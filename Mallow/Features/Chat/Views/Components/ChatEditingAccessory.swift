@@ -22,7 +22,7 @@ struct ChatEditingAccessory: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.orange)
 
-                Text("Edit Message")
+                Text("MESSAGE_ACTION_EDIT")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -37,8 +37,8 @@ struct ChatEditingAccessory: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Cancel editing and restore the conversation")
-                .help("Cancel editing and restore the conversation")
+                .accessibilityLabel("CHAT_ACTION_CANCEL_EDIT")
+                .help("CHAT_ACTION_CANCEL_EDIT")
             }
             .padding(.top, 8)
             .padding(.bottom, 6)

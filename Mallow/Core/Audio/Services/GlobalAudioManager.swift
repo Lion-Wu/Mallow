@@ -386,11 +386,11 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
         guard !isRealtimeMode else { return }
         let title: String
         if currentTTSConfiguration?.provider == .personalVoice {
-            title = NSLocalizedString("Apple Personal Voice unavailable", comment: "Shown when Apple Personal Voice synthesis fails")
+            title = NSLocalizedString("VOICE_PERSONAL_UNAVAILABLE", value: "Apple Personal Voice unavailable", comment: "Shown when Apple Personal Voice synthesis fails")
         } else if currentTTSConfiguration?.provider == .appleSpeech {
-            title = NSLocalizedString("Apple Speech unavailable", comment: "Shown when Apple's built-in speech synthesis fails")
+            title = NSLocalizedString("VOICE_SPEECH_UNAVAILABLE", value: "Apple Speech unavailable", comment: "Shown when Apple's built-in speech synthesis fails")
         } else {
-            title = NSLocalizedString("TTS server unavailable", comment: "Shown when the TTS server cannot be reached or replied with an error")
+            title = NSLocalizedString("VOICE_TTS_SERVER_UNAVAILABLE", value: "TTS server unavailable", comment: "Shown when the TTS server cannot be reached or replied with an error")
         }
         noticePublisher.publish(
             title: title,
@@ -405,7 +405,7 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
         guard !trimmed.isEmpty else { return }
         playbackNoticeMessage = trimmed
         noticePublisher.publish(
-            title: NSLocalizedString("Voice Playback Issue", comment: "Fallback title when TTS or audio playback fails"),
+            title: NSLocalizedString("VOICE_PLAYBACK_ISSUE", value: "Voice Playback Issue", comment: "Fallback title when TTS or audio playback fails"),
             message: trimmed,
             category: isRealtimeMode ? .realtimeVoice : .tts,
             autoDismiss: autoDismiss
@@ -428,13 +428,13 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
         let code = URLError.Code(rawValue: error.code)
         switch code {
         case .cannotConnectToHost, .cannotFindHost:
-            return String(format: NSLocalizedString("Unable to connect to the TTS server at %@", comment: "Shown when the TTS host cannot be reached"), address)
+            return String(format: NSLocalizedString("VOICE_TTS_CONNECTION_FAILED", value: "Unable to connect to the TTS server at %@", comment: "Shown when the TTS host cannot be reached"), address)
         case .notConnectedToInternet:
-            return NSLocalizedString("No internet connection for TTS requests.", comment: "Shown when the device is offline and TTS cannot be reached")
+            return NSLocalizedString("VOICE_TTS_OFFLINE", value: "No internet connection for TTS requests.", comment: "Shown when the device is offline and TTS cannot be reached")
         case .networkConnectionLost:
-            return NSLocalizedString("Connection to the TTS server was lost during playback.", comment: "Shown when the TTS stream drops mid-playback")
+            return NSLocalizedString("VOICE_TTS_CONNECTION_LOST", value: "Connection to the TTS server was lost during playback.", comment: "Shown when the TTS stream drops mid-playback")
         case .timedOut:
-            return NSLocalizedString("The TTS server did not respond in time.", comment: "Shown when the TTS request times out")
+            return NSLocalizedString("VOICE_TTS_TIMEOUT", value: "The TTS server did not respond in time.", comment: "Shown when the TTS request times out")
         default:
             return error.localizedDescription
         }

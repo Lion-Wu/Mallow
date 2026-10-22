@@ -130,9 +130,9 @@ struct ChatSidebarPresentationController {
 
         let subtitle: String
         if session.lastMessageID == nil && session.lastMessageAt == nil {
-            subtitle = String(localized: "Fresh conversation")
+            subtitle = String(localized: "CHAT_FRESH_CONVERSATION", defaultValue: "Fresh conversation")
         } else if session.sidebarPreviewText.isEmpty {
-            subtitle = String(localized: "No recent replies")
+            subtitle = String(localized: "CHAT_NO_RECENT_REPLIES", defaultValue: "No recent replies")
         } else {
             subtitle = session.sidebarPreviewText
         }

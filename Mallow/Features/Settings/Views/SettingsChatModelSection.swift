@@ -26,11 +26,11 @@ struct SettingsChatModelSection: View {
             HStack {
                 Spacer()
                 Button(action: viewModel.fetchAvailableModels) {
-                    Label("Refresh Model List", systemImage: "arrow.clockwise.circle")
+                    Label("MODEL_ACTION_REFRESH_LIST", systemImage: "arrow.clockwise.circle")
                 }
                 .settingsActionButtonStyle()
                 #if os(macOS)
-                .help("Refresh available model list")
+                .help("MODEL_ACCESSIBILITY_REFRESH_LIST")
                 #endif
                 .disabled(viewModel.isLoadingModels)
             }
@@ -38,21 +38,21 @@ struct SettingsChatModelSection: View {
 
             if viewModel.shouldShowUnknownModelImageInputToggle {
                 Toggle(
-                    "Enable image input for this model",
+                    "SETTINGS_IMAGE_INPUT_ENABLE_OVERRIDE",
                     isOn: Binding(
                         get: { viewModel.isSelectedUnknownModelImageInputEnabled },
                         set: { viewModel.setSelectedUnknownModelImageInputEnabled($0) }
                     )
                 )
 
-                Text("Unable to confirm whether this model supports image input. Enable it if supported.")
+                Text("MODEL_IMAGE_SUPPORT_UNKNOWN")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             if viewModel.shouldShowUnknownModelThinkingOptions {
-                LabeledContent("Supported Thinking Options") {
+                LabeledContent("MODEL_SUPPORTED_THINKING_OPTIONS") {
                     Menu {
                         ForEach(viewModel.availableManualThinkingOptions) { option in
                             Toggle(isOn: Binding(
@@ -60,7 +60,7 @@ struct SettingsChatModelSection: View {
                                 set: { viewModel.setManualThinkingOption(option, enabled: $0) }
                             )) {
                                 if option == .on && viewModel.usesAnthropicFixedBudgetThinking {
-                                    Text("Fixed-budget Thinking")
+                                    Text("THINKING_FIXED_BUDGET")
                                 } else {
                                     Text(option.displayName)
                                 }
@@ -68,11 +68,11 @@ struct SettingsChatModelSection: View {
                         }
                     } label: {
                         Text(viewModel.selectedManualThinkingOptions.isEmpty
-                             ? String(localized: "None")
+                             ? String(localized: "COMMON_NONE", defaultValue: "None")
                              : viewModel.selectedManualThinkingOptions.map(\.displayName).joined(separator: ", "))
                     }
                 }
-                Text("Unable to confirm this model's supported thinking options. Select them manually.")
+                Text("MODEL_THINKING_OPTIONS_UNKNOWN")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -83,7 +83,7 @@ struct SettingsChatModelSection: View {
     }
 
     private var modelPickerRow: some View {
-        LabeledContent("Model") {
+        LabeledContent("MODEL_TITLE") {
             ZStack(alignment: .trailing) {
                 HStack {
                     Spacer(minLength: 0)
@@ -116,12 +116,12 @@ struct SettingsChatModelSection: View {
                     .controlSize(.small)
                     #endif
                 if viewModel.isRetryingModels {
-                    Text(String(format: NSLocalizedString("Retrying (attempt %d)...", comment: "Shown while auto retry is waiting to reconnect"), max(1, viewModel.modelRetryAttempt)))
+                    Text(String(format: NSLocalizedString("AUDIO_RETRY_ATTEMPT", value: "Retrying (attempt %d)...", comment: "Shown while auto retry is waiting to reconnect"), max(1, viewModel.modelRetryAttempt)))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 } else {
-                    Text("Loading model list...")
+                    Text("MODEL_LIST_LOADING")
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -154,11 +154,11 @@ struct SettingsChatModelSection: View {
             EmptyView()
         } else {
             #if os(macOS)
-            Text("Chat Model")
+            Text("SETTINGS_CHAT_MODEL")
                 .font(.headline)
                 .textCase(.none)
             #else
-            Text("Chat Model")
+            Text("SETTINGS_CHAT_MODEL")
             #endif
         }
     }

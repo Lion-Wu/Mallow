@@ -29,7 +29,7 @@ struct ChatScrollToBottomButton: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(.primary)
-        .accessibilityLabel("Scroll to bottom")
+        .accessibilityLabel("CHAT_ACTION_SCROLL_BOTTOM")
     }
 
     private var fallbackLabel: some View {

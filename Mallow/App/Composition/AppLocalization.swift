@@ -9,7 +9,7 @@ import Foundation
 
 enum AppLocalization {
     static var supportedLocalizationIdentifiers: [String] {
-        Bundle.main.localizations.filter { $0 != "Base" }
+        Bundle.main.localizations
     }
 
     static func localizedPlaceholderTitles() -> Set<String> {
@@ -19,7 +19,7 @@ enum AppLocalization {
 
         return Set(
             identifiers.map { identifier in
-                String(localized: "New Chat", locale: Locale(identifier: identifier))
+                String(localized: "CHAT_TITLE_NEW", defaultValue: "New Chat", locale: Locale(identifier: identifier))
             }
         )
     }

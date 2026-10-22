@@ -20,7 +20,7 @@ enum ChatSessionRepositoryReadError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .contextUnavailable:
-            return String(localized: "The chat data store is not available.")
+            return String(localized: "STORAGE_CHAT_STORE_UNAVAILABLE", defaultValue: "The chat data store is not available.")
         }
     }
 }

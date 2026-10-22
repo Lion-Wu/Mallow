@@ -29,9 +29,9 @@ enum TTSAudioChunkDecodeFailure: Error, Equatable {
     var message: String {
         switch self {
         case .emptyData:
-            return NSLocalizedString("No data received", comment: "Shown when the TTS server returns an empty body")
+            return NSLocalizedString("AUDIO_ERROR_NO_DATA", value: "No data received", comment: "Shown when the TTS server returns an empty body")
         case .unsupportedAudioData:
-            return NSLocalizedString("Received audio data could not be played.", comment: "Shown when AVAudioPlayer fails to read TTS audio data")
+            return NSLocalizedString("AUDIO_ERROR_UNPLAYABLE", value: "Received audio data could not be played.", comment: "Shown when AVAudioPlayer fails to read TTS audio data")
         }
     }
 }

@@ -52,7 +52,7 @@ final class VoiceVisionCameraController: NSObject, ObservableObject, @unchecked 
                 guard !Task.isCancelled, self.shouldContinueStarting else { return }
                 self.updateUI(
                     statusMessage: NSLocalizedString(
-                        "Allow camera access in Settings and try again.",
+                        "CAMERA_PERMISSION_SETTINGS", value: "Allow camera access in Settings and try again.",
                         comment: "Shown when voice vision camera access has not been granted"
                     ),
                     isPreviewVisible: false

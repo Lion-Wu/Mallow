@@ -24,12 +24,12 @@ struct UserContextMenuModifier: ViewModifier {
                 .contextMenu(menuItems: {
                     let parts = message.content.extractThinkParts()
                     let bodyText = parts.body
-                    Button { copyToClipboard(bodyText) } label: { Label("Copy", systemImage: "doc.on.doc") }
-                    Button { onSelectText(bodyText) } label: { Label("Select Text", systemImage: "text.cursor") }
-                    Button { onEditUserMessage(message) } label: { Label("Edit Message", systemImage: "pencil") }
+                    Button { copyToClipboard(bodyText) } label: { Label("COMMON_ACTION_COPY", systemImage: "doc.on.doc") }
+                    Button { onSelectText(bodyText) } label: { Label("MESSAGE_ACTION_SELECT_TEXT", systemImage: "text.cursor") }
+                    Button { onEditUserMessage(message) } label: { Label("MESSAGE_ACTION_EDIT", systemImage: "pencil") }
                     if developerModeEnabled {
                         Divider()
-                        Button { showMessageDetails() } label: { Label("Details", systemImage: "info.circle") }
+                        Button { showMessageDetails() } label: { Label("COMMON_DETAILS", systemImage: "info.circle") }
                     }
                 })
                 .sheet(isPresented: $isShowingMessageDetails) {
@@ -77,20 +77,20 @@ struct MessageBranchControls: View {
             Button {
                 onPrevious()
             } label: {
-                Text("←")
+                Text(verbatim: "←")
                     .font(.caption2.weight(.semibold))
             }
             .buttonStyle(.plain)
             .disabled(!isEnabled || !canGoPrevious)
 
-            Text("\(currentIndex)/\(totalCount)")
+            Text(LocalizedStringResource("MESSAGE_BRANCH_COUNT_RATIO", defaultValue: "\(currentIndex)/\(totalCount)"))
                 .font(.caption2.weight(.semibold))
                 .monospacedDigit()
 
             Button {
                 onNext()
             } label: {
-                Text("→")
+                Text(verbatim: "→")
                     .font(.caption2.weight(.semibold))
             }
             .buttonStyle(.plain)
@@ -102,7 +102,7 @@ struct MessageBranchControls: View {
             Text(
                 String.localizedStringWithFormat(
                     NSLocalizedString(
-                        "Version %1$d of %2$d",
+                        "MESSAGE_VERSION_FORMAT", value: "Version %1$d of %2$d",
                         comment: "Accessibility label describing the current message branch version"
                     ),
                     currentIndex,
@@ -122,13 +122,13 @@ struct ErrorBubbleView: View {
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.white)
-                Text("An error occurred")
+                Text("COMMON_ERROR_GENERIC")
                     .foregroundStyle(.white)
                     .font(.headline)
             }
             .padding(.bottom, 2)
 
-            Text(text.isEmpty ? "Unknown error" : text)
+            Text(text.isEmpty ? String(localized: "COMMON_ERROR_UNKNOWN", defaultValue: "Unknown error") : text)
                 .foregroundStyle(.white.opacity(0.95))
                 .font(.subheadline)
 
@@ -137,7 +137,7 @@ struct ErrorBubbleView: View {
                 Button {
                     onRetry()
                 } label: {
-                    Label("Retry", systemImage: "arrow.clockwise")
+                    Label("COMMON_ACTION_RETRY", systemImage: "arrow.clockwise")
                         .font(.subheadline.weight(.semibold))
                         .padding(.vertical, 6)
                         .padding(.horizontal, 10)

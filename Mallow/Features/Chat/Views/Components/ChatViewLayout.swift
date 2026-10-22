@@ -455,7 +455,7 @@ struct ChatImageDropOverlay: View {
                 }
                 .padding(12)
                 .overlay {
-                    Label("Drop images anywhere to attach", systemImage: "photo.badge.plus")
+                    Label("CHAT_DROP_IMAGES_HINT", systemImage: "photo.badge.plus")
                         .font(.headline)
                         .foregroundStyle(ChatTheme.accent)
                         .padding(.horizontal, 16)

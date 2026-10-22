@@ -29,7 +29,7 @@ struct SystemClipboardTool: ClipboardToolServing {
         #elseif canImport(AppKit)
         let text = await MainActor.run { NSPasteboard.general.string(forType: .string) ?? "" }
         #else
-        throw ChatToolError.unsupported(NSLocalizedString("Clipboard is not available on this platform.", comment: "Tool-use error"))
+        throw ChatToolError.unsupported(NSLocalizedString("TOOLS_CLIPBOARD_UNSUPPORTED", value: "Clipboard is not available on this platform.", comment: "Tool-use error"))
         #endif
         let limited = String(text.prefix(10_000))
         return ChatToolExecutionPayload(
@@ -38,15 +38,15 @@ struct SystemClipboardTool: ClipboardToolServing {
                 "truncated": .bool(text.count > limited.count)
             ],
             summary: limited.isEmpty
-                ? NSLocalizedString("Clipboard did not contain text.", comment: "Tool summary")
-                : NSLocalizedString("Clipboard text was read.", comment: "Tool summary")
+                ? NSLocalizedString("TOOLS_CLIPBOARD_NO_TEXT", value: "Clipboard did not contain text.", comment: "Tool summary")
+                : NSLocalizedString("TOOLS_CLIPBOARD_READ", value: "Clipboard text was read.", comment: "Tool summary")
         )
     }
 
     func setText(arguments: ChatToolArgumentReader) async throws -> ChatToolExecutionPayload {
         let text = try arguments.requiredRawString("text")
         guard text.count <= 10_000 else {
-            throw ChatToolError.invalidArguments(NSLocalizedString("text must contain at most 10000 characters.", comment: "Tool-use error"))
+            throw ChatToolError.invalidArguments(NSLocalizedString("TOOLS_CLIPBOARD_TEXT_TOO_LONG", value: "text must contain at most 10000 characters.", comment: "Tool-use error"))
         }
         try Task.checkCancellation()
         #if canImport(UIKit)
@@ -61,11 +61,11 @@ struct SystemClipboardTool: ClipboardToolServing {
             NSPasteboard.general.setString(text, forType: .string)
         }
         #else
-        throw ChatToolError.unsupported(NSLocalizedString("Clipboard is not available on this platform.", comment: "Tool-use error"))
+        throw ChatToolError.unsupported(NSLocalizedString("TOOLS_CLIPBOARD_UNSUPPORTED", value: "Clipboard is not available on this platform.", comment: "Tool-use error"))
         #endif
         return ChatToolExecutionPayload(
             payload: ["character_count": .number(Double(text.count))],
-            summary: NSLocalizedString("Clipboard text was updated.", comment: "Tool summary")
+            summary: NSLocalizedString("TOOLS_CLIPBOARD_UPDATED", value: "Clipboard text was updated.", comment: "Tool summary")
         )
     }
 }
@@ -76,7 +76,7 @@ struct DefaultSystemActionTool: SystemActionToolServing {
         guard let url = URL(string: rawURL),
               let scheme = url.scheme?.lowercased(),
               ["http", "https", "mailto", "maps"].contains(scheme) else {
-            throw ChatToolError.invalidArguments(NSLocalizedString("URL scheme is not allowed.", comment: "Tool-use error"))
+            throw ChatToolError.invalidArguments(NSLocalizedString("TOOLS_URL_SCHEME_NOT_ALLOWED", value: "URL scheme is not allowed.", comment: "Tool-use error"))
         }
         try Task.checkCancellation()
 
@@ -88,15 +88,15 @@ struct DefaultSystemActionTool: SystemActionToolServing {
             return NSWorkspace.shared.open(url)
         }
         #else
-        throw ChatToolError.unsupported(NSLocalizedString("Opening URLs is not available on this platform.", comment: "Tool-use error"))
+        throw ChatToolError.unsupported(NSLocalizedString("TOOLS_URL_UNSUPPORTED", value: "Opening URLs is not available on this platform.", comment: "Tool-use error"))
         #endif
 
         guard opened else {
-            throw ChatToolError.failed(NSLocalizedString("The system could not open the URL.", comment: "Tool-use error"))
+            throw ChatToolError.failed(NSLocalizedString("TOOLS_URL_OPEN_FAILED", value: "The system could not open the URL.", comment: "Tool-use error"))
         }
         return ChatToolExecutionPayload(
             payload: ["url": .string(url.absoluteString)],
-            summary: NSLocalizedString("URL was opened.", comment: "Tool summary")
+            summary: NSLocalizedString("TOOLS_URL_OPENED", value: "URL was opened.", comment: "Tool summary")
         )
     }
 
@@ -130,7 +130,7 @@ struct DefaultSystemActionTool: SystemActionToolServing {
         payload.merge(ChatToolTimeFormatter.timeZonePayloadFields(for: now, timeZone: timeZone)) { current, _ in current }
         return ChatToolExecutionPayload(
             payload: payload,
-            summary: NSLocalizedString("Current time was read.", comment: "Tool summary")
+            summary: NSLocalizedString("TOOLS_TIME_READ", value: "Current time was read.", comment: "Tool summary")
         )
     }
 }

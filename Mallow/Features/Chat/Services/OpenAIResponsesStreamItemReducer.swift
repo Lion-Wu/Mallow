@@ -142,7 +142,7 @@ struct OpenAIResponsesStreamItemReducer {
 
         case "response.failed", "error":
             let message = payloadExtractor.openAICompatibleStreamErrorMessage(from: dictionary) ?? NSLocalizedString(
-                "OpenAI API error",
+                "PROVIDER_OPENAI_ERROR", value: "OpenAI API error",
                 comment: "Fallback error shown when OpenAI-compatible stream returns an error event without a message"
             )
             if let statusCode = ChatStreamErrorRetryClassifier.statusCode(from: dictionary) {
@@ -169,11 +169,11 @@ struct OpenAIResponsesStreamItemReducer {
         let reason = (details?["reason"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !reason.isEmpty {
             return String(
-                format: NSLocalizedString("Response was incomplete: %@", comment: "OpenAI Responses incomplete response reason"),
+                format: NSLocalizedString("PROVIDER_RESPONSE_INCOMPLETE_DETAIL", value: "Response was incomplete: %@", comment: "OpenAI Responses incomplete response reason"),
                 reason
             )
         }
-        return NSLocalizedString("Response was incomplete.", comment: "OpenAI Responses incomplete response error")
+        return NSLocalizedString("PROVIDER_RESPONSE_INCOMPLETE", value: "Response was incomplete.", comment: "OpenAI Responses incomplete response error")
     }
 
     private func appendDelta(

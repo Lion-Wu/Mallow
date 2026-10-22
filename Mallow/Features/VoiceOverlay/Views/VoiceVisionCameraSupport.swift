@@ -10,9 +10,9 @@ enum VoiceVisionCameraError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noCameraAvailable:
-            return NSLocalizedString("No camera was found for photo capture.", comment: "Shown when voice vision camera cannot find a camera")
+            return NSLocalizedString("CAMERA_NOT_FOUND", value: "No camera was found for photo capture.", comment: "Shown when voice vision camera cannot find a camera")
         case .unableToAddInput, .unableToAddOutput:
-            return NSLocalizedString("Camera Capture Failed", comment: "Title shown when the camera cannot be configured")
+            return NSLocalizedString("CAMERA_CAPTURE_FAILED", value: "Camera Capture Failed", comment: "Title shown when the camera cannot be configured")
         }
     }
 }

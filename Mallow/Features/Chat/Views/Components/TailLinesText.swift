@@ -70,7 +70,7 @@ struct TailLinesText: View {
             .onChange(of: geo.size) { _, _ in recomputeIfNeeded(width: w) }
         }
         .frame(height: fixedHeight, alignment: .bottom)
-        .accessibilityLabel("Reasoning preview")
+        .accessibilityLabel("MESSAGE_REASONING_PREVIEW")
     }
 
     private func recomputeIfNeeded(width: CGFloat) {

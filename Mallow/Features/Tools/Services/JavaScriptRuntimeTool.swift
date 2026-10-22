@@ -29,7 +29,7 @@ struct SandboxedJavaScriptRuntimeTool: JavaScriptRuntimeToolServing {
         }
         return ChatToolExecutionPayload(
             payload: payload,
-            summary: NSLocalizedString("JavaScript code was evaluated.", comment: "Tool summary")
+            summary: NSLocalizedString("TOOLS_JAVASCRIPT_EVALUATED", value: "JavaScript code was evaluated.", comment: "Tool summary")
         )
     }
 }

@@ -11,8 +11,8 @@ import AVFoundation
 @MainActor
 final class VoiceViewModel: ObservableObject {
     // MARK: - State
-    @Published var text: String = String(localized: "Sample text.")
-    @Published var connectionStatus: String = String(localized: "Waiting for connection")
+    @Published var text: String = String(localized: "VOICE_SAMPLE_TEXT", defaultValue: "Sample text.")
+    @Published var connectionStatus: String = String(localized: "NETWORK_WAITING_CONNECTION", defaultValue: "Waiting for connection")
     @Published var errorMessage: String?
     @Published var isLoading: Bool = false
 
@@ -24,7 +24,7 @@ final class VoiceViewModel: ObservableObject {
             try session.setCategory(.playback, mode: .default, options: [])
             try session.setActive(true, options: [])
         } catch {
-            let message = String(format: String(localized: "Unable to set up audio session: %@"), error.localizedDescription)
+            let message = String(format: String(localized: "AUDIO_SESSION_SETUP_FAILED", defaultValue: "Unable to set up audio session: %@"), error.localizedDescription)
             self.errorMessage = message
         }
         #endif

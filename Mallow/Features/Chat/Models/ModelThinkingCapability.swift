@@ -27,33 +27,33 @@ struct ModelThinkingOption: Codable, Equatable, Hashable, Sendable, Identifiable
     }
 
     var displayName: String {
-        if self == .serverDefault { return NSLocalizedString("Default", comment: "Server default") }
+        if self == .serverDefault { return NSLocalizedString("COMMON_DEFAULT", value: "Default", comment: "Server default") }
         if self == .off || self == .none {
-            return NSLocalizedString("Off", comment: "Thinking control option")
+            return NSLocalizedString("COMMON_OFF", value: "Off", comment: "Thinking control option")
         }
         if self == .on {
-            return NSLocalizedString("On", comment: "Thinking control option")
+            return NSLocalizedString("COMMON_ON", value: "On", comment: "Thinking control option")
         }
         if self == .minimal {
-            return NSLocalizedString("Minimal", comment: "Thinking effort option")
+            return NSLocalizedString("THINKING_LEVEL_MINIMAL", value: "Minimal", comment: "Thinking effort option")
         }
         if self == .low {
-            return NSLocalizedString("Low", comment: "Thinking effort option")
+            return NSLocalizedString("THINKING_LEVEL_LOW", value: "Low", comment: "Thinking effort option")
         }
         if self == .medium {
-            return NSLocalizedString("Medium", comment: "Thinking effort option")
+            return NSLocalizedString("THINKING_LEVEL_MEDIUM", value: "Medium", comment: "Thinking effort option")
         }
         if self == .high {
-            return NSLocalizedString("High", comment: "Thinking effort option")
+            return NSLocalizedString("THINKING_LEVEL_HIGH", value: "High", comment: "Thinking effort option")
         }
         if self == .xhigh {
-            return NSLocalizedString("Extra High", comment: "Thinking effort option")
+            return NSLocalizedString("THINKING_LEVEL_EXTRA_HIGH", value: "Extra High", comment: "Thinking effort option")
         }
         if self == .max {
-            return NSLocalizedString("Max", comment: "Thinking effort option")
+            return NSLocalizedString("THINKING_LEVEL_MAX", value: "Max", comment: "Thinking effort option")
         }
         if self == .ultra {
-            return NSLocalizedString("Ultra", comment: "Thinking effort option")
+            return NSLocalizedString("THINKING_LEVEL_ULTRA", value: "Ultra", comment: "Thinking effort option")
         }
         return rawValue
     }

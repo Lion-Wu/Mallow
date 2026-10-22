@@ -142,7 +142,7 @@ extension ChatService {
         ).first
         let toolName = call?.name ?? "tool_call"
         let title = call.map { ChatToolDefinitions.activityTitle(for: $0.name) }
-            ?? NSLocalizedString("Generating Tool Call", comment: "Tool activity title")
+            ?? NSLocalizedString("TOOLS_GENERATING_CALL", value: "Generating Tool Call", comment: "Tool activity title")
         let summary: String?
         if let call {
             summary = ChatToolDefinitions.activitySummary(for: call)

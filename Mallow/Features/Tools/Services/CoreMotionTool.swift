@@ -20,7 +20,7 @@ struct CoreMotionTool: MotionToolServing {
         let duration = try arguments.double("duration_seconds", default: 1.0, range: 0.2...3.0)
         let manager = CMMotionManager()
         guard manager.isDeviceMotionAvailable else {
-            throw ChatToolError.unsupported(NSLocalizedString("Device motion is not available on this platform.", comment: "Tool-use error"))
+            throw ChatToolError.unsupported(NSLocalizedString("TOOLS_MOTION_UNSUPPORTED", value: "Device motion is not available on this platform.", comment: "Tool-use error"))
         }
         manager.deviceMotionUpdateInterval = 0.1
         manager.startDeviceMotionUpdates()
@@ -29,7 +29,7 @@ struct CoreMotionTool: MotionToolServing {
         manager.stopDeviceMotionUpdates()
 
         guard let motion else {
-            throw ChatToolError.failed(NSLocalizedString("No device motion sample was received.", comment: "Tool-use error"))
+            throw ChatToolError.failed(NSLocalizedString("TOOLS_MOTION_NO_SAMPLE", value: "No device motion sample was received.", comment: "Tool-use error"))
         }
         return ChatToolExecutionPayload(
             payload: [
@@ -50,10 +50,10 @@ struct CoreMotionTool: MotionToolServing {
                 ]),
                 "duration_seconds": .number(duration)
             ],
-            summary: NSLocalizedString("Device motion snapshot was read.", comment: "Tool summary")
+            summary: NSLocalizedString("TOOLS_MOTION_READ", value: "Device motion snapshot was read.", comment: "Tool summary")
         )
         #else
-        throw ChatToolError.unsupported(NSLocalizedString("Device motion is not available on this platform.", comment: "Tool-use error"))
+        throw ChatToolError.unsupported(NSLocalizedString("TOOLS_MOTION_UNSUPPORTED", value: "Device motion is not available on this platform.", comment: "Tool-use error"))
         #endif
     }
 }

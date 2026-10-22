@@ -8,13 +8,13 @@ nonisolated struct DataRecoveryIssue: Identifiable, Sendable {
         case ownership, parent, identity, content, additionalSettings, database, selection
         var title: String {
             switch self {
-            case .ownership: String(localized: "Missing Chat Ownership")
-            case .parent: String(localized: "Invalid Message Chain")
-            case .identity: String(localized: "Missing or Duplicate Identity")
-            case .content: String(localized: "Unreadable Fields")
-            case .additionalSettings: String(localized: "Additional Settings Record")
-            case .database: String(localized: "Database Structure")
-            case .selection: String(localized: "Invalid Branch Selection")
+            case .ownership: String(localized: "DATA_CHAT_OWNERSHIP_MISSING", defaultValue: "Missing Chat Ownership")
+            case .parent: String(localized: "CHAT_INVALID_MESSAGE_CHAIN", defaultValue: "Invalid Message Chain")
+            case .identity: String(localized: "DATA_IDENTITY_INVALID", defaultValue: "Missing or Duplicate Identity")
+            case .content: String(localized: "DATA_UNREADABLE_FIELDS", defaultValue: "Unreadable Fields")
+            case .additionalSettings: String(localized: "DATA_ADDITIONAL_SETTINGS_RECORD", defaultValue: "Additional Settings Record")
+            case .database: String(localized: "DATA_DATABASE_STRUCTURE", defaultValue: "Database Structure")
+            case .selection: String(localized: "CHAT_INVALID_BRANCH_SELECTION", defaultValue: "Invalid Branch Selection")
             }
         }
     }
@@ -46,29 +46,29 @@ nonisolated struct DataRecoveryIssue: Identifiable, Sendable {
 
     var explanation: String {
         switch reason {
-        case .ownership: String(localized: "This message does not reference an existing chat.")
-        case .parent: String(localized: "The preceding message is missing, belongs to another chat, or forms a circular chain.")
-        case .content: String(localized: "Some stored fields cannot be read. Other parts of this record may still be readable.")
-        case .identity: String(localized: "This record has a missing or duplicate identifier and cannot be safely selected for deletion.")
-        case .additionalSettings: String(localized: "More than one global settings record exists.")
-        case .selection: String(localized: "The selected branch no longer exists in this chat.")
-        case .database: String(localized: "The database structure check reported an error.")
+        case .ownership: String(localized: "DATA_MESSAGE_CHAT_MISSING", defaultValue: "This message does not reference an existing chat.")
+        case .parent: String(localized: "DATA_MESSAGE_PARENT_INVALID", defaultValue: "The preceding message is missing, belongs to another chat, or forms a circular chain.")
+        case .content: String(localized: "RECOVERY_FIELDS_UNREADABLE", defaultValue: "Some stored fields cannot be read. Other parts of this record may still be readable.")
+        case .identity: String(localized: "DATA_RECORD_IDENTITY_UNSAFE", defaultValue: "This record has a missing or duplicate identifier and cannot be safely selected for deletion.")
+        case .additionalSettings: String(localized: "DATA_DUPLICATE_GLOBAL_SETTINGS", defaultValue: "More than one global settings record exists.")
+        case .selection: String(localized: "CHAT_BRANCH_MISSING", defaultValue: "The selected branch no longer exists in this chat.")
+        case .database: String(localized: "DATA_DATABASE_CHECK_ERROR", defaultValue: "The database structure check reported an error.")
         }
     }
 
     static func fieldTitle(_ field: String) -> String {
         switch field {
-        case "content", "messageDocumentData": String(localized: "Message")
-        case "generationRounds": String(localized: "Generation Statistics")
-        case "createdAt": String(localized: "Created At")
-        case "imageAttachmentsData": String(localized: "Images and Attachments")
-        case "assistantSegmentsData": String(localized: "Message Segments")
-        case "toolActivityPlacementsData": String(localized: "Tool Positions")
-        case "openAIResponsesConversationItemsData", "providerResponseID", "requestPreviousResponseID": String(localized: "Request and Response Records")
-        case "modelThinkingPreferencesJSON": String(localized: "Thinking Settings")
-        case "modelThinkingOptionsJSON": String(localized: "Supported Thinking Options")
-        case "modelImageInputOverrideJSON": String(localized: "Image Input Override")
-        case "detectedAPIFormatsJSON", "apiFormatPreferenceRaw": String(localized: "API Format")
+        case "content", "messageDocumentData": String(localized: "MESSAGE_TITLE", defaultValue: "Message")
+        case "generationRounds": String(localized: "MESSAGE_GENERATION_STATISTICS", defaultValue: "Generation Statistics")
+        case "createdAt": String(localized: "COMMON_CREATED_AT", defaultValue: "Created At")
+        case "imageAttachmentsData": String(localized: "STORAGE_IMAGES_AND_ATTACHMENTS", defaultValue: "Images and Attachments")
+        case "assistantSegmentsData": String(localized: "MESSAGE_SEGMENTS", defaultValue: "Message Segments")
+        case "toolActivityPlacementsData": String(localized: "TOOL_POSITIONS", defaultValue: "Tool Positions")
+        case "openAIResponsesConversationItemsData", "providerResponseID", "requestPreviousResponseID": String(localized: "DATA_REQUEST_RESPONSE_RECORDS", defaultValue: "Request and Response Records")
+        case "modelThinkingPreferencesJSON": String(localized: "THINKING_SETTINGS", defaultValue: "Thinking Settings")
+        case "modelThinkingOptionsJSON": String(localized: "MODEL_SUPPORTED_THINKING_OPTIONS", defaultValue: "Supported Thinking Options")
+        case "modelImageInputOverrideJSON": String(localized: "MODEL_IMAGE_INPUT_OVERRIDE", defaultValue: "Image Input Override")
+        case "detectedAPIFormatsJSON", "apiFormatPreferenceRaw": String(localized: "SETTINGS_API_FORMAT", defaultValue: "API Format")
         default: field
         }
     }
@@ -102,10 +102,10 @@ nonisolated struct DataModelPreference: Identifiable, Sendable {
         case endpoint = "detectedAPIFormatsJSON"
         var title: String {
             switch self {
-            case .thinking: String(localized: "Thinking Settings")
-            case .thinkingOptions: String(localized: "Supported Thinking Options")
-            case .images: String(localized: "Image Input Override")
-            case .endpoint: String(localized: "API Format")
+            case .thinking: String(localized: "THINKING_SETTINGS", defaultValue: "Thinking Settings")
+            case .thinkingOptions: String(localized: "MODEL_SUPPORTED_THINKING_OPTIONS", defaultValue: "Supported Thinking Options")
+            case .images: String(localized: "MODEL_IMAGE_INPUT_OVERRIDE", defaultValue: "Image Input Override")
+            case .endpoint: String(localized: "SETTINGS_API_FORMAT", defaultValue: "API Format")
             }
         }
     }
@@ -114,20 +114,20 @@ nonisolated struct DataModelPreference: Identifiable, Sendable {
     let key: String
     let value: String
     var presetID: UUID? = nil
-    var source: String { presetID != nil || kind != .endpoint ? String(localized: "Manual") : String(localized: "Automatic") }
+    var source: String { presetID != nil || kind != .endpoint ? String(localized: "COMMON_MANUAL", defaultValue: "Manual") : String(localized: "COMMON_AUTOMATIC", defaultValue: "Automatic") }
     var displayValue: String {
         guard let object = try? JSONSerialization.jsonObject(with: Data(value.utf8), options: .fragmentsAllowed) else { return value }
-        if kind == .images, let enabled = object as? Bool { return enabled ? String(localized: "On") : String(localized: "Off") }
+        if kind == .images, let enabled = object as? Bool { return enabled ? String(localized: "COMMON_ON", defaultValue: "On") : String(localized: "COMMON_OFF", defaultValue: "Off") }
         if kind == .thinking, let raw = object as? String { return ModelThinkingOption(rawValue: raw).displayName }
         if kind == .thinkingOptions, let options = object as? [String] {
-            return options.isEmpty ? String(localized: "None") : options.map { ModelThinkingOption(rawValue: $0).displayName }.joined(separator: ", ")
+            return options.isEmpty ? String(localized: "COMMON_NONE", defaultValue: "None") : options.map { ModelThinkingOption(rawValue: $0).displayName }.joined(separator: ", ")
         }
         let raw = (object as? [String: String])?["style"] ?? (object as? String) ?? ""
         switch raw {
-        case "openAIResponses": return String(localized: "OpenAI Responses")
-        case "openAIChatCompletions": return String(localized: "OpenAI Chat Completions")
-        case "anthropic", "anthropicMessages": return String(localized: "Anthropic Messages")
-        case "lmStudio", "lmStudioRESTV1": return String(localized: "LM Studio REST v1")
+        case "openAIResponses": return String(localized: "API_FORMAT_OPENAI_RESPONSES", defaultValue: "OpenAI Responses")
+        case "openAIChatCompletions": return String(localized: "API_FORMAT_OPENAI_CHAT_COMPLETIONS", defaultValue: "OpenAI Chat Completions")
+        case "anthropic", "anthropicMessages": return String(localized: "API_FORMAT_ANTHROPIC_MESSAGES", defaultValue: "Anthropic Messages")
+        case "lmStudio", "lmStudioRESTV1": return String(localized: "API_FORMAT_LM_STUDIO_REST_V1", defaultValue: "LM Studio REST v1")
         default: return raw.isEmpty ? value : raw
         }
     }
@@ -325,7 +325,7 @@ nonisolated enum DataManagementMutation: Sendable {
                     component.append(item)
                     queue.append(contentsOf: children[item.id] ?? [])
                 }
-                let session = ChatSession(title: String(localized: "Recovered Message"))
+                let session = ChatSession(title: String(localized: "RECOVERY_RECOVERED_MESSAGE", defaultValue: "Recovered Message"))
                 if let createdAt = root.createdAt { session.createdAt = createdAt }
                 context.insert(session)
                 for item in component {

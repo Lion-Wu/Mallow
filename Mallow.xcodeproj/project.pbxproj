@@ -269,8 +269,8 @@
 		FDAC72000000000000000002 /* AppleSpeechSynthesisSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAC72000000000000000001 /* AppleSpeechSynthesisSession.swift */; };
 		FDAFF0012F90000000000001 /* ContentFingerprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAFF0002F90000000000001 /* ContentFingerprint.swift */; };
 		FDAFF0032F90000000000001 /* MessageRenderCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAFF0022F90000000000001 /* MessageRenderCache.swift */; };
-		FDB5FD112F0000010000001A /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = FDB5FD102F0000010000001A /* Localizable.strings */; };
-		FDB5FD212F0000010000001B /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = FDB5FD202F0000010000001B /* InfoPlist.strings */; };
+		FDB5FD112F0000010000001A /* Resources/Localization/Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FDB5FD102F0000010000001A /* Resources/Localization/Localizable.xcstrings */; };
+		FDB5FD212F0000010000001B /* Resources/Localization/InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = FDB5FD202F0000010000001B /* Resources/Localization/InfoPlist.xcstrings */; };
 		FDD6A0B12F1D000100000001 /* MessageDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDD6A0B02F1D000100000001 /* MessageDetailsView.swift */; };
 		FDF0B0022F8F000000000001 /* RealtimeVoiceWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDF0B0012F8F000000000001 /* RealtimeVoiceWindowController.swift */; };
 		FDF714C12E7FC54100B62D71 /* IncrementalTextSegmenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDF714C02E7FC54100B62D71 /* IncrementalTextSegmenter.swift */; };
@@ -679,24 +679,8 @@
 		FDAC72000000000000000001 /* AppleSpeechSynthesisSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppleSpeechSynthesisSession.swift; path = Mallow/Core/Audio/Services/AppleSpeechSynthesisSession.swift; sourceTree = SOURCE_ROOT; };
 		FDAFF0002F90000000000001 /* ContentFingerprint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentFingerprint.swift; path = Mallow/Features/Chat/Views/Components/ContentFingerprint.swift; sourceTree = SOURCE_ROOT; };
 		FDAFF0022F90000000000001 /* MessageRenderCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MessageRenderCache.swift; path = Mallow/Features/Chat/Views/Components/MessageRenderCache.swift; sourceTree = SOURCE_ROOT; };
-		FDB5FD0A2F0000010000001A /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Resources/Localization/en.lproj/Localizable.strings; sourceTree = "<group>"; };
-		FDB5FD0B2F0000010000001A /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "Resources/Localization/zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		FDB5FD0C2F0000010000001A /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "Resources/Localization/zh-Hant.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		FDB5FD0D2F0000010000001A /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = Resources/Localization/ja.lproj/Localizable.strings; sourceTree = "<group>"; };
-		FDB5FD122F0000010000001A /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = Resources/Localization/ar.lproj/Localizable.strings; sourceTree = "<group>"; };
-		FDB5FD132F0000010000001A /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = Resources/Localization/de.lproj/Localizable.strings; sourceTree = "<group>"; };
-		FDB5FD142F0000010000001A /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = Resources/Localization/es.lproj/Localizable.strings; sourceTree = "<group>"; };
-		FDB5FD152F0000010000001A /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = Resources/Localization/fr.lproj/Localizable.strings; sourceTree = "<group>"; };
-		FDB5FD162F0000010000001A /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = Resources/Localization/ko.lproj/Localizable.strings; sourceTree = "<group>"; };
-		FDB5FD2A2F0000010000001B /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Resources/Localization/en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		FDB5FD2B2F0000010000001B /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "Resources/Localization/zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		FDB5FD2C2F0000010000001B /* zh-Hant */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hant"; path = "Resources/Localization/zh-Hant.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		FDB5FD2D2F0000010000001B /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = Resources/Localization/ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		FDB5FD322F0000010000001B /* ar */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ar; path = Resources/Localization/ar.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		FDB5FD332F0000010000001B /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = Resources/Localization/de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		FDB5FD342F0000010000001B /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = Resources/Localization/es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		FDB5FD352F0000010000001B /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = Resources/Localization/fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		FDB5FD362F0000010000001B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = Resources/Localization/ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		FDB5FD102F0000010000001A /* Resources/Localization/Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Resources/Localization/Localizable.xcstrings; sourceTree = "<group>"; };
+		FDB5FD202F0000010000001B /* Resources/Localization/InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Resources/Localization/InfoPlist.xcstrings; sourceTree = "<group>"; };
 		FDD6A0B02F1D000100000001 /* MessageDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MessageDetailsView.swift; path = Mallow/Features/Chat/Views/Components/MessageDetailsView.swift; sourceTree = SOURCE_ROOT; };
 		FDF0B0012F8F000000000001 /* RealtimeVoiceWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RealtimeVoiceWindowController.swift; path = Mallow/Features/VoiceOverlay/Controllers/RealtimeVoiceWindowController.swift; sourceTree = SOURCE_ROOT; };
 		FDF714C02E7FC54100B62D71 /* IncrementalTextSegmenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IncrementalTextSegmenter.swift; path = Mallow/Core/Audio/Support/IncrementalTextSegmenter.swift; sourceTree = SOURCE_ROOT; };
@@ -1662,8 +1646,8 @@
 		FDB5FD402F0000010000001C /* Localization */ = {
 			isa = PBXGroup;
 			children = (
-				FDB5FD102F0000010000001A /* Localizable.strings */,
-				FDB5FD202F0000010000001B /* InfoPlist.strings */,
+				FDB5FD102F0000010000001A /* Resources/Localization/Localizable.xcstrings */,
+				FDB5FD202F0000010000001B /* Resources/Localization/InfoPlist.xcstrings */,
 			);
 			name = Localization;
 			sourceTree = "<group>";
@@ -1742,7 +1726,6 @@
 				"zh-Hans",
 				"zh-Hant",
 				ja,
-				Base,
 			);
 			mainGroup = B329D64E2B394979000A17C9;
 			packageReferences = (
@@ -1766,8 +1749,8 @@
 				B329D6622B39497A000A17C9 /* Preview Assets.xcassets in Resources */,
 				B329D65F2B39497A000A17C9 /* Assets.xcassets in Resources */,
 				A19000000000000000000001 /* AppIcon.icon in Resources */,
-				FDB5FD112F0000010000001A /* Localizable.strings in Resources */,
-				FDB5FD212F0000010000001B /* InfoPlist.strings in Resources */,
+				FDB5FD112F0000010000001A /* Resources/Localization/Localizable.xcstrings in Resources */,
+				FDB5FD212F0000010000001B /* Resources/Localization/InfoPlist.xcstrings in Resources */,
 				AA60B1000000000000000003 /* Resources/OpenSourceNotices.json in Resources */,
 				AA60B1000000000000000005 /* LICENSE in Resources */,
 				AA60B1000000000000000007 /* Mallow.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved in Resources */,
@@ -2193,41 +2176,6 @@
 			targetProxy = FD700000000000000000000D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
-
-/* Begin PBXVariantGroup section */
-		FDB5FD102F0000010000001A /* Localizable.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				FDB5FD122F0000010000001A /* ar */,
-				FDB5FD132F0000010000001A /* de */,
-				FDB5FD142F0000010000001A /* es */,
-				FDB5FD152F0000010000001A /* fr */,
-				FDB5FD162F0000010000001A /* ko */,
-				FDB5FD0A2F0000010000001A /* en */,
-				FDB5FD0B2F0000010000001A /* zh-Hans */,
-				FDB5FD0C2F0000010000001A /* zh-Hant */,
-				FDB5FD0D2F0000010000001A /* ja */,
-			);
-			name = Localizable.strings;
-			sourceTree = "<group>";
-		};
-		FDB5FD202F0000010000001B /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				FDB5FD322F0000010000001B /* ar */,
-				FDB5FD332F0000010000001B /* de */,
-				FDB5FD342F0000010000001B /* es */,
-				FDB5FD352F0000010000001B /* fr */,
-				FDB5FD362F0000010000001B /* ko */,
-				FDB5FD2A2F0000010000001B /* en */,
-				FDB5FD2B2F0000010000001B /* zh-Hans */,
-				FDB5FD2C2F0000010000001B /* zh-Hant */,
-				FDB5FD2D2F0000010000001B /* ja */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		B329D6632B39497A000A17C9 /* Debug */ = {

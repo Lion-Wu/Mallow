@@ -8,11 +8,11 @@
 import Foundation
 
 extension SettingsManager {
-    func createNormalSystemPromptPreset(name: String = String(localized: "New Prompt Preset")) -> SystemPromptPreset? {
+    func createNormalSystemPromptPreset(name: String = String(localized: "PROMPT_PRESET_TITLE_NEW", defaultValue: "New Prompt Preset")) -> SystemPromptPreset? {
         createSystemPromptPreset(mode: SystemPromptPresetStore.normalMode, name: name)
     }
 
-    func createVoiceSystemPromptPreset(name: String = String(localized: "New Prompt Preset")) -> SystemPromptPreset? {
+    func createVoiceSystemPromptPreset(name: String = String(localized: "PROMPT_PRESET_TITLE_NEW", defaultValue: "New Prompt Preset")) -> SystemPromptPreset? {
         createSystemPromptPreset(mode: SystemPromptPresetStore.voiceMode, name: name)
     }
 

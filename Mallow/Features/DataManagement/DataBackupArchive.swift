@@ -35,7 +35,7 @@ nonisolated enum DataBackupArchive {
         if !documents.isEmpty {
             // Documents have no record identity in the app's merge model.
             // Preserve them in the archive and explicitly report that they were not imported.
-            result.categories.append(DataRecoveryCategory(id: "Documents", title: String(localized: "Documents"),
+            result.categories.append(DataRecoveryCategory(id: "Documents", title: String(localized: "STORAGE_DOCUMENTS", defaultValue: "Documents"),
                 skipped: documents.count, skippedNames: documents.map { String($0.name.dropFirst(prefix.count)) }))
         }
         return result

@@ -99,7 +99,7 @@ final class RealtimeVoiceWindowController: NSObject, NSWindowDelegate {
 
         let hosting = NSHostingController(rootView: root)
         let window = NSWindow(contentViewController: hosting)
-        window.title = NSLocalizedString("Realtime Voice", comment: "Window title for realtime voice mode")
+        window.title = NSLocalizedString("VOICE_REALTIME", value: "Realtime Voice", comment: "Window title for realtime voice mode")
         window.isReleasedWhenClosed = false
         window.styleMask.insert(.fullSizeContentView)
         window.delegate = self

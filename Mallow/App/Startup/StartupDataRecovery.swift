@@ -11,7 +11,7 @@ nonisolated final class PersistentStoreOwnership: Sendable {
 
     struct AlreadyInUse: LocalizedError {
         var errorDescription: String? {
-            String(localized: "Another instance of the app is using this data. Close that instance, then try again.")
+            String(localized: "STORAGE_ERROR_IN_USE", defaultValue: "Another instance of the app is using this data. Close that instance, then try again.")
         }
     }
 
@@ -224,11 +224,11 @@ nonisolated enum StartupDataRecovery {
             categories.append(category)
         }
 
-        try recover("ChatSession", title: String(localized: "Chats"), make: recoverSession) { session, row in
+        try recover("ChatSession", title: String(localized: "CHAT_LIST_TITLE", defaultValue: "Chats"), make: recoverSession) { session, row in
             sessions[try row.integer("Z_PK")] = session
             sessionRows[session.id] = row
         }
-        try recover("ChatMessage", title: String(localized: "Messages"), make: recoverMessage) { message, row in
+        try recover("ChatMessage", title: String(localized: "MESSAGE_LIST", defaultValue: "Messages"), make: recoverMessage) { message, row in
             let key = try row.integer("Z_PK")
             let sessionKey = try row.integer("ZSESSION")
             guard let session = sessions[sessionKey] else { throw row.invalid("session") }
@@ -299,11 +299,11 @@ nonisolated enum StartupDataRecovery {
             session.sidebarPreviewText = ChatSession.sidebarPreviewText(for: latest)
         }
 
-        try recover("AppSettings", title: String(localized: "Settings"), make: AppSettingsStore.recover)
-        try recover("ChatServerPreset", title: String(localized: "Chat Server Presets"), make: recoverChatServer)
-        try recover("VoiceServerPreset", title: String(localized: "Voice Server Presets"), make: recoverVoiceServer)
-        try recover("VoicePreset", title: String(localized: "Voice Presets"), make: recoverVoice)
-        try recover("SystemPromptPreset", title: String(localized: "System Prompt Presets"), make: recoverPrompt)
+        try recover("AppSettings", title: String(localized: "SETTINGS_TITLE", defaultValue: "Settings"), make: AppSettingsStore.recover)
+        try recover("ChatServerPreset", title: String(localized: "DATA_CHAT_SERVER_PRESETS", defaultValue: "Chat Server Presets"), make: recoverChatServer)
+        try recover("VoiceServerPreset", title: String(localized: "DATA_VOICE_SERVER_PRESETS", defaultValue: "Voice Server Presets"), make: recoverVoiceServer)
+        try recover("VoicePreset", title: String(localized: "DATA_VOICE_PRESETS", defaultValue: "Voice Presets"), make: recoverVoice)
+        try recover("SystemPromptPreset", title: String(localized: "DATA_SYSTEM_PROMPT_PRESETS", defaultValue: "System Prompt Presets"), make: recoverPrompt)
         if persist {
             for message in try context.fetch(FetchDescriptor<ChatMessage>()) { try message.persistDocument() }
             try context.save()
@@ -397,7 +397,7 @@ extension StartupDataRecovery {
     }
 
     private static func recoverChatServer(_ row: RecoveryRow) throws -> ChatServerPreset {
-        let model = ChatServerPreset(name: String(localized: "New Preset"))
+        let model = ChatServerPreset(name: String(localized: "PRESET_TITLE_NEW", defaultValue: "New Preset"))
         model.id = try row.value("id")
         model.name = try row.value("name")
         model.apiURL = try row.value("apiURL")
@@ -409,7 +409,7 @@ extension StartupDataRecovery {
     }
 
     private static func recoverVoiceServer(_ row: RecoveryRow) throws -> VoiceServerPreset {
-        let model = VoiceServerPreset(name: String(localized: "New Preset"))
+        let model = VoiceServerPreset(name: String(localized: "PRESET_TITLE_NEW", defaultValue: "New Preset"))
         model.id = try row.value("id")
         model.name = try row.value("name")
         model.serverAddress = try row.value("serverAddress")
@@ -419,7 +419,7 @@ extension StartupDataRecovery {
     }
 
     private static func recoverVoice(_ row: RecoveryRow) throws -> VoicePreset {
-        let model = VoicePreset(name: String(localized: "New Preset"))
+        let model = VoicePreset(name: String(localized: "PRESET_TITLE_NEW", defaultValue: "New Preset"))
         model.id = try row.value("id")
         model.name = try row.value("name")
         model.refAudioPath = try row.value("refAudioPath")
@@ -433,7 +433,7 @@ extension StartupDataRecovery {
     }
 
     private static func recoverPrompt(_ row: RecoveryRow) throws -> SystemPromptPreset {
-        let model = SystemPromptPreset(name: String(localized: "New Prompt Preset"))
+        let model = SystemPromptPreset(name: String(localized: "PROMPT_PRESET_TITLE_NEW", defaultValue: "New Prompt Preset"))
         model.id = try row.value("id")
         model.name = try row.value("name")
         model.mode = try row.value("mode", as: String.self)

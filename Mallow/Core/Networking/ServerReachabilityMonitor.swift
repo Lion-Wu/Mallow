@@ -115,7 +115,7 @@ final class ServerReachabilityMonitor: ObservableObject {
                 self.isChatReachable = false
                 if self.shouldPublishNotice(for: .textModel) {
                     self.noticePublisher.publishCritical(
-                        title: NSLocalizedString("Text server unreachable", comment: "Shown when the LLM endpoint cannot be reached"),
+                        title: NSLocalizedString("CHAT_SERVER_UNREACHABLE", value: "Text server unreachable", comment: "Shown when the LLM endpoint cannot be reached"),
                         message: friendlyMessage(for: error, base: chatBase),
                         category: .textModel
                     )
@@ -140,7 +140,7 @@ final class ServerReachabilityMonitor: ObservableObject {
                 self.isTTSReachable = false
                 if self.shouldPublishNotice(for: .tts) {
                     self.noticePublisher.publishCritical(
-                        title: NSLocalizedString("TTS server unreachable", comment: "Shown when the TTS endpoint cannot be reached"),
+                        title: NSLocalizedString("VOICE_TTS_SERVER_UNREACHABLE", value: "TTS server unreachable", comment: "Shown when the TTS endpoint cannot be reached"),
                         message: friendlyMessage(for: error, base: ttsBase),
                         category: .tts
                     )
@@ -233,13 +233,13 @@ final class ServerReachabilityMonitor: ObservableObject {
         if let urlError = error as? URLError {
             switch urlError.code {
             case .cannotFindHost, .cannotConnectToHost:
-                return String(format: NSLocalizedString("Could not connect to %@", comment: "Shown when a server host is unreachable"), base)
+                return String(format: NSLocalizedString("NETWORK_CONNECTION_FAILED", value: "Could not connect to %@", comment: "Shown when a server host is unreachable"), base)
             case .notConnectedToInternet:
-                return NSLocalizedString("You appear to be offline. Please check your internet connection.", comment: "Shown when the device is offline")
+                return NSLocalizedString("NETWORK_OFFLINE", value: "You appear to be offline. Please check your internet connection.", comment: "Shown when the device is offline")
             case .networkConnectionLost:
-                return NSLocalizedString("The network connection was lost.", comment: "Shown when the connection drops")
+                return NSLocalizedString("NETWORK_CONNECTION_LOST", value: "The network connection was lost.", comment: "Shown when the connection drops")
             case .timedOut:
-                return NSLocalizedString("The request timed out. The server may be offline or busy.", comment: "Shown when a server request times out")
+                return NSLocalizedString("NETWORK_REQUEST_TIMEOUT", value: "The request timed out. The server may be offline or busy.", comment: "Shown when a server request times out")
             default:
                 return urlError.localizedDescription
             }

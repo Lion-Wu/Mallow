@@ -51,8 +51,8 @@ struct ContentView: View {
             iosContent
         #endif
         }
-        .alert("Data Saving Issue", isPresented: persistenceWriteFailureAlertBinding) {
-            Button("OK") {
+        .alert("DATA_SAVING_ISSUE", isPresented: persistenceWriteFailureAlertBinding) {
+            Button("COMMON_ACTION_OK") {
                 chatSessionsViewModel.clearPersistenceWriteFailure()
             }
         } message: {
@@ -115,10 +115,10 @@ private extension ContentView {
                 ToolbarItem {
                     if !voiceOverlayViewModel.isPresented {
                         Button(action: { chatSessionsViewModel.startNewSession() }) {
-                            Label("New Chat", systemImage: "plus")
+                            Label("CHAT_TITLE_NEW", systemImage: "plus")
                         }
                         .labelStyle(.iconOnly)
-                        .help("New Chat")
+                        .help("CHAT_TITLE_NEW")
                         .disabled(!chatSessionsViewModel.canStartNewSession)
                     }
                 }
@@ -165,10 +165,10 @@ private extension ContentView {
                                 Button(action: {
                                     startNewIOSSession()
                                 }) {
-                                    Label("New Chat", systemImage: "square.and.pencil")
+                                    Label("CHAT_TITLE_NEW", systemImage: "square.and.pencil")
                                 }
                                 .labelStyle(.iconOnly)
-                                .accessibilityLabel("New Chat")
+                                .accessibilityLabel("CHAT_TITLE_NEW")
                                 .disabled(!chatSessionsViewModel.canStartNewSession)
                             }
                         }

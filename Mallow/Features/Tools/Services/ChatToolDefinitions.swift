@@ -472,39 +472,39 @@ enum ChatToolDefinitions {
     static func activityTitle(for name: String) -> String {
         switch ChatToolID(toolName: name) {
         case .calendarListEvents:
-            return NSLocalizedString("Listing Calendar Events", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_CALENDAR_LISTING", value: "Listing Calendar Events", comment: "Tool activity title")
         case .calendarCreateEvent:
-            return NSLocalizedString("Creating Calendar Event", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_CALENDAR_CREATING", value: "Creating Calendar Event", comment: "Tool activity title")
         case .calendarDeleteEvent:
-            return NSLocalizedString("Deleting Calendar Event", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_CALENDAR_DELETING", value: "Deleting Calendar Event", comment: "Tool activity title")
         case .calendarShowEvents:
-            return NSLocalizedString("Showing Calendar Events", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_CALENDAR_SHOWING", value: "Showing Calendar Events", comment: "Tool activity title")
         case .remindersListReminders:
-            return NSLocalizedString("Listing Reminders", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_REMINDERS_LISTING", value: "Listing Reminders", comment: "Tool activity title")
         case .remindersCreateReminder:
-            return NSLocalizedString("Creating Reminder", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_REMINDERS_CREATING", value: "Creating Reminder", comment: "Tool activity title")
         case .remindersDeleteReminder:
-            return NSLocalizedString("Deleting Reminder", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_REMINDERS_DELETING", value: "Deleting Reminder", comment: "Tool activity title")
         case .remindersShowReminders:
-            return NSLocalizedString("Showing Reminders", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_REMINDERS_SHOWING", value: "Showing Reminders", comment: "Tool activity title")
         case .locationCurrent:
-            return NSLocalizedString("Getting Location", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_LOCATION_READING", value: "Getting Location", comment: "Tool activity title")
         case .motionDevice:
-            return NSLocalizedString("Reading Motion", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_MOTION_READING", value: "Reading Motion", comment: "Tool activity title")
         case .deviceContext:
-            return NSLocalizedString("Checking Device", comment: "Tool activity title")
+            return NSLocalizedString("DEVICE_CHECKING", value: "Checking Device", comment: "Tool activity title")
         case .clipboardGetText:
-            return NSLocalizedString("Reading Clipboard", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_CLIPBOARD_READING", value: "Reading Clipboard", comment: "Tool activity title")
         case .clipboardSetText:
-            return NSLocalizedString("Writing Clipboard", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_CLIPBOARD_WRITING", value: "Writing Clipboard", comment: "Tool activity title")
         case .systemOpenURL:
-            return NSLocalizedString("Opening Link", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_URL_OPENING", value: "Opening Link", comment: "Tool activity title")
         case .systemGetTime:
-            return NSLocalizedString("Reading Current Time", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_TIME_READING", value: "Reading Current Time", comment: "Tool activity title")
         case .javaScriptRun:
-            return NSLocalizedString("Running Code", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_CODE_RUNNING", value: "Running Code", comment: "Tool activity title")
         case .none:
-            return NSLocalizedString("Using Tool", comment: "Tool activity title")
+            return NSLocalizedString("TOOLS_STATUS_USING", value: "Using Tool", comment: "Tool activity title")
         }
     }
 
@@ -529,7 +529,7 @@ enum ChatToolDefinitions {
                     endRaw: stringValue("end", in: arguments)
                 ),
                 namedScopeSummary(
-                    label: NSLocalizedString("Calendar", comment: "Tool activity summary label"),
+                    label: NSLocalizedString("TOOLS_CALENDAR", value: "Calendar", comment: "Tool activity summary label"),
                     value: stringValue("calendar_name", in: arguments)
                 ),
                 keywordsSummary(arguments)
@@ -542,7 +542,7 @@ enum ChatToolDefinitions {
                     endRaw: stringValue("end", in: arguments)
                 ),
                 namedScopeSummary(
-                    label: NSLocalizedString("Calendar", comment: "Tool activity summary label"),
+                    label: NSLocalizedString("TOOLS_CALENDAR", value: "Calendar", comment: "Tool activity summary label"),
                     value: stringValue("calendar_name", in: arguments)
                 )
             )
@@ -556,7 +556,7 @@ enum ChatToolDefinitions {
                     endRaw: stringValue("end", in: arguments)
                 ),
                 namedScopeSummary(
-                    label: NSLocalizedString("List", comment: "Tool activity summary label"),
+                    label: NSLocalizedString("TOOLS_REMINDER_LIST", value: "List", comment: "Tool activity summary label"),
                     value: stringValue("list_name", in: arguments)
                 ),
                 keywordsSummary(arguments)
@@ -566,7 +566,7 @@ enum ChatToolDefinitions {
                 quotedTitleSummary(stringValue("title", in: arguments)),
                 dueDateTimeSummary(stringValue("due", in: arguments)),
                 namedScopeSummary(
-                    label: NSLocalizedString("List", comment: "Tool activity summary label"),
+                    label: NSLocalizedString("TOOLS_REMINDER_LIST", value: "List", comment: "Tool activity summary label"),
                     value: stringValue("list_name", in: arguments)
                 ),
                 prioritySummary(numberValue("priority", in: arguments))
@@ -576,7 +576,7 @@ enum ChatToolDefinitions {
         case .motionDevice:
             if let duration = numberValue("duration_seconds", in: arguments) {
                 return String(
-                    format: NSLocalizedString("%.1fs snapshot", comment: "Tool activity summary"),
+                    format: NSLocalizedString("TOOLS_MOTION_SNAPSHOT_DURATION", value: "%.1fs snapshot", comment: "Tool activity summary"),
                     duration
                 )
             }
@@ -584,7 +584,7 @@ enum ChatToolDefinitions {
         case .clipboardSetText:
             guard let text = stringValue("text", in: arguments) else { return nil }
             return String(
-                format: NSLocalizedString("%d characters", comment: "Tool activity summary"),
+                format: NSLocalizedString("TEXT_CHARACTER_COUNT", value: "%d characters", comment: "Tool activity summary"),
                 text.count
             )
         case .systemOpenURL:
@@ -596,7 +596,7 @@ enum ChatToolDefinitions {
         case .javaScriptRun:
             guard let code = stringValue("code", in: arguments) else { return nil }
             return String(
-                format: NSLocalizedString("JavaScript, %d characters", comment: "Tool activity summary"),
+                format: NSLocalizedString("TOOLS_JAVASCRIPT_CHARACTER_COUNT", value: "JavaScript, %d characters", comment: "Tool activity summary"),
                 code.count
             )
         case .locationCurrent, .deviceContext, .clipboardGetText, .systemGetTime, .none:
@@ -669,7 +669,7 @@ enum ChatToolDefinitions {
     private static func namedScopeSummary(label: String, value: String?) -> String? {
         guard let value else { return nil }
         return String(
-            format: NSLocalizedString("%@: %@", comment: "Tool activity summary"),
+            format: NSLocalizedString("COMMON_NAME_VALUE", value: "%@: %@", comment: "Tool activity summary"),
             label,
             value
         )
@@ -678,13 +678,13 @@ enum ChatToolDefinitions {
     private static func reminderStatusSummary(_ rawStatus: String?) -> String {
         switch rawStatus?.lowercased() {
         case "completed":
-            return NSLocalizedString("Completed reminders", comment: "Tool activity summary")
+            return NSLocalizedString("TOOLS_REMINDERS_COMPLETED", value: "Completed reminders", comment: "Tool activity summary")
         case "all":
-            return NSLocalizedString("All reminders", comment: "Tool activity summary")
+            return NSLocalizedString("TOOLS_REMINDERS_ALL", value: "All reminders", comment: "Tool activity summary")
         case "incomplete", nil:
-            return NSLocalizedString("Open reminders", comment: "Tool activity summary")
+            return NSLocalizedString("TOOLS_REMINDERS_OPEN", value: "Open reminders", comment: "Tool activity summary")
         default:
-            return rawStatus ?? NSLocalizedString("Open reminders", comment: "Tool activity summary")
+            return rawStatus ?? NSLocalizedString("TOOLS_REMINDERS_OPEN", value: "Open reminders", comment: "Tool activity summary")
         }
     }
 
@@ -693,7 +693,7 @@ enum ChatToolDefinitions {
         let range = temporalRangeSummary(startRaw: startRaw, endRaw: endRaw, defaultToToday: false)
         guard let range else { return nil }
         return String(
-            format: NSLocalizedString("Due %@", comment: "Tool activity summary"),
+            format: NSLocalizedString("TOOLS_REMINDER_DUE", value: "Due %@", comment: "Tool activity summary"),
             range
         )
     }
@@ -703,7 +703,7 @@ enum ChatToolDefinitions {
             return nil
         }
         return String(
-            format: NSLocalizedString("Calendar: %@", comment: "Tool activity summary"),
+            format: NSLocalizedString("TOOLS_CALENDAR_NAME", value: "Calendar: %@", comment: "Tool activity summary"),
             range
         )
     }
@@ -712,7 +712,7 @@ enum ChatToolDefinitions {
         let keywords = stringArrayValue("keywords", in: arguments)
         guard !keywords.isEmpty else { return nil }
         return String(
-            format: NSLocalizedString("Keywords: %@", comment: "Tool activity summary"),
+            format: NSLocalizedString("TOOLS_SEARCH_KEYWORDS", value: "Keywords: %@", comment: "Tool activity summary"),
             keywords.joined(separator: ", ")
         )
     }
@@ -720,7 +720,7 @@ enum ChatToolDefinitions {
     private static func dueDateTimeSummary(_ rawValue: String?) -> String? {
         guard let rawValue else { return nil }
         return String(
-            format: NSLocalizedString("Due %@", comment: "Tool activity summary"),
+            format: NSLocalizedString("TOOLS_REMINDER_DUE", value: "Due %@", comment: "Tool activity summary"),
             dateTimeSummary(rawValue)
         )
     }
@@ -728,7 +728,7 @@ enum ChatToolDefinitions {
     private static func prioritySummary(_ value: Double?) -> String? {
         guard let value, value > 0 else { return nil }
         return String(
-            format: NSLocalizedString("Priority %d", comment: "Tool activity summary"),
+            format: NSLocalizedString("TOOLS_REMINDER_PRIORITY", value: "Priority %d", comment: "Tool activity summary"),
             Int(value)
         )
     }
@@ -809,13 +809,13 @@ enum ChatToolDefinitions {
 
     private static func relativeDateText(_ date: Date, calendar: Calendar) -> String {
         if calendar.isDateInToday(date) {
-            return NSLocalizedString("Today", comment: "Tool activity date")
+            return NSLocalizedString("DATE_TODAY", value: "Today", comment: "Tool activity date")
         }
         if calendar.isDateInTomorrow(date) {
-            return NSLocalizedString("Tomorrow", comment: "Tool activity date")
+            return NSLocalizedString("DATE_TOMORROW", value: "Tomorrow", comment: "Tool activity date")
         }
         if calendar.isDateInYesterday(date) {
-            return NSLocalizedString("Yesterday", comment: "Tool activity date")
+            return NSLocalizedString("DATE_YESTERDAY", value: "Yesterday", comment: "Tool activity date")
         }
         let formatter = DateFormatter()
         formatter.locale = .autoupdatingCurrent

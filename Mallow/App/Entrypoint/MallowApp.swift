@@ -58,7 +58,7 @@ struct MallowApp: App {
         }
 
         #if os(macOS)
-        Window("About \(ApplicationInformation.name)", id: AboutView.windowID) {
+        Window(LocalizedStringResource("ABOUT_TITLE", defaultValue: "About \(ApplicationInformation.name)"), id: AboutView.windowID) {
             AboutView()
         }
         .defaultSize(width: 760, height: 820)
