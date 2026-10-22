@@ -84,17 +84,6 @@ extension ChatService {
         stopWatchdog()
     }
 
-    @discardableResult
-    func runBufferedPromptToolCallIfPresent() -> Bool {
-        let calls = ChatPromptToolProtocol.parseToolCalls(
-            from: promptToolPrimaryText,
-            provider: activeStreamRequest?.endpoint.provider
-        )
-        guard !calls.isEmpty else { return false }
-        runPromptToolCallsIfAllowed(calls)
-        return true
-    }
-
     func resetPromptToolGate(preservingOpenThinking: Bool = false) {
         promptToolBufferedDeltas.removeAll(keepingCapacity: true)
         promptToolPrimaryText = ""

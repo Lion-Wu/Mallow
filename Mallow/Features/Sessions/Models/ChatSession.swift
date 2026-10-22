@@ -55,20 +55,17 @@ extension ChatSession {
     }
 
     func registerMessageActivity(_ message: ChatMessage) {
-        if let current = lastMessageAt {
-            if message.createdAt > current {
-                lastMessageAt = message.createdAt
-                lastMessageID = message.id
-                sidebarPreviewText = Self.sidebarPreviewText(for: message)
-            }
-        } else {
-            lastMessageAt = message.createdAt
-            lastMessageID = message.id
-            sidebarPreviewText = Self.sidebarPreviewText(for: message)
+        if let createdAt = message.createdAt {
+            if let current = lastMessageAt, createdAt <= current { return }
+            lastMessageAt = createdAt
+        } else if lastMessageID != nil {
+            return
         }
+        lastMessageID = message.id
+        sidebarPreviewText = Self.sidebarPreviewText(for: message)
     }
 
-    func synchronizeTransientMessageStateForPersistence() {
+    func synchronizeTransientMessageStateForPersistence() throws {
         if !didInitializeTransientPersistenceTracking {
             for message in messages where message.assistantSegmentsNeedPersistence {
                 messagesNeedingTransientPersistence[message.id] = message
@@ -77,7 +74,7 @@ extension ChatSession {
         }
 
         for message in messagesNeedingTransientPersistence.values {
-            message.synchronizeAssistantSegmentsForPersistence()
+            try message.synchronizeAssistantSegmentsForPersistence()
         }
     }
 

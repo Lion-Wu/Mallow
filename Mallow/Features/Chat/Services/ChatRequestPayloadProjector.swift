@@ -13,11 +13,10 @@ struct ChatRequestSourceMessage: Equatable, Sendable {
     let imageAttachments: [ChatImageAttachment]
     let providerResponseID: String?
     let requestContextFingerprint: String?
-    let requestContentSnapshot: String?
     let assistantSegments: [ChatAssistantSegment]
     let openAIResponsesConversationItems: [JSONValue]
     let toolActivityPlacements: [ChatToolActivityPlacement]
-    let createdAt: Date
+    let createdAt: Date?
 
     init(
         content: String,
@@ -25,18 +24,16 @@ struct ChatRequestSourceMessage: Equatable, Sendable {
         imageAttachments: [ChatImageAttachment] = [],
         providerResponseID: String? = nil,
         requestContextFingerprint: String? = nil,
-        requestContentSnapshot: String? = nil,
         assistantSegments: [ChatAssistantSegment] = [],
         openAIResponsesConversationItems: [JSONValue] = [],
         toolActivityPlacements: [ChatToolActivityPlacement] = [],
-        createdAt: Date = Date()
+        createdAt: Date? = nil
     ) {
         self.content = content
         self.isUser = isUser
         self.imageAttachments = imageAttachments
         self.providerResponseID = providerResponseID
         self.requestContextFingerprint = requestContextFingerprint
-        self.requestContentSnapshot = requestContentSnapshot
         self.assistantSegments = assistantSegments
         self.openAIResponsesConversationItems = openAIResponsesConversationItems
         self.toolActivityPlacements = toolActivityPlacements
@@ -128,10 +125,6 @@ struct ChatRequestPayloadProjector: ChatRequestPayloadProjecting, Sendable {
         guard !message.isUser else {
             return message.content
         }
-        if let snapshot = message.requestContentSnapshot,
-           !snapshot.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return snapshot
-        }
         return makeAssistantRequestContent(
             content: assistantTextContent(for: message),
             toolActivityPlacements: message.toolActivityPlacements
@@ -199,23 +192,7 @@ struct ChatRequestPayloadProjector: ChatRequestPayloadProjecting, Sendable {
         return "\(content)\n\n\(toolContext)"
     }
 
-    @discardableResult
-    static func refreshAssistantRequestSnapshotIfNeeded(
-        _ message: ChatMessage,
-        placements: [ChatToolActivityPlacement]? = nil
-    ) -> Bool {
-        guard !message.isUser else { return false }
-        let persistentPlacements = (placements ?? message.toolActivityPlacements)
-            .filter { $0.activity.phase.isPersistentToolTracePhase }
-        let nextSnapshot = persistentPlacements.isEmpty ? nil : makeAssistantRequestContent(
-            content: message.assistantText,
-            toolActivityPlacements: persistentPlacements
-        )
-        let canUpdateSnapshot = message.isActive || message.streamCompletedAt == nil || message.requestContentSnapshot == nil
-        guard canUpdateSnapshot, message.requestContentSnapshot != nextSnapshot else { return false }
-        message.requestContentSnapshot = nextSnapshot
-        return true
-    }
+
 }
 
 private enum ChatToolContextTranscriptFormatter {

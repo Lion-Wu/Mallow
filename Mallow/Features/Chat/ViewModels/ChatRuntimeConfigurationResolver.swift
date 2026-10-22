@@ -31,13 +31,15 @@ struct ChatRuntimeConfigurationResolver {
     }
 
     func supportsImageInput(fallbackModelIdentifier: String) -> Bool {
-        settingsManager.chatModelCapabilities.supportsImageInput(
+        guard settingsManager.isChatModelReady else { return false }
+        return settingsManager.chatModelCapabilities.supportsImageInput(
             for: effectiveModelIdentifier(fallback: fallbackModelIdentifier)
         )
     }
 
     func thinkingCapability(fallbackModelIdentifier: String) -> ModelThinkingCapability? {
-        settingsManager.chatModelCapabilities.thinkingCapability(
+        guard settingsManager.isChatModelReady else { return nil }
+        return settingsManager.chatModelCapabilities.thinkingCapability(
             for: effectiveModelIdentifier(fallback: fallbackModelIdentifier)
         )
     }

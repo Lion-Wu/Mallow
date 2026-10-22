@@ -23,7 +23,7 @@ enum ChatMessageBranchResolver {
         if lhs.createdAt == rhs.createdAt {
             return lhs.id.uuidString < rhs.id.uuidString
         }
-        return lhs.createdAt < rhs.createdAt
+        return (lhs.createdAt ?? .distantPast) < (rhs.createdAt ?? .distantPast)
     }
 
     static func messageLookup(in session: ChatSession) -> [UUID: ChatMessage] {

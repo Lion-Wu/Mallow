@@ -145,14 +145,14 @@ final class SettingsViewModel: ObservableObject {
 
     // MARK: - Model List (Networking)
 
-    @Published private(set) var availableModels: [String] = []
-    @Published private(set) var isLoadingModels: Bool = false
-    @Published private(set) var isRetryingModels: Bool = false
-    @Published private(set) var modelRetryAttempt: Int = 0
-    @Published private(set) var modelRetryLastError: String?
-    @Published private(set) var chatServerErrorMessage: String?
-    @Published private(set) var lastFetchedModelMetadata: [ModelInfo] = []
-    @Published private(set) var lastModelFetchEndpoint: ChatAPIEndpointCandidate?
+    var availableModels: [String] { settingsManager.chatModelCatalogState.availableModels }
+    var isLoadingModels: Bool { settingsManager.chatModelCatalogState.isLoadingModels }
+    var isRetryingModels: Bool { settingsManager.chatModelCatalogState.isRetryingModels }
+    var modelRetryAttempt: Int { settingsManager.chatModelCatalogState.modelRetryAttempt }
+    var modelRetryLastError: String? { settingsManager.chatModelCatalogState.modelRetryLastError }
+    var chatServerErrorMessage: String? { settingsManager.chatModelCatalogState.chatServerErrorMessage }
+    var lastFetchedModelMetadata: [ModelInfo] { settingsManager.chatModelCatalogState.lastFetchedModelMetadata }
+    var lastModelFetchEndpoint: ChatAPIEndpointCandidate? { settingsManager.chatModelCatalogState.lastModelFetchEndpoint }
 
     // MARK: - Preset bindings for the UI
     typealias PresetSummary = SettingsPresetSummary
@@ -240,7 +240,6 @@ final class SettingsViewModel: ObservableObject {
     let settingsManager: SettingsManager
     private var editingContextID: ObjectIdentifier?
     let presetBindingController: SettingsPresetBindingController
-    private let modelCatalogController: SettingsModelCatalogController
 
     func withSuppressed(
         _ flag: SettingsViewModelSuppressionController.Flag,
@@ -258,14 +257,10 @@ final class SettingsViewModel: ObservableObject {
 
     // MARK: - Init
     init(
-        settingsManager: SettingsManager = .shared,
-        modelCatalogService: ModelCatalogFetching = DefaultModelCatalogService()
+        settingsManager: SettingsManager = .shared
     ) {
         self.settingsManager = settingsManager
         self.presetBindingController = SettingsPresetBindingController(settingsManager: settingsManager)
-        self.modelCatalogController = SettingsModelCatalogController(
-            modelCatalogFetchCoordinator: ModelCatalogFetchCoordinator(modelCatalogService: modelCatalogService)
-        )
         // Seed values from the current in-memory state. A later SwiftData attach may update the manager,
         // so we also listen for the first post-load signal and resync.
         serverAddress = ""
@@ -292,14 +287,55 @@ final class SettingsViewModel: ObservableObject {
         toolUseSettings = .defaults
 
         refreshFromSettingsManager()
+        bindModelCatalogUpdates()
         bindInitialStoreSync()
         bindAppleSpeechVoiceChanges()
     }
 
     var shouldShowUnknownModelImageInputToggle: Bool {
         let model = selectedModel.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !model.isEmpty else { return false }
+        guard isSelectedModelCapabilityReady else { return false }
         return settingsManager.chatModelCapabilities.isImageInputSupportUnknown(for: model)
+    }
+
+    private var isSelectedModelCapabilityReady: Bool {
+        settingsManager.isChatModelReady && !isLoadingModels &&
+            selectedModel == settingsManager.chatSettings.selectedModel &&
+            ChatAPIEndpointResolver.normalizedAPIBaseKey(apiURL) ==
+                ChatAPIEndpointResolver.normalizedAPIBaseKey(settingsManager.chatSettings.apiURL)
+    }
+
+    var shouldShowUnknownModelThinkingOptions: Bool {
+        isSelectedModelCapabilityReady &&
+            settingsManager.chatModelCapabilities.isThinkingCapabilityUnknown(for: selectedModel)
+    }
+
+    var availableManualThinkingOptions: [ModelThinkingOption] {
+        settingsManager.chatModelCapabilities.availableManualThinkingOptions(for: selectedModel)
+    }
+
+    var selectedManualThinkingOptions: [ModelThinkingOption] {
+        settingsManager.chatModelCapabilities.manualThinkingOptions(for: selectedModel)
+    }
+
+    var selectedModelThinkingCapability: ModelThinkingCapability? {
+        settingsManager.chatModelCapabilities.thinkingCapability(for: selectedModel)
+    }
+
+    var usesAnthropicFixedBudgetThinking: Bool {
+        guard settingsManager.chatModelCapabilities.resolvedRequestStyle(for: settingsManager.chatSettings.apiURL) == .anthropicMessages else { return false }
+        let modes = lastFetchedModelMetadata.first { $0.id == selectedModel }?
+            .thinkingCapabilityHint(provider: .anthropic, requestStyle: .anthropicMessages)?
+            .anthropicThinkingModes ?? []
+        return modes.contains("enabled") || !modes.contains("adaptive")
+    }
+
+    func setManualThinkingOption(_ option: ModelThinkingOption, enabled: Bool) {
+        var options = selectedManualThinkingOptions.filter { $0 != option }
+        if enabled { options.append(option) }
+        options = availableManualThinkingOptions.filter { options.contains($0) }
+        settingsManager.chatModelCapabilities.setManualThinkingOptions(options, for: selectedModel)
+        objectWillChange.send()
     }
 
     var toolUseStatusMessage: String? {
@@ -373,66 +409,30 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - Networking (List Models)
 
     func fetchAvailableModels() {
-        settingsManager.didPrefetchChatModelsOnLaunch = true
-        settingsManager.chatModelCatalogRefreshCoordinator.cancel()
-        let trimmedAPIURL = apiURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        let requestedKey = chatAPIKey
-        let requestedFormat = selectedChatAPIFormatPreference
-        modelCatalogController.fetch(
-            request: SettingsModelCatalogRequest(
-                apiURL: trimmedAPIURL,
-                apiKey: requestedKey,
-                formatPreference: requestedFormat,
-                detectedProvider: settingsManager.chatModelCapabilities.detectedProvider(for: trimmedAPIURL),
-                selectedModel: selectedModel,
-                detectedStyle: settingsManager.chatModelCapabilities.detectedRequestStyle(for: trimmedAPIURL)
-            ),
-            currentState: currentModelCatalogState(),
-            applyState: { [weak self] state in
-                self?.applyModelCatalogState(state)
-            },
-            applyDetection: { [weak self] detection in
-                guard let self,
-                      ChatAPIEndpointResolver.normalizedAPIBaseKey(self.apiURL) == ChatAPIEndpointResolver.normalizedAPIBaseKey(trimmedAPIURL),
-                      self.chatAPIKey == requestedKey,
-                      self.selectedChatAPIFormatPreference == requestedFormat else { return }
-                self.applyDetectedModels(detection)
+        guard commitChatServerEdits() else { return }
+        settingsManager.fetchAvailableChatModels(forceRefresh: true)
+    }
+
+    private func bindModelCatalogUpdates() {
+        settingsManager.$chatModelCatalogState
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
             }
-        )
-    }
+            .store(in: &cancellables)
 
-    private func currentModelCatalogState() -> SettingsModelCatalogState {
-        SettingsModelCatalogState(
-            availableModels: availableModels,
-            isLoadingModels: isLoadingModels,
-            isRetryingModels: isRetryingModels,
-            modelRetryAttempt: modelRetryAttempt,
-            modelRetryLastError: modelRetryLastError,
-            chatServerErrorMessage: chatServerErrorMessage,
-            lastFetchedModelMetadata: lastFetchedModelMetadata,
-            lastModelFetchEndpoint: lastModelFetchEndpoint
-        )
-    }
-
-    private func applyModelCatalogState(_ state: SettingsModelCatalogState) {
-        availableModels = state.availableModels
-        isLoadingModels = state.isLoadingModels
-        isRetryingModels = state.isRetryingModels
-        modelRetryAttempt = state.modelRetryAttempt
-        modelRetryLastError = state.modelRetryLastError
-        chatServerErrorMessage = state.chatServerErrorMessage
-        lastFetchedModelMetadata = state.lastFetchedModelMetadata
-        lastModelFetchEndpoint = state.lastModelFetchEndpoint
-    }
-
-    private func applyDetectedModels(_ detection: SettingsModelCatalogDetection) {
-        settingsManager.chatModelCapabilities.noteDetectedEndpoint(detection.result.endpoint, for: detection.apiURL)
-        settingsManager.chatModelCapabilities.updateImageInputSupport(detection.result.imageInputSupportByModelID, for: detection.apiURL)
-        settingsManager.chatModelCapabilities.updateThinkingCapabilities(detection.result.thinkingCapabilitiesByModelID, for: detection.apiURL)
-
-        if let nextSelectedModel = detection.nextSelectedModel {
-            selectedModel = nextSelectedModel
-        }
+        settingsManager.$chatSettings
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let settings = self.settingsManager.chatSettings
+                guard ChatAPIEndpointResolver.normalizedAPIBaseKey(self.apiURL) == ChatAPIEndpointResolver.normalizedAPIBaseKey(settings.apiURL),
+                      self.chatAPIKey.trimmingCharacters(in: .whitespacesAndNewlines) == settings.apiKey.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+                self.withSuppressed(.autoSaves) {
+                    self.selectedModel = settings.selectedModel
+                }
+            }
+            .store(in: &cancellables)
     }
 
     func refreshFromSettingsManager() {
@@ -574,14 +574,6 @@ final class SettingsViewModel: ObservableObject {
         guard !suppression.isActive(.autoSaves),
               !suppression.isActive(.saveChatServerPreset),
               !suppression.isActive(.saveChatServerPresetFormat) else { return true }
-        let previousSettings = settingsManager.chatSettings
-        let previousBase = ChatAPIEndpointResolver.normalizedAPIBaseKey(previousSettings.apiURL)
-            ?? previousSettings.apiURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        let nextBase = ChatAPIEndpointResolver.normalizedAPIBaseKey(apiURL)
-            ?? apiURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        let requiresModelRefresh = previousBase != nextBase
-            || previousSettings.apiKey != chatAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
-            || settingsManager.chatModelCapabilities.selectedChatAPIFormatPreference() != selectedChatAPIFormatPreference
         let didCommit = settingsManager.commitSelectedChatServerSettings(
             name: chatServerPresetName,
             apiURL: apiURL,
@@ -596,12 +588,6 @@ final class SettingsViewModel: ObservableObject {
         let presets = presetBindingController.chatServerBinding().presets
         if chatServerPresetList != presets {
             chatServerPresetList = presets
-        }
-        if requiresModelRefresh {
-            availableModels = []
-            lastFetchedModelMetadata = []
-            lastModelFetchEndpoint = nil
-            fetchAvailableModels()
         }
         return true
     }

@@ -54,10 +54,9 @@ final class ChatViewModel: ObservableObject {
         let content: String
         let assistantSegments: [ChatAssistantSegment]
         let openAIResponsesConversationItems: [JSONValue]
-        let requestContentSnapshot: String?
         let toolActivityPlacements: [ChatToolActivityPlacement]
         let characterCount: Int
-        let tokenCount: Int
+        let tokenCount: Int?
         let tokenCountSource: String?
         let activeToolActivities: [ChatToolActivity]
         let messageToolActivities: [ChatToolActivity]
@@ -104,6 +103,7 @@ final class ChatViewModel: ObservableObject {
     private var chatConfiguration: ChatServiceConfiguration { textRequestRuntime.configuration }
     private let runtimeConfigurationResolver: ChatRuntimeConfigurationResolver
     private let settingsManager: SettingsManager
+    private var modelCatalogSubscription: AnyCancellable?
     private let reachability: ServerReachabilityMonitor
     private let audioManager: GlobalAudioManager
     private let sessionMutationController: ChatSessionMutationController
@@ -138,7 +138,6 @@ final class ChatViewModel: ObservableObject {
     }
     private let branchRestartCoordinator = ChatBranchRestartCoordinator()
     let queuedDraftAutostartController = ChatQueuedDraftAutostartController()
-    private var recordedRequestContextFingerprintsForActiveRequest = Set<String>()
     private var streamAttemptRetryCheckpoint: StreamAttemptRetryCheckpoint?
 
     // Emits content fingerprint updates (e.g., streaming deltas) to drive targeted UI refreshes.
@@ -185,6 +184,12 @@ final class ChatViewModel: ObservableObject {
         bindStreamRetryStatusController()
         ensureMessageTreeInitializedIfNeeded()
         bindStreamingSession()
+        modelCatalogSubscription = settingsManager.$readyChatModelCatalog
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+                self?.scheduleQueuedDraftAutostartIfNeeded()
+            }
     }
 
     func didApplyStoredMessageChanges() {
@@ -202,6 +207,17 @@ final class ChatViewModel: ObservableObject {
     }
 
     var hasPendingImageAttachments: Bool { !pendingImageAttachments.isEmpty }
+
+    var isModelReady: Bool { settingsManager.isChatModelReady }
+
+    @discardableResult
+    func ensureModelReadyForSending() -> Bool {
+        guard isModelReady else {
+            requestDidFail.send(.validation(ChatNetworkError.modelInformationUnavailable.localizedDescription))
+            return false
+        }
+        return true
+    }
 
     func removePendingImageAttachment(id: UUID) { pendingImageAttachments.removeAll { $0.id == id } }
 
@@ -279,17 +295,14 @@ final class ChatViewModel: ObservableObject {
 
     private func handleResponseMetadata(_ metadata: ChatResponseMetadata) {
         applyRequestTransportMetadataToLatestUserMessage(metadata)
-
-        guard let requestContext = metadata.requestContext else { return }
-        guard !recordedRequestContextFingerprintsForActiveRequest.contains(requestContext.fingerprint) else {
-            return
+        if let id = currentAssistantMessageID, let message = messageLookup()[id] {
+            textRequestRuntime.applyGenerationRounds(to: message)
+            persistSession(reason: .throttled)
         }
-        recordedRequestContextFingerprintsForActiveRequest.insert(requestContext.fingerprint)
-        ChatRequestContextMetadataStore.record(requestContext, in: chatSession.modelContext)
     }
 
     private func applyRequestTransportMetadataToLatestUserMessage(_ metadata: ChatResponseMetadata) {
-        guard metadata.requestContext != nil || metadata.requestUsedPreviousResponseID != nil else {
+        guard metadata.requestUsedPreviousResponseID != nil else {
             return
         }
         guard let message = activeBranchMessages().last(where: \.isUser) else {
@@ -297,12 +310,6 @@ final class ChatViewModel: ObservableObject {
         }
 
         var didChange = false
-        if let fingerprint = metadata.requestContext?.fingerprint,
-           !fingerprint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-           message.requestContextFingerprint != fingerprint {
-            message.requestContextFingerprint = fingerprint
-            didChange = true
-        }
         if let usedPreviousResponseID = metadata.requestUsedPreviousResponseID,
            message.requestUsedPreviousResponseID != usedPreviousResponseID {
             message.requestUsedPreviousResponseID = usedPreviousResponseID
@@ -390,7 +397,6 @@ final class ChatViewModel: ObservableObject {
 
     private func completeChatServiceError(_ error: Error, now: Date = Date()) {
         streamAttemptRetryCheckpoint = nil
-        refreshTrackedAssistantRequestSnapshotIfNeeded()
         let completion = textRequestRuntime.completeAfterError(error, in: chatSession, now: now)
 
         if !completion.errorText.isEmpty {
@@ -427,7 +433,6 @@ final class ChatViewModel: ObservableObject {
         let finishedAt = Date()
         isToolContinuationLoading = false
         streamAttemptRetryCheckpoint = nil
-        refreshTrackedAssistantRequestSnapshotIfNeeded()
         textRequestRuntime.completeSuccessfully(in: chatSession, finishedAt: finishedAt)
         clearProcessingToolActivitiesFromMessages()
         clearToolActivities()
@@ -512,10 +517,9 @@ final class ChatViewModel: ObservableObject {
             content: message?.content ?? "",
             assistantSegments: message?.assistantSegments ?? [],
             openAIResponsesConversationItems: message?.openAIResponsesConversationItems ?? [],
-            requestContentSnapshot: message?.requestContentSnapshot,
             toolActivityPlacements: message?.toolActivityPlacements ?? [],
             characterCount: message?.characterCount ?? 0,
-            tokenCount: message?.tokenCount ?? 0,
+            tokenCount: message?.tokenCount,
             tokenCountSource: message?.tokenCountSource,
             activeToolActivities: toolActivities,
             messageToolActivities: message.flatMap { messageToolActivities[$0.id] } ?? [],
@@ -552,7 +556,6 @@ final class ChatViewModel: ObservableObject {
             message.content != checkpoint.content ||
             message.assistantSegments != checkpoint.assistantSegments ||
             message.openAIResponsesConversationItems != checkpoint.openAIResponsesConversationItems ||
-            message.requestContentSnapshot != checkpoint.requestContentSnapshot ||
             message.toolActivityPlacements != checkpoint.toolActivityPlacements ||
             message.characterCount != checkpoint.characterCount ||
             message.tokenCount != checkpoint.tokenCount ||
@@ -562,10 +565,7 @@ final class ChatViewModel: ObservableObject {
         message.content = checkpoint.content
         message.assistantSegments = checkpoint.assistantSegments
         message.openAIResponsesConversationItems = checkpoint.openAIResponsesConversationItems
-        message.requestContentSnapshot = checkpoint.requestContentSnapshot
         message.toolActivityPlacements = checkpoint.toolActivityPlacements
-        message.characterCount = checkpoint.characterCount
-        message.tokenCount = checkpoint.tokenCount
         message.tokenCountSource = checkpoint.tokenCountSource
         let fingerprint = ContentFingerprint.make(message.renderFingerprintSource)
         if streamingAssistantMessageID == message.id {
@@ -637,19 +637,9 @@ final class ChatViewModel: ObservableObject {
     ) {
         let persistentPlacements = placements.filter { $0.activity.phase.isPersistentToolTracePhase }
         let placementsChanged = message.toolActivityPlacements != persistentPlacements
-        let snapshotChanged = ChatRequestPayloadProjector.refreshAssistantRequestSnapshotIfNeeded(
-            message,
-            placements: persistentPlacements
-        )
-        guard placementsChanged || snapshotChanged else { return }
+        guard placementsChanged else { return }
         message.toolActivityPlacements = persistentPlacements
         persistSession(reason: .throttled)
-    }
-
-    private func refreshTrackedAssistantRequestSnapshotIfNeeded() {
-        let messageID = currentAssistantMessageID ?? streamingAssistantMessageID
-        guard let messageID, let message = messageLookup()[messageID] else { return }
-        _ = ChatRequestPayloadProjector.refreshAssistantRequestSnapshotIfNeeded(message)
     }
 
     private func clearTerminalToolActivitiesAfterDelay() {
@@ -694,7 +684,7 @@ final class ChatViewModel: ObservableObject {
             currentAssistantMessageID = appendResult.message.id
             streamingAssistantMessageID = appendResult.message.id
             streamingAssistantFingerprint = appendResult.fingerprint
-            applyStreamMetadata(to: appendResult.message, firstTokenTimestamp: now)
+            applyStreamMetadata(to: appendResult.message)
             resetStreamingPersistenceState()
             persistSession(reason: .immediate)
         }
@@ -749,7 +739,6 @@ final class ChatViewModel: ObservableObject {
     }
 
     private func markRequestActive(pendingParentMessageID: UUID?) {
-        recordedRequestContextFingerprintsForActiveRequest.removeAll(keepingCapacity: true)
         textRequestRuntime.markActive(pendingParentMessageID: pendingParentMessageID)
     }
 
@@ -771,7 +760,6 @@ final class ChatViewModel: ObservableObject {
     ) -> ChatMessage {
         let placeholder = ChatMessage(
             content: assistant?.content ?? "",
-            requestContentSnapshot: assistant?.requestContentSnapshot,
             assistantSegments: assistant?.assistantSegments ?? [],
             openAIResponsesConversationItems: assistant?.openAIResponsesConversationItems ?? [],
             isUser: false,
@@ -813,22 +801,18 @@ final class ChatViewModel: ObservableObject {
         )
     }
 
-    private func applyStreamMetadata(to message: ChatMessage, firstTokenTimestamp: Date) {
+    private func applyStreamMetadata(to message: ChatMessage) {
         textRequestRuntime.applyStreamMetadata(
-            to: message,
-            firstTokenTimestamp: firstTokenTimestamp
+            to: message
         )
     }
 
-    private func estimatedTokenCountFromCharacters(_ characterCount: Int) -> Int { textRequestRuntime.estimatedTokenCountFromCharacters(characterCount) }
 
-    private func bumpStreamCounters(for message: ChatMessage, delta: String) { textRequestRuntime.bumpStreamCounters(for: message, delta: delta) }
 
     private func shouldForceImmediatePersist(afterAppending addedChars: Int) -> Bool { textRequestRuntime.shouldForceImmediatePersist(afterAppending: addedChars) }
 
     @discardableResult
     private func finalizeActiveAssistantMessage(reason: String, finishedAt: Date = Date(), errorDescription: String? = nil) -> ChatMessage? {
-        refreshTrackedAssistantRequestSnapshotIfNeeded()
         return textRequestRuntime.finalizeActiveAssistantMessage(
             in: chatSession,
             reason: reason,
@@ -870,7 +854,6 @@ final class ChatViewModel: ObservableObject {
         var finalizedMessages: [ChatMessage] = []
 
         for message in chatSession.messages where !message.isUser && message.isActive {
-            _ = ChatRequestPayloadProjector.refreshAssistantRequestSnapshotIfNeeded(message)
             if textRequestRuntime.finalizeDanglingActiveAssistantMessage(message, now: now) {
                 finalizedMessages.append(message)
             }
@@ -904,16 +887,14 @@ final class ChatViewModel: ObservableObject {
                 thinkingOptionRawValue: message.thinkingOptionRawValue,
                 requestID: message.requestID,
                 providerResponseID: message.providerResponseID,
-                providerResponseIDs: message.providerResponseIDs,
                 requestContextFingerprint: message.requestContextFingerprint,
                 requestUsedPreviousResponseID: message.requestUsedPreviousResponseID,
                 requestPreviousResponseID: message.requestPreviousResponseID,
                 streamStartedAt: message.streamStartedAt,
                 streamFirstTokenAt: message.streamFirstTokenAt,
+                streamFirstTokenAtSource: message.streamFirstTokenAtSource,
                 streamCompletedAt: now,
                 timeToFirstToken: message.timeToFirstToken,
-                streamDuration: message.streamDuration,
-                generationDuration: message.generationDuration,
                 outputTokenCount: message.outputTokenCount,
                 reasoningOutputTokenCount: message.reasoningOutputTokenCount,
                 tokensPerSecond: message.tokensPerSecond,
@@ -922,7 +903,6 @@ final class ChatViewModel: ObservableObject {
                 timeToFirstTokenSource: message.timeToFirstTokenSource,
                 tokensPerSecondSource: message.tokensPerSecondSource,
                 finishReasonSource: ChatStreamMetricValueSource.local.rawValue,
-                characterCount: errorText.count,
                 promptMessageCount: message.promptMessageCount,
                 promptCharacterCount: message.promptCharacterCount,
                 finishReason: message.finishReason,
@@ -954,6 +934,7 @@ final class ChatViewModel: ObservableObject {
         ignoringUnsupportedImageInputs: Bool,
         clearComposerAfterSend: Bool
     ) -> Bool {
+        guard ensureModelReadyForSending() else { return false }
         syncChatConfigurationFromSettingsIfNeeded()
 
         let supportsImageInputs = currentModelSupportsImageInput()
@@ -971,8 +952,7 @@ final class ChatViewModel: ObservableObject {
                 resetRetryState()
                 ensureMessageTreeInitializedIfNeeded()
             },
-            fallbackParent: { activeBranchMessages().last },
-            estimatedTokenCount: estimatedTokenCountFromCharacters
+            fallbackParent: { activeBranchMessages().last }
         )
         guard case let .accepted(turnStart) = turnResult else {
             return false
@@ -1057,6 +1037,7 @@ final class ChatViewModel: ObservableObject {
 
     @discardableResult
     func sendRealtimeVoiceMessage(_ text: String, imageAttachments: [ChatImageAttachment] = []) -> Bool {
+        guard ensureModelReadyForSending() else { return false }
         let supportsImageInputs = currentModelSupportsImageInput()
         let hasExistingImageContext = activeBranchContainsImageInputs(includePending: false)
 
@@ -1092,7 +1073,6 @@ final class ChatViewModel: ObservableObject {
         isToolContinuationLoading = false
         streamAttemptRetryCheckpoint = nil
         cancelQueuedDraftAutostart()
-        refreshTrackedAssistantRequestSnapshotIfNeeded()
         let completion = textRequestRuntime.cancelCurrentRequest(in: chatSession, finishedAt: finishedAt)
 
         let err = completion.errorMessage
@@ -1164,8 +1144,7 @@ final class ChatViewModel: ObservableObject {
         streamingAssistantMessageID = message.id
         streamingAssistantFingerprint = fingerprint
 
-        applyStreamMetadata(to: message, firstTokenTimestamp: now)
-        bumpStreamCounters(for: message, delta: piece)
+        applyStreamMetadata(to: message)
         textRequestRuntime.markAssistantDeltaStarted()
         // Keep the persisted sidebar projection in the same transaction as the
         // streamed message content. The UI event remains after persistence.
@@ -1198,22 +1177,18 @@ final class ChatViewModel: ObservableObject {
             textRequestRuntime.markAssistantDeltaStarted()
         }
         let now = Date()
-        let mirrorPiece: String
         let countedPiece: String
         switch segment {
         case let .text(_, text):
-            mirrorPiece = text
             countedPiece = text
         case let .reasoning(_, text):
-            mirrorPiece = ""
             countedPiece = text
         case .tool:
-            mirrorPiece = ""
             countedPiece = ""
         }
 
         let appendResult = ChatAssistantDeltaAppender.append(
-            piece: mirrorPiece,
+            piece: "",
             to: chatSession,
             currentAssistantMessageID: currentAssistantMessageID,
             pendingAssistantParentMessageID: pendingAssistantParentMessageID,
@@ -1249,10 +1224,7 @@ final class ChatViewModel: ObservableObject {
         streamingAssistantMessageID = message.id
         streamingAssistantFingerprint = fingerprint
 
-        applyStreamMetadata(to: message, firstTokenTimestamp: now)
-        if !countedPiece.isEmpty {
-            bumpStreamCounters(for: message, delta: countedPiece)
-        }
+        applyStreamMetadata(to: message)
         textRequestRuntime.markAssistantDeltaStarted()
         if case let .text(_, text) = segment, !text.isEmpty {
             realtimeNarrationCoordinator.appendDelta(text)
@@ -1286,6 +1258,7 @@ final class ChatViewModel: ObservableObject {
         ignoringUnsupportedImageInputs: Bool = false
     ) -> ChatBranchRestartRequestResult {
         guard !sending else { return .unavailable }
+        guard ensureModelReadyForSending() else { return .unavailable }
         syncChatConfigurationFromSettingsIfNeeded()
         ensureMessageTreeInitializedIfNeeded()
         guard !message.isUser,
@@ -1311,6 +1284,7 @@ final class ChatViewModel: ObservableObject {
         ignoringUnsupportedImageInputs: Bool = false
     ) -> ChatBranchRestartRequestResult {
         guard !sending else { return .unavailable }
+        guard ensureModelReadyForSending() else { return .unavailable }
         syncChatConfigurationFromSettingsIfNeeded()
         ensureMessageTreeInitializedIfNeeded()
         guard !errorMessage.isUser,
@@ -1423,6 +1397,7 @@ final class ChatViewModel: ObservableObject {
 
     @discardableResult
     func retryLongWaitingStream() -> Bool {
+        guard ensureModelReadyForSending() else { return false }
         guard longWaitNotice != nil,
               hasActiveTextRequest || isToolContinuationLoading else {
             return false
@@ -1486,6 +1461,7 @@ final class ChatViewModel: ObservableObject {
     }
 
     private func restartCurrentTextRequestUsingLatestConfiguration() throws {
+        guard isModelReady else { throw ChatNetworkError.modelInformationUnavailable }
         let activeMessages = activeBranchMessages()
         guard let lastIndex = activeMessages.lastIndex(where: { !$0.content.hasPrefix("!error:") }) else {
             throw ChatNetworkError.invalidRequestHistory
@@ -1509,8 +1485,6 @@ final class ChatViewModel: ObservableObject {
                 }
                 rollbackStreamAttemptRetryCheckpointIfNeeded()
                 requestMessages = Array(requestMessages[...userIndex])
-            } else {
-                refreshTrackedAssistantRequestSnapshotIfNeeded()
             }
         }
 

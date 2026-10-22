@@ -500,7 +500,7 @@ struct DataImportPreviewView: View {
                                         Text("No Data").foregroundStyle(.secondary)
                                     }
                                     HStack {
-                                        Text(message.createdAt, style: .date)
+                                        if let createdAt = message.createdAt { Text(createdAt, style: .date) }
                                         Text(change.kind == .updated ? LocalizedStringKey("Update Message Data") : change.kind == .branch ? LocalizedStringKey("New Branch") : LocalizedStringKey("New Messages"))
                                     }.font(.caption).foregroundStyle(.secondary)
                                 }
@@ -553,7 +553,7 @@ struct DataImportPreviewView: View {
                 if change.kind == .branch {
                     let existing = preview.original.snapshot.messages.filter {
                         $0.sessionID == message.sessionID && $0.parentID == message.parentID
-                    }.sorted { $0.createdAt < $1.createdAt }
+                    }.sorted { ($0.createdAt ?? .distantPast) < ($1.createdAt ?? .distantPast) }
                     if !existing.isEmpty {
                         Section("Existing branch — kept") {
                             ForEach(existing, id: \.id) { DataImportMessageView(message: $0) }
@@ -667,15 +667,14 @@ struct DataImportPreviewView: View {
         changed(String(localized: "Model"), old.modelIdentifier, new.modelIdentifier)
         changed(String(localized: "Server Address"), old.apiBaseURL, new.apiBaseURL)
         changed(String(localized: "Message Date"), old.createdAt, new.createdAt)
-        changed(String(localized: "Request Content"), old.requestContentSnapshot, new.requestContentSnapshot)
         changed(String(localized: "Response Content"), old.assistantSegmentsData, new.assistantSegmentsData)
         changed(String(localized: "Conversation Context"), old.openAIResponsesConversationItemsData, new.openAIResponsesConversationItemsData)
         changed(String(localized: "Tool Activity"), old.toolActivityPlacementsData, new.toolActivityPlacementsData)
         changed(String(localized: "Thinking Settings"), old.thinkingOptionRawValue, new.thinkingOptionRawValue)
-        if old.requestID != new.requestID || old.providerResponseID != new.providerResponseID || old.providerResponseIDsData != new.providerResponseIDsData || old.requestContextFingerprint != new.requestContextFingerprint || old.requestUsedPreviousResponseID != new.requestUsedPreviousResponseID || old.requestPreviousResponseID != new.requestPreviousResponseID {
+        if old.requestID != new.requestID || old.providerResponseID != new.providerResponseID || old.requestContextFingerprint != new.requestContextFingerprint || old.requestUsedPreviousResponseID != new.requestUsedPreviousResponseID || old.requestPreviousResponseID != new.requestPreviousResponseID {
             result.append(String(localized: "Request and Response Records"))
         }
-        if old.streamStartedAt != new.streamStartedAt || old.streamFirstTokenAt != new.streamFirstTokenAt || old.streamCompletedAt != new.streamCompletedAt || old.timeToFirstToken != new.timeToFirstToken || old.streamDuration != new.streamDuration || old.generationDuration != new.generationDuration || old.outputTokenCount != new.outputTokenCount || old.reasoningOutputTokenCount != new.reasoningOutputTokenCount || old.tokensPerSecond != new.tokensPerSecond || old.tokenCount != new.tokenCount || old.tokenCountSource != new.tokenCountSource || old.timeToFirstTokenSource != new.timeToFirstTokenSource || old.tokensPerSecondSource != new.tokensPerSecondSource || old.characterCount != new.characterCount || old.promptMessageCount != new.promptMessageCount || old.promptCharacterCount != new.promptCharacterCount {
+        if old.generationRounds != new.generationRounds || old.streamStartedAt != new.streamStartedAt || old.streamFirstTokenAt != new.streamFirstTokenAt || old.streamFirstTokenAtSource != new.streamFirstTokenAtSource || old.streamCompletedAt != new.streamCompletedAt || old.timeToFirstToken != new.timeToFirstToken || old.outputTokenCount != new.outputTokenCount || old.reasoningOutputTokenCount != new.reasoningOutputTokenCount || old.tokensPerSecond != new.tokensPerSecond || old.tokenCount != new.tokenCount || old.tokenCountSource != new.tokenCountSource || old.timeToFirstTokenSource != new.timeToFirstTokenSource || old.tokensPerSecondSource != new.tokensPerSecondSource || old.promptMessageCount != new.promptMessageCount || old.promptCharacterCount != new.promptCharacterCount {
             result.append(String(localized: "Generation Statistics"))
         }
         if old.finishReason != new.finishReason || old.finishReasonSource != new.finishReasonSource || old.errorDescription != new.errorDescription || old.isActive != new.isActive {
@@ -693,7 +692,9 @@ private struct DataImportMessageView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(message.isUser ? LocalizedStringKey("You") : LocalizedStringKey("Assistant")).font(.subheadline.weight(.semibold))
                 Spacer()
-                Text(message.createdAt, format: .dateTime).font(.caption).foregroundStyle(.secondary)
+                if let createdAt = message.createdAt {
+                    Text(createdAt, format: .dateTime).font(.caption).foregroundStyle(.secondary)
+                }
             }
             if !message.content.isEmpty {
                 RichMarkdownView(markdown: message.content)

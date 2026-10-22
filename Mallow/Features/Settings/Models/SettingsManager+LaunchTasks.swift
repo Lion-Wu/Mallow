@@ -14,42 +14,54 @@ extension SettingsManager {
         }
     }
 
-    func prefetchChatModelsOnLaunchIfNeeded() async {
-        guard !didPrefetchChatModelsOnLaunch else { return }
-        didPrefetchChatModelsOnLaunch = true
-        await refreshChatProviderHintsAndModels()
-    }
-
-    func refreshChatProviderHintsAndModels() async {
+    func fetchAvailableChatModels(forceRefresh: Bool = false) {
         let requestedSettings = chatSettings
         let requestedFormat = chatModelCapabilities.selectedChatAPIFormatPreference()
-        let rawBase = chatSettings.apiURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !rawBase.isEmpty else { return }
+        let isSameCatalog = modelCatalogController.requestedCatalog?.matches(
+            settings: requestedSettings,
+            format: requestedFormat
+        ) == true
+        guard forceRefresh || !isSameCatalog else { return }
 
-        guard let result = await chatModelCatalogRefreshCoordinator.refresh(
-            chatSettings: requestedSettings,
-            formatPreference: requestedFormat,
-            detectedProvider: chatModelCapabilities.detectedProvider(for: rawBase),
-            detectedStyle: chatModelCapabilities.detectedRequestStyle(for: rawBase)
-        ) else { return }
+        readyChatModelCatalog = nil
+        let rawBase = requestedSettings.apiURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        modelCatalogController.fetch(
+            request: SettingsModelCatalogRequest(
+                apiURL: rawBase,
+                apiKey: requestedSettings.apiKey,
+                formatPreference: requestedFormat,
+                detectedProvider: chatModelCapabilities.detectedProvider(for: rawBase),
+                selectedModel: requestedSettings.selectedModel,
+                detectedStyle: chatModelCapabilities.detectedRequestStyle(for: rawBase)
+            ),
+            currentState: isSameCatalog ? chatModelCatalogState : .empty,
+            applyState: { [weak self] state in
+                self?.chatModelCatalogState = state
+            },
+            applyDetection: { [weak self] detection in
+                guard let self else { return }
+                let catalog = ChatModelCatalogReadiness(
+                    apiURL: rawBase,
+                    apiKey: requestedSettings.apiKey,
+                    formatPreference: requestedFormat,
+                    modelIDs: detection.result.modelIDs
+                )
+                guard catalog.matches(
+                    settings: self.chatSettings,
+                    format: self.chatModelCapabilities.selectedChatAPIFormatPreference()
+                ) else { return }
 
-        let currentRawBase = chatSettings.apiURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard ChatAPIEndpointResolver.normalizedAPIBaseKey(currentRawBase) == ChatAPIEndpointResolver.normalizedAPIBaseKey(result.rawBase),
-              chatSettings.apiKey == requestedSettings.apiKey,
-              chatModelCapabilities.selectedChatAPIFormatPreference() == requestedFormat else {
-            return
-        }
-
-        chatModelCapabilities.noteDetectedEndpoint(result.endpoint, for: result.rawBase)
-        chatModelCapabilities.updateImageInputSupport(result.imageInputSupportByModelID, for: result.rawBase)
-        chatModelCapabilities.updateThinkingCapabilities(result.thinkingCapabilitiesByModelID, for: result.rawBase)
-
-        let selected = chatSettings.selectedModel.trimmingCharacters(in: .whitespacesAndNewlines)
-        let availableModelIDs = Set(result.modelIDs)
-        if !result.models.isEmpty && (selected.isEmpty || !availableModelIDs.contains(selected)),
-           let firstModel = result.models.first?.id {
-            updateChatSettings(apiURL: chatSettings.apiURL, selectedModel: firstModel)
-        }
+                let result = detection.result
+                self.chatModelCapabilities.noteDetectedEndpoint(result.endpoint, for: rawBase)
+                self.chatModelCapabilities.updateImageInputSupport(result.imageInputSupportByModelID, for: rawBase)
+                self.chatModelCapabilities.updateThinkingCapabilities(result.thinkingCapabilitiesByModelID, for: rawBase)
+                if !result.modelIDs.contains(self.chatSettings.selectedModel),
+                   let firstModel = result.modelIDs.first {
+                    self.updateChatSettings(apiURL: self.chatSettings.apiURL, selectedModel: firstModel)
+                }
+                self.readyChatModelCatalog = catalog
+            }
+        )
     }
 
     func applySelectedPreset() async {

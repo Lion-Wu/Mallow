@@ -17,7 +17,6 @@ struct ChatUserTurnAppender {
         plan: ChatTurnDraftPlan,
         to session: ChatSession,
         fallbackParent: () -> ChatMessage?,
-        estimatedTokenCount: (Int) -> Int,
         createdAt now: Date = Date()
     ) -> ChatUserTurnAppendResult {
         var shouldClearEditingBaseMessageID = false
@@ -37,9 +36,6 @@ struct ChatUserTurnAppender {
             isUser: true,
             isActive: true,
             createdAt: now,
-            tokenCount: estimatedTokenCount(plan.text.count),
-            tokenCountSource: ChatStreamMetricValueSource.local.rawValue,
-            characterCount: plan.text.count,
             session: session
         )
         userMessage.parentMessage = parentMessage

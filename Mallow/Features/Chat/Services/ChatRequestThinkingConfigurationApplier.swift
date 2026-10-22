@@ -16,7 +16,12 @@ struct ChatRequestThinkingConfigurationApplier: Sendable {
         thinkingCapability: ModelThinkingCapability?,
         thinkingOption: ModelThinkingOption?
     ) {
-        guard let option = thinkingOption else { return }
+        if endpoint.style == .anthropicMessages {
+            applyAnthropic(to: &requestBody, settings: settings, capability: thinkingCapability,
+                           option: thinkingOption)
+            return
+        }
+        guard let option = thinkingOption, option != .serverDefault else { return }
         if let capability = thinkingCapability,
            !capability.isConfigurable {
             return
@@ -28,27 +33,7 @@ struct ChatRequestThinkingConfigurationApplier: Sendable {
             requestBody["reasoning"] = lmStudioReasoningValue(for: option)
 
         case .anthropicMessages:
-            guard !option.isDisabled else { return }
-            if isAnthropicAdaptiveThinkingModel(model) {
-                requestBody["thinking"] = [
-                    "type": "adaptive",
-                    "display": "summarized"
-                ]
-                requestBody["output_config"] = [
-                    "effort": anthropicAdaptiveEffort(for: option, model: model)
-                ]
-                removeAnthropicThinkingSamplingConflicts(from: &requestBody)
-                return
-            }
-
-            let budget = anthropicThinkingBudget(for: option, settings: settings)
-            requestBody["thinking"] = [
-                "type": "enabled",
-                "budget_tokens": budget
-            ]
-            let currentMaxTokens = (requestBody["max_tokens"] as? Int) ?? settings.anthropicMaxTokens
-            requestBody["max_tokens"] = max(currentMaxTokens, budget + settings.anthropicThinkingResponseReserve)
-            removeAnthropicThinkingSamplingConflicts(from: &requestBody)
+            break
 
         case .openAIResponses:
             requestBody["reasoning"] = [
@@ -56,19 +41,6 @@ struct ChatRequestThinkingConfigurationApplier: Sendable {
             ]
 
         case .openAIChatCompletions:
-            if ChatEndpointBaseURL.hostMatchesOfficialDomain(
-                endpoint.chatURL.host ?? "",
-                domain: "deepseek.com"
-            ) {
-                requestBody["thinking"] = ["type": option.isDisabled ? "disabled" : "enabled"]
-                if option.isDisabled {
-                    requestBody.removeValue(forKey: "reasoning_effort")
-                } else {
-                    requestBody["reasoning_effort"] = deepSeekReasoningEffort(for: option)
-                }
-                return
-            }
-
             if let requestParameter {
                 switch requestParameter {
                 case .reasoningEffort:
@@ -118,12 +90,6 @@ struct ChatRequestThinkingConfigurationApplier: Sendable {
         if option == .none {
             return "off"
         }
-        if option == .minimal {
-            return "low"
-        }
-        if option == .xhigh || option == .max {
-            return "high"
-        }
         return option.rawValue
     }
 
@@ -134,72 +100,48 @@ struct ChatRequestThinkingConfigurationApplier: Sendable {
         if option == .off {
             return "none"
         }
-        if option == .on {
-            return "medium"
-        }
-        if option == .max, capability?.options.contains(.max) != true {
-            return "xhigh"
-        }
         return option.rawValue
     }
 
-    private func deepSeekReasoningEffort(for option: ModelThinkingOption) -> String {
-        option == .max || option == .xhigh ? "max" : "high"
-    }
-
-    private func anthropicThinkingBudget(for option: ModelThinkingOption, settings: APIAdvancedSettings) -> Int {
-        if option == .minimal || option == .low || option == .on {
-            return settings.anthropicLowThinkingBudget
+    private func applyAnthropic(
+        to requestBody: inout [String: Any],
+        settings: APIAdvancedSettings,
+        capability: ModelThinkingCapability?,
+        option: ModelThinkingOption?
+    ) {
+        guard capability?.options.isEmpty != true else { return }
+        let modes = capability?.anthropicThinkingModes ?? []
+        let mode: String?
+        if !settings.anthropicThinkingModeOverride.isEmpty {
+            mode = settings.anthropicThinkingModeOverride
+        } else if option?.isDisabled == true, modes.contains("disabled") {
+            mode = "disabled"
+        } else if let option, option.isEffortLevel,
+                  modes.contains("adaptive"),
+                  capability?.anthropicEfforts?.contains(option) == true {
+            mode = "adaptive"
+        } else if option == .on, modes.contains("enabled") {
+            mode = "enabled"
+        } else if option == .on, modes.contains("adaptive") {
+            mode = "adaptive"
+        } else {
+            mode = nil
         }
-        if option == .medium {
-            return settings.anthropicMediumThinkingBudget
+        if let mode {
+            var thinking: [String: Any] = ["type": mode]
+            if mode == "enabled" {
+                let maximum = requestBody["max_tokens"] as? Int ?? APIAdvancedSettings.anthropicDefaultMaxTokens
+                thinking["budget_tokens"] = settings.anthropicThinkingBudgetEnabled
+                    ? settings.anthropicThinkingBudget : maximum - 1
+            }
+            requestBody["thinking"] = thinking
         }
-        if option == .high || option == .xhigh || option == .max || option == .ultra {
-            return settings.anthropicHighThinkingBudget
+        guard mode == "adaptive" else { return }
+        if settings.anthropicThinkingModeOverride == "adaptive", !settings.anthropicEffortOverride.isEmpty {
+            requestBody["output_config"] = ["effort": settings.anthropicEffortOverride]
+        } else if let option, option.isEffortLevel,
+                  capability?.anthropicEfforts?.contains(option) == true {
+            requestBody["output_config"] = ["effort": option.rawValue]
         }
-        if option == .off || option == .none {
-            return 0
-        }
-        return settings.anthropicMediumThinkingBudget
-    }
-
-    private func removeAnthropicThinkingSamplingConflicts(from requestBody: inout [String: Any]) {
-        requestBody.removeValue(forKey: "temperature")
-        requestBody.removeValue(forKey: "top_k")
-        if let topP = requestBody["top_p"] as? Double,
-           !(0.95...1).contains(topP) {
-            requestBody.removeValue(forKey: "top_p")
-        }
-    }
-
-    private func isAnthropicAdaptiveThinkingModel(_ model: String) -> Bool {
-        let normalized = model.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return normalized.contains("claude-opus-4-7") ||
-            normalized.contains("claude-opus-4-6") ||
-            normalized.contains("claude-sonnet-4-6") ||
-            normalized.contains("claude-mythos")
-    }
-
-    private func anthropicAdaptiveEffort(for option: ModelThinkingOption, model: String) -> String {
-        if option == .xhigh {
-            let normalized = model.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            return normalized.contains("claude-opus-4-7") ? "xhigh" : "max"
-        }
-        if option == .max {
-            return "max"
-        }
-        if option == .minimal || option == .low || option == .on {
-            return "low"
-        }
-        if option == .medium {
-            return "medium"
-        }
-        if option == .high {
-            return "high"
-        }
-        if option == .off || option == .none {
-            return "low"
-        }
-        return option.rawValue
     }
 }

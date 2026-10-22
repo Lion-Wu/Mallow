@@ -334,6 +334,7 @@ struct OpenAICompatibleStreamEventReducer {
             if metadata.tokensPerSecond == nil, let predictedPerSecond = timings.predicted_per_second {
                 metadata.tokensPerSecond = predictedPerSecond
             }
+            metadata.timeToFirstTokenSeconds = timings.time_to_first_token_seconds
         }
 
         for choice in chunk.choices ?? [] {

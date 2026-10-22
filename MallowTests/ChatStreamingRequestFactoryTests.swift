@@ -46,27 +46,6 @@ final class ChatStreamingRequestFactoryTests: XCTestCase {
         XCTAssertEqual(request.value(forHTTPHeaderField: "anthropic-version"), "2023-06-01")
     }
 
-    func testStreamingRequestFactoryBuildsOpenRouterAnthropicMessagesHeaders() throws {
-        let endpoint = ChatAPIEndpointCandidate(
-            provider: .anthropic,
-            style: .anthropicMessages,
-            chatURL: try XCTUnwrap(URL(string: "https://openrouter.ai/api/v1/messages")),
-            modelsURL: try XCTUnwrap(URL(string: "https://openrouter.ai/api/v1/models"))
-        )
-
-        let request = ChatStreamingRequestFactory().makeStreamingRequest(
-            endpoint: endpoint,
-            requestBodyData: Data(),
-            apiKey: "sk-or-test"
-        )
-
-        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer sk-or-test")
-        XCTAssertNil(request.value(forHTTPHeaderField: "X-OpenRouter-Cache"))
-        XCTAssertNil(request.value(forHTTPHeaderField: "X-OpenRouter-Cache-TTL"))
-        XCTAssertNil(request.value(forHTTPHeaderField: "x-api-key"))
-        XCTAssertNil(request.value(forHTTPHeaderField: "anthropic-version"))
-    }
-
     func testStreamingRequestFactoryDoesNotEnableOpenRouterResponseCachingImplicitly() throws {
         let endpoint = ChatAPIEndpointCandidate(
             provider: .openAI,
@@ -85,7 +64,7 @@ final class ChatStreamingRequestFactoryTests: XCTestCase {
         XCTAssertNil(request.value(forHTTPHeaderField: "X-OpenRouter-Cache-TTL"))
     }
 
-    func testStreamingRequestFactoryBuildsAzureOpenAIAPIKeyHeader() throws {
+    func testStreamingRequestFactoryUsesStandardBearerForAzureV1() throws {
         let endpoint = ChatAPIEndpointCandidate(
             provider: .openAI,
             style: .openAIResponses,
@@ -99,8 +78,8 @@ final class ChatStreamingRequestFactoryTests: XCTestCase {
             apiKey: "sk-azure-test"
         )
 
-        XCTAssertEqual(request.value(forHTTPHeaderField: "api-key"), "sk-azure-test")
-        XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+        XCTAssertNil(request.value(forHTTPHeaderField: "api-key"))
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer sk-azure-test")
     }
 
     func testStreamingRequestFactoryKeepsAzureBearerTokenAuthorization() throws {

@@ -1,6 +1,7 @@
 import Foundation
 
 struct ModelThinkingOption: Codable, Equatable, Hashable, Sendable, Identifiable {
+    static let serverDefault = ModelThinkingOption(rawValue: "server_default")
     static let off = ModelThinkingOption(rawValue: "off", normalizedKey: "off")
     static let on = ModelThinkingOption(rawValue: "on", normalizedKey: "on")
     static let none = ModelThinkingOption(rawValue: "none", normalizedKey: "off")
@@ -22,10 +23,11 @@ struct ModelThinkingOption: Codable, Equatable, Hashable, Sendable, Identifiable
     }
 
     var isEffortLevel: Bool {
-        !isDisabled && self != .on
+        !isDisabled && self != .on && self != .serverDefault
     }
 
     var displayName: String {
+        if self == .serverDefault { return NSLocalizedString("Default", comment: "Server default") }
         if self == .off || self == .none {
             return NSLocalizedString("Off", comment: "Thinking control option")
         }
@@ -84,31 +86,7 @@ struct ModelThinkingOption: Codable, Equatable, Hashable, Sendable, Identifiable
     static func normalized(_ raw: String) -> ModelThinkingOption? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
-        let normalized = normalizedKey(for: trimmed)
-        switch normalized {
-        case "off", "disabled", "disable", "false":
-            return .off
-        case "none", "no_reasoning":
-            return .off
-        case "on", "enabled", "enable", "true", "auto", "dynamic":
-            return .on
-        case "minimal", "minimum":
-            return .minimal
-        case "low":
-            return .low
-        case "medium", "normal", "default":
-            return .medium
-        case "high":
-            return .high
-        case "xhigh", "extra_high", "extrahigh":
-            return .xhigh
-        case "max", "maximum":
-            return .max
-        case "ultra":
-            return .ultra
-        default:
-            return ModelThinkingOption(rawValue: trimmed, normalizedKey: normalized)
-        }
+        return ModelThinkingOption(rawValue: trimmed)
     }
 
     private static func normalizedKey(for raw: String) -> String {
@@ -137,33 +115,42 @@ struct ModelThinkingCapability: Codable, Equatable, Sendable {
     var options: [ModelThinkingOption]
     var defaultOption: ModelThinkingOption?
     var requestParameter: ModelThinkingRequestParameter?
-
-    static let compatibleReasoningEffort = ModelThinkingCapability(
-        options: [.off, .minimal, .low, .medium, .high, .xhigh],
-        defaultOption: .off,
-        requestParameter: nil
-    )
+    var anthropicThinkingModes: [String]?
+    var anthropicEfforts: [ModelThinkingOption]?
+    var maxOutputTokens: Int?
+    var hasKnownOptions: Bool
+    var allowsDisabling: Bool?
 
     init(
         options: [ModelThinkingOption],
         defaultOption: ModelThinkingOption? = nil,
-        requestParameter: ModelThinkingRequestParameter? = nil
+        requestParameter: ModelThinkingRequestParameter? = nil,
+        anthropicThinkingModes: [String]? = nil,
+        anthropicEfforts: [ModelThinkingOption]? = nil,
+        maxOutputTokens: Int? = nil,
+        hasKnownOptions: Bool = true,
+        allowsDisabling: Bool? = nil
     ) {
         var unique: [ModelThinkingOption] = []
-        for option in options where !unique.contains(option) {
+        for option in options where !unique.contains(option) && (allowsDisabling != false || !option.isDisabled) {
             unique.append(option)
         }
-        self.options = unique
+        self.options = unique.contains(.serverDefault) ? unique : [.serverDefault] + unique
         if let defaultOption, unique.contains(defaultOption) {
             self.defaultOption = defaultOption
         } else {
             self.defaultOption = nil
         }
         self.requestParameter = requestParameter
+        self.anthropicThinkingModes = anthropicThinkingModes
+        self.anthropicEfforts = anthropicEfforts
+        self.maxOutputTokens = maxOutputTokens
+        self.hasKnownOptions = hasKnownOptions
+        self.allowsDisabling = allowsDisabling
     }
 
     var enabledOptions: [ModelThinkingOption] {
-        options.filter { !$0.isDisabled }
+        options.filter { !$0.isDisabled && $0 != .serverDefault }
     }
 
     var disabledOption: ModelThinkingOption? {
@@ -179,20 +166,11 @@ struct ModelThinkingCapability: Codable, Equatable, Sendable {
     }
 
     var isConfigurable: Bool {
-        supportsToggle || supportsEffortSelection
+        hasKnownOptions && options.contains { $0 != .serverDefault }
     }
 
     var defaultSelection: ModelThinkingOption? {
-        if let defaultOption, options.contains(defaultOption) {
-            return defaultOption
-        }
-        if supportsEffortSelection {
-            return options.contains(.medium) ? .medium : enabledOptions.first
-        }
-        if supportsToggle {
-            return disabledOption ?? enabledOptions.first
-        }
-        return nil
+        .serverDefault
     }
 
     func normalizedSelection(_ option: ModelThinkingOption?) -> ModelThinkingOption? {
@@ -204,20 +182,25 @@ struct ModelThinkingCapability: Codable, Equatable, Sendable {
 
     func toggledSelection(from option: ModelThinkingOption?) -> ModelThinkingOption? {
         let current = normalizedSelection(option)
-        if current?.isDisabled == true {
+        if current?.isDisabled == true || current == .serverDefault {
             if let defaultOption, !defaultOption.isDisabled, options.contains(defaultOption) {
                 return defaultOption
             }
             return enabledOptions.first
         }
-        return disabledOption
+        return disabledOption ?? .serverDefault
     }
 
     func withRequestParameter(_ requestParameter: ModelThinkingRequestParameter?) -> ModelThinkingCapability {
         ModelThinkingCapability(
             options: options,
             defaultOption: defaultOption,
-            requestParameter: requestParameter
+            requestParameter: requestParameter,
+            anthropicThinkingModes: anthropicThinkingModes,
+            anthropicEfforts: anthropicEfforts,
+            maxOutputTokens: maxOutputTokens,
+            hasKnownOptions: hasKnownOptions,
+            allowsDisabling: allowsDisabling
         )
     }
 }
@@ -335,7 +318,7 @@ struct ModelThinkingCapabilityDescriptor: Codable, Equatable, Sendable {
             return
         }
         if let supported = try? singleValue.decode(Bool.self) {
-            allowed_options = supported ? ["off", "on"] : ["off"]
+            allowed_options = supported ? nil : []
             allowedOptions = nil
             options = nil
             values = nil
@@ -390,14 +373,10 @@ struct ModelThinkingCapabilityDescriptor: Codable, Equatable, Sendable {
     func asThinkingCapability(requestParameter: ModelThinkingRequestParameter?) -> ModelThinkingCapability? {
         let rawEfforts = supported_efforts ?? supportedEfforts ?? []
         if !rawEfforts.isEmpty {
-            var rawOptions: [String] = []
-            let parsedEfforts = rawEfforts.compactMap(ModelThinkingOption.normalized)
-            let enabledEfforts = parsedEfforts.filter { !$0.isDisabled }
-            if mandatory != true {
-                rawOptions.append("off")
+            var parsedOptions = rawEfforts.compactMap(ModelThinkingOption.normalized)
+            if mandatory != true, !parsedOptions.contains(where: \.isDisabled) {
+                parsedOptions.insert(.off, at: 0)
             }
-            rawOptions.append(contentsOf: enabledEfforts.map(\.rawValue))
-            let parsedOptions = rawOptions.compactMap(ModelThinkingOption.normalized)
             let defaultEnabled = default_enabled ?? defaultEnabled
             let parsedExplicitDefault = [default_effort, defaultEffort, defaultValue, default_option]
                 .compactMap { $0 }
@@ -413,29 +392,28 @@ struct ModelThinkingCapabilityDescriptor: Codable, Equatable, Sendable {
             return ModelThinkingCapability(
                 options: parsedOptions,
                 defaultOption: parsedDefault,
-                requestParameter: requestParameter
+                requestParameter: requestParameter,
+                allowsDisabling: mandatory.map { !$0 }
             )
         }
 
         let rawOptions = allowed_options ?? allowedOptions ?? options ?? values ?? []
-        let parsedOptions = rawOptions.compactMap(ModelThinkingOption.normalized)
+        var parsedOptions = rawOptions.compactMap(ModelThinkingOption.normalized)
+        if !parsedOptions.isEmpty, mandatory != true, !parsedOptions.contains(where: \.isDisabled) {
+            parsedOptions.insert(.off, at: 0)
+        }
         let parsedDefault = [defaultValue, default_option, default_effort, defaultEffort]
             .compactMap { $0 }
             .compactMap(ModelThinkingOption.normalized)
             .first
-        if parsedOptions.isEmpty, let enabled = default_enabled ?? defaultEnabled ?? mandatory {
-            let options: [ModelThinkingOption] = mandatory == true ? [.on] : [.off, .on]
-            return ModelThinkingCapability(
-                options: options,
-                defaultOption: enabled ? .on : .off,
-                requestParameter: requestParameter
-            )
-        }
-        guard !parsedOptions.isEmpty else { return nil }
+        let hasExplicitOptions = allowed_options != nil || allowedOptions != nil || options != nil || values != nil || supported_efforts != nil || supportedEfforts != nil
+        guard hasExplicitOptions || default_enabled != nil || defaultEnabled != nil || mandatory != nil else { return nil }
         return ModelThinkingCapability(
             options: parsedOptions,
             defaultOption: parsedDefault,
-            requestParameter: requestParameter
+            requestParameter: requestParameter,
+            hasKnownOptions: hasExplicitOptions,
+            allowsDisabling: mandatory.map { !$0 }
         )
     }
 }

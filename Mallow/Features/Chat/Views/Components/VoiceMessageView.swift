@@ -368,12 +368,7 @@ struct VoiceMessageView: View {
             versions.append(message)
         }
 
-        return versions.sorted { lhs, rhs in
-            if lhs.createdAt == rhs.createdAt {
-                return lhs.id.uuidString < rhs.id.uuidString
-            }
-            return lhs.createdAt < rhs.createdAt
-        }
+        return versions.sorted(by: ChatMessageBranchResolver.stableMessageOrder)
     }
 
     @ViewBuilder

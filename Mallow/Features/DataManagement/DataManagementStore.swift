@@ -5,7 +5,7 @@ import SwiftData
 
 nonisolated struct DataRecoveryIssue: Identifiable, Sendable {
     enum Reason: String, Sendable {
-        case ownership, parent, identity, content, additionalSettings, database, metadata, selection
+        case ownership, parent, identity, content, additionalSettings, database, selection
         var title: String {
             switch self {
             case .ownership: String(localized: "Missing Chat Ownership")
@@ -14,7 +14,6 @@ nonisolated struct DataRecoveryIssue: Identifiable, Sendable {
             case .content: String(localized: "Unreadable Fields")
             case .additionalSettings: String(localized: "Additional Settings Record")
             case .database: String(localized: "Database Structure")
-            case .metadata: String(localized: "Missing Request Metadata")
             case .selection: String(localized: "Invalid Branch Selection")
             }
         }
@@ -52,7 +51,6 @@ nonisolated struct DataRecoveryIssue: Identifiable, Sendable {
         case .content: String(localized: "Some stored fields cannot be read. Other parts of this record may still be readable.")
         case .identity: String(localized: "This record has a missing or duplicate identifier and cannot be safely selected for deletion.")
         case .additionalSettings: String(localized: "More than one global settings record exists.")
-        case .metadata: String(localized: "The request metadata referenced by this message is missing.")
         case .selection: String(localized: "The selected branch no longer exists in this chat.")
         case .database: String(localized: "The database structure check reported an error.")
         }
@@ -60,12 +58,15 @@ nonisolated struct DataRecoveryIssue: Identifiable, Sendable {
 
     static func fieldTitle(_ field: String) -> String {
         switch field {
-        case "content": String(localized: "Message")
+        case "content", "messageDocumentData": String(localized: "Message")
+        case "generationRounds": String(localized: "Generation Statistics")
+        case "createdAt": String(localized: "Created At")
         case "imageAttachmentsData": String(localized: "Images and Attachments")
         case "assistantSegmentsData": String(localized: "Message Segments")
         case "toolActivityPlacementsData": String(localized: "Tool Positions")
-        case "openAIResponsesConversationItemsData", "providerResponseIDsData", "providerResponseID", "requestPreviousResponseID", "requestContentSnapshot": String(localized: "Request Snapshots and Continuation Data")
+        case "openAIResponsesConversationItemsData", "providerResponseID", "requestPreviousResponseID": String(localized: "Request and Response Records")
         case "modelThinkingPreferencesJSON": String(localized: "Thinking Settings")
+        case "modelThinkingOptionsJSON": String(localized: "Supported Thinking Options")
         case "modelImageInputOverrideJSON": String(localized: "Image Input Override")
         case "detectedAPIFormatsJSON", "apiFormatPreferenceRaw": String(localized: "API Format")
         default: field
@@ -78,10 +79,9 @@ nonisolated struct DataStorageMessage: Identifiable, Sendable {
     let id: UUID
     let sessionID: UUID?
     let title: String
-    let date: Date
+    let date: Date?
     let bytes: Int64
     let imageBytes: Int64
-    let contextBytes: Int64
     let model: String?
 }
 
@@ -91,18 +91,19 @@ nonisolated struct DataStorageChat: Identifiable, Sendable {
     let date: Date
     let bytes: Int64
     let imageBytes: Int64
-    let contextBytes: Int64
     let messageCount: Int
 }
 
 nonisolated struct DataModelPreference: Identifiable, Sendable {
     enum Kind: String, CaseIterable, Sendable {
         case thinking = "modelThinkingPreferencesJSON"
+        case thinkingOptions = "modelThinkingOptionsJSON"
         case images = "modelImageInputOverrideJSON"
         case endpoint = "detectedAPIFormatsJSON"
         var title: String {
             switch self {
             case .thinking: String(localized: "Thinking Settings")
+            case .thinkingOptions: String(localized: "Supported Thinking Options")
             case .images: String(localized: "Image Input Override")
             case .endpoint: String(localized: "API Format")
             }
@@ -118,6 +119,9 @@ nonisolated struct DataModelPreference: Identifiable, Sendable {
         guard let object = try? JSONSerialization.jsonObject(with: Data(value.utf8), options: .fragmentsAllowed) else { return value }
         if kind == .images, let enabled = object as? Bool { return enabled ? String(localized: "On") : String(localized: "Off") }
         if kind == .thinking, let raw = object as? String { return ModelThinkingOption(rawValue: raw).displayName }
+        if kind == .thinkingOptions, let options = object as? [String] {
+            return options.isEmpty ? String(localized: "None") : options.map { ModelThinkingOption(rawValue: $0).displayName }.joined(separator: ", ")
+        }
         let raw = (object as? [String: String])?["style"] ?? (object as? String) ?? ""
         switch raw {
         case "openAIResponses": return String(localized: "OpenAI Responses")
@@ -135,7 +139,6 @@ nonisolated struct DataStorageCatalog: Sendable {
     let chats: [DataStorageChat]
     let messages: [DataStorageMessage]
     let preferences: [DataModelPreference]
-    let sharedMetadataBytes: Int64
     let unassignedMessageBytes: Int64
     let checkedAt: Date
 }
@@ -175,22 +178,19 @@ nonisolated enum DataManagementStore {
             sessions[try row.integer("Z_PK")] = (try row.value("id"), try row.value("title"), try row.value("createdAt"), try row.integer("BYTES"))
         }
         let total = try reader.payloadSizeExpression(entity: "ChatMessage")
-        // Match the stored text/blob fields removed by clearContext. Shared request
-        // metadata belongs to the database, not to every message referencing it.
-        let contextFields = ["ZREQUESTCONTENTSNAPSHOT", "ZOPENAIRESPONSESCONVERSATIONITEMSDATA",
-                             "ZPROVIDERRESPONSEIDSDATA", "ZPROVIDERRESPONSEID", "ZREQUESTPREVIOUSRESPONSEID"]
-        let context = contextFields.map { "COALESCE(length(CAST(\($0) AS BLOB)),0)" }.joined(separator: "+")
         var messages: [DataStorageMessage] = []
-        try reader.query("SELECT ZID,ZSESSION,ZCREATEDAT,ZMODELIDENTIFIER,substr(ZCONTENT,1,160) AS ZCONTENT,\(total) AS BYTES,COALESCE(length(ZIMAGEATTACHMENTSDATA),0) AS IMAGES,\(context) AS CONTEXT FROM ZCHATMESSAGE") { row in
-            messages.append(DataStorageMessage(id: try row.value("id"), sessionID: try row.optionalInteger("ZSESSION").flatMap { sessions[$0]?.0 },
-                title: try row.value("content"), date: try row.value("createdAt"), bytes: try row.integer("BYTES"),
-                imageBytes: try row.integer("IMAGES"), contextBytes: try row.integer("CONTEXT"), model: row.recover("modelIdentifier", defaultValue: Optional<String>.none)))
+        try reader.query("SELECT *,\(total) AS BYTES,COALESCE(length(ZIMAGEATTACHMENTSDATA),0) AS IMAGES FROM ZCHATMESSAGE") { row in
+            let message = try StartupDataRecovery.recoverMessage(row)
+            messages.append(DataStorageMessage(id: message.id, sessionID: try row.optionalInteger("ZSESSION").flatMap { sessions[$0]?.0 },
+                title: String(message.content.prefix(160)), date: message.createdAt, bytes: try row.integer("BYTES"),
+                imageBytes: try row.integer("IMAGES"),
+                model: message.modelIdentifier))
         }
         let bySession = Dictionary(grouping: messages.compactMap { $0.sessionID == nil ? nil : $0 }, by: { $0.sessionID! })
         let chats = sessions.values.map { id, title, date, sessionBytes in
             let items = bySession[id] ?? []
             return DataStorageChat(id: id, title: title, date: date, bytes: items.reduce(sessionBytes) { $0 + $1.bytes },
-                imageBytes: items.reduce(0) { $0 + $1.imageBytes }, contextBytes: items.reduce(0) { $0 + $1.contextBytes }, messageCount: items.count)
+                imageBytes: items.reduce(0) { $0 + $1.imageBytes }, messageCount: items.count)
         }.sorted { $0.bytes > $1.bytes }
         var preferences: [DataModelPreference] = []
         _ = try reader.scan(entity: "AppSettings") { row in
@@ -216,7 +216,6 @@ nonisolated enum DataManagementStore {
         }
         return DataStorageCatalog(revision: revision, chats: chats, messages: messages.sorted { $0.bytes > $1.bytes },
             preferences: preferences.sorted { $0.key < $1.key },
-            sharedMetadataBytes: try reader.payloadSize(entity: "ChatRequestContextMetadata"),
             unassignedMessageBytes: messages.filter { $0.sessionID == nil }.reduce(0) { $0 + $1.bytes }, checkedAt: Date())
     }
 
@@ -233,8 +232,8 @@ nonisolated enum DataManagementStore {
         guard issue.entity == "ChatMessage", issue.rowID > 0 else { return nil }
         let reader = try RecoveryStoreReader(url: url, allowSidecarCreation: true)
         var content: String?
-        try reader.query("SELECT ZCONTENT FROM ZCHATMESSAGE WHERE Z_PK=\(issue.rowID)") { row in
-            content = try? row.value("content", as: String.self)
+        try reader.query("SELECT * FROM ZCHATMESSAGE WHERE Z_PK=\(issue.rowID)") { row in
+            content = try? StartupDataRecovery.recoverMessage(row).content
         }
         return content
     }
@@ -246,8 +245,7 @@ nonisolated enum DataManagementMutation: Sendable {
     case deleteAttachments(messageID: UUID, attachmentIDs: Set<UUID>)
     case deleteAllAttachments(Set<UUID>)
     case deletePreference(DataModelPreference)
-    case deleteModelData(preferences: [DataModelPreference], contextMessageIDs: Set<UUID>)
-    case clearContext(Set<UUID>)
+    case deleteModelData(preferences: [DataModelPreference])
     case deleteIssues([DataRecoveryIssue])
     case recoverUnowned(Set<UUID>)
 
@@ -262,7 +260,7 @@ nonisolated enum DataManagementMutation: Sendable {
     var changesSettings: Bool {
         switch self {
         case .deletePreference: true
-        case .deleteModelData(let preferences, _): !preferences.isEmpty
+        case .deleteModelData(let preferences): !preferences.isEmpty
         case .deleteIssues(let issues): issues.contains { $0.entity != "ChatMessage" && $0.entity != "ChatSession" }
         default: false
         }
@@ -278,11 +276,8 @@ nonisolated enum DataManagementMutation: Sendable {
             try deletePreference(item, in: context)
             return
         }
-        if case .deleteModelData(let preferences, let messageIDs) = self {
+        if case .deleteModelData(let preferences) = self {
             for item in preferences { try deletePreference(item, in: context) }
-            if !messageIDs.isEmpty {
-                try Self.clearContext(messageIDs).apply(in: context, storeURL: storeURL)
-            }
             return
         }
         let messages = try context.fetch(FetchDescriptor<ChatMessage>())
@@ -308,16 +303,6 @@ nonisolated enum DataManagementMutation: Sendable {
         case .deletePreference, .deleteModelData:
             // Model data mutations are handled before loading chats.
             break
-        case .clearContext(let ids):
-            for id in ids {
-                let model = try message(id)
-                model.requestContentSnapshot = nil
-                model.openAIResponsesConversationItemsData = nil
-                model.providerResponseID = nil
-                model.providerResponseIDsData = nil
-                model.requestPreviousResponseID = nil
-                model.requestUsedPreviousResponseID = nil
-            }
         case .deleteIssues:
             // Handled before materializing records that may contain invalid fields.
             break
@@ -341,7 +326,7 @@ nonisolated enum DataManagementMutation: Sendable {
                     queue.append(contentsOf: children[item.id] ?? [])
                 }
                 let session = ChatSession(title: String(localized: "Recovered Message"))
-                session.createdAt = root.createdAt
+                if let createdAt = root.createdAt { session.createdAt = createdAt }
                 context.insert(session)
                 for item in component {
                     item.session = session
@@ -365,6 +350,7 @@ nonisolated enum DataManagementMutation: Sendable {
         guard found.count == 1 else { throw DataBackupError.dataChanged }
         let model = found[0]
         let raw: String? = switch item.kind {
+        case .thinkingOptions: model.modelThinkingOptionsJSON
         case .thinking: model.modelThinkingPreferencesJSON
         case .images: model.modelImageInputOverrideJSON
         case .endpoint: model.detectedAPIFormatsJSON
@@ -372,6 +358,7 @@ nonisolated enum DataManagementMutation: Sendable {
         guard var values = try JSONSerialization.jsonObject(with: Data((raw ?? "{}").utf8)) as? [String: Any], values.removeValue(forKey: item.key) != nil else { throw DataBackupError.dataChanged }
         let updated = String(decoding: try JSONSerialization.data(withJSONObject: values, options: .sortedKeys), as: UTF8.self)
         switch item.kind {
+        case .thinkingOptions: model.modelThinkingOptionsJSON = updated
         case .thinking: model.modelThinkingPreferencesJSON = updated
         case .images: model.modelImageInputOverrideJSON = updated
         case .endpoint: model.detectedAPIFormatsJSON = updated
@@ -390,8 +377,8 @@ extension DataManagementStore {
         let reader = try RecoveryStoreReader(url: url, allowSidecarCreation: true)
         let hex = id.uuidString.replacingOccurrences(of: "-", with: "")
         var result: DataMessageDetails?
-        try reader.query("SELECT ZCONTENT,ZIMAGEATTACHMENTSDATA FROM ZCHATMESSAGE WHERE hex(ZID)='\(hex)'") { row in
-            let content: String = try row.value("content")
+        try reader.query("SELECT * FROM ZCHATMESSAGE WHERE hex(ZID)='\(hex)'") { row in
+            let content = try StartupDataRecovery.recoverMessage(row).content
             let raw: Data? = row.recover("imageAttachmentsData", defaultValue: Optional<Data>.none)
             let readable = try row.readableItems(raw, of: ChatImageAttachment.self, field: "imageAttachmentsData")
             result = DataMessageDetails(content: content, attachments: try readable.map { try JSONDecoder().decode([ChatImageAttachment].self, from: $0) } ?? [],
@@ -490,14 +477,14 @@ nonisolated struct DataChatPreview: Sendable {
         let content: String
         let reasoning: String?
         let isUser: Bool
-        let date: Date
+        let date: Date?
         let attachments: [ChatImageAttachment]
         let problems: [String]
     }
     struct Branch: Identifiable, Sendable {
         let id: UUID
         let messageIDs: [UUID]
-        let date: Date
+        let date: Date?
         let title: String
     }
     let messages: [UUID: Message]

@@ -90,6 +90,7 @@ extension ChatService {
     }
 
     func runPendingToolCallsAndContinue() {
+        finishGenerationRound(outcome: "completed")
         guard let context = activeToolLoopContext else { return }
         let calls = pendingToolCalls
         pendingToolCalls.removeAll(keepingCapacity: true)

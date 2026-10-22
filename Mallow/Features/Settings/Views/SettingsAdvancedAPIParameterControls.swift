@@ -11,6 +11,12 @@ struct SettingsAdvancedAPIParameterControls: View {
     @ObservedObject var viewModel: SettingsViewModel
     let profile: SettingsAdvancedAPIParameterProfile
 
+    private var showsAnthropicFixedBudget: Bool {
+        let mode = viewModel.apiAdvancedSettings.anthropicThinkingModeOverride
+        if !mode.isEmpty { return mode == "enabled" }
+        return viewModel.selectedModelThinkingCapability?.anthropicThinkingModes?.contains("enabled") == true
+    }
+
     var body: some View {
         switch profile {
         case .openAIResponses:
@@ -37,26 +43,32 @@ struct SettingsAdvancedAPIParameterControls: View {
             )
             SettingsAdvancedAPISamplingControls(sampling: $viewModel.apiAdvancedSettings.openAIChatSampling)
         case .anthropic:
-            SettingsAdvancedAPIIntegerField(
+            SettingsAdvancedAPIIntegerToggleField(
                 title: "max_tokens",
+                enabled: $viewModel.apiAdvancedSettings.anthropicMaxTokensEnabled,
                 value: $viewModel.apiAdvancedSettings.anthropicMaxTokens
             )
-            SettingsAdvancedAPIIntegerField(
-                title: "Extended thinking response reserve tokens",
-                value: $viewModel.apiAdvancedSettings.anthropicThinkingResponseReserve
-            )
-            SettingsAdvancedAPIIntegerField(
-                title: "Extended thinking low budget_tokens",
-                value: $viewModel.apiAdvancedSettings.anthropicLowThinkingBudget
-            )
-            SettingsAdvancedAPIIntegerField(
-                title: "Extended thinking medium budget_tokens",
-                value: $viewModel.apiAdvancedSettings.anthropicMediumThinkingBudget
-            )
-            SettingsAdvancedAPIIntegerField(
-                title: "Extended thinking high budget_tokens",
-                value: $viewModel.apiAdvancedSettings.anthropicHighThinkingBudget
-            )
+            Picker("thinking.type", selection: $viewModel.apiAdvancedSettings.anthropicThinkingModeOverride) {
+                Text("Default").tag("")
+                Text(verbatim: "disabled").tag("disabled")
+                Text(verbatim: "adaptive").tag("adaptive")
+                Text(verbatim: "enabled").tag("enabled")
+            }
+            if showsAnthropicFixedBudget {
+                SettingsAdvancedAPIIntegerToggleField(
+                    title: "budget_tokens",
+                    enabled: $viewModel.apiAdvancedSettings.anthropicThinkingBudgetEnabled,
+                    value: $viewModel.apiAdvancedSettings.anthropicThinkingBudget
+                )
+                if !viewModel.apiAdvancedSettings.anthropicThinkingBudgetEnabled {
+                    Text("Automatic budget")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else if viewModel.apiAdvancedSettings.anthropicThinkingModeOverride == "adaptive" {
+                TextField("output_config.effort", text: $viewModel.apiAdvancedSettings.anthropicEffortOverride,
+                          prompt: Text("Default"))
+            }
             SettingsAdvancedAPISamplingControls(
                 sampling: $viewModel.apiAdvancedSettings.anthropicSampling,
                 includeTopK: true,

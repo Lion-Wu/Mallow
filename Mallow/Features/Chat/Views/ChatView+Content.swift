@@ -197,6 +197,7 @@ extension ChatView {
             inputOverflow: inputOverflow,
             layoutMetrics: layoutMetrics,
             supportsImageInput: currentModelSupportsImageInput,
+            isModelReady: viewModel.isModelReady,
             thinkingCapability: currentModelThinkingCapability,
             thinkingOption: currentThinkingOption,
             errorCenter: errorCenter,

@@ -11,6 +11,7 @@ struct ChatModelCapabilityStore: Equatable {
     private(set) var imageInputSupport: [String: Bool]
     private(set) var imageInputOverrides: [String: Bool]
     private(set) var thinkingCapabilities: [String: ModelThinkingCapability]
+    private(set) var thinkingOptionOverrides: [String: [ModelThinkingOption]]
     private(set) var thinkingPreferences: [String: ModelThinkingOption]
     private(set) var detectedProviderHints: [String: ChatProvider]
     private(set) var detectedRequestStyleHints: [String: ChatRequestStyle]
@@ -19,6 +20,7 @@ struct ChatModelCapabilityStore: Equatable {
         let rawThinking: [String: String] = decodeDictionary(settings.modelThinkingPreferencesJSON)
         var store = Self(
             imageInputOverrides: decodeImageInputOverrides(from: settings.modelImageInputOverrideJSON),
+            thinkingOptionOverrides: decodeDictionary(settings.modelThinkingOptionsJSON),
             thinkingPreferences: rawThinking.compactMapValues(ModelThinkingOption.normalized)
         )
         let records: [String: [String: String]] = decodeDictionary(settings.detectedAPIFormatsJSON)
@@ -43,6 +45,7 @@ struct ChatModelCapabilityStore: Equatable {
         let thinking = try encoder.encode(thinkingPreferences.mapValues(\.rawValue))
         let overrides = imageInputOverrides.isEmpty ? nil : String(decoding: try encoder.encode(imageInputOverrides), as: UTF8.self)
         settings.detectedAPIFormatsJSON = String(decoding: formats, as: UTF8.self)
+        settings.modelThinkingOptionsJSON = String(decoding: try encoder.encode(thinkingOptionOverrides), as: UTF8.self)
         settings.modelThinkingPreferencesJSON = String(decoding: thinking, as: UTF8.self)
         settings.modelImageInputOverrideJSON = overrides
     }
@@ -51,6 +54,7 @@ struct ChatModelCapabilityStore: Equatable {
         imageInputSupport: [String: Bool] = [:],
         imageInputOverrides: [String: Bool] = [:],
         thinkingCapabilities: [String: ModelThinkingCapability] = [:],
+        thinkingOptionOverrides: [String: [ModelThinkingOption]] = [:],
         thinkingPreferences: [String: ModelThinkingOption] = [:],
         detectedProviderHints: [String: ChatProvider] = [:],
         detectedRequestStyleHints: [String: ChatRequestStyle] = [:]
@@ -58,6 +62,7 @@ struct ChatModelCapabilityStore: Equatable {
         self.imageInputSupport = imageInputSupport
         self.imageInputOverrides = imageInputOverrides
         self.thinkingCapabilities = thinkingCapabilities
+        self.thinkingOptionOverrides = thinkingOptionOverrides
         self.thinkingPreferences = thinkingPreferences
         self.detectedProviderHints = detectedProviderHints
         self.detectedRequestStyleHints = detectedRequestStyleHints
@@ -129,76 +134,62 @@ struct ChatModelCapabilityStore: Equatable {
         return detectedRequestStyleHints[key]
     }
 
-    func imageInputManualOverride(for modelIdentifier: String) -> Bool? {
-        let trimmed = modelIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        return imageInputOverrides[trimmed]
+    static func preferenceKey(apiBaseURL: String, requestStyle: ChatRequestStyle?, modelIdentifier: String) -> String? {
+        guard let requestStyle,
+              let key = scopedKey(apiBaseURL: apiBaseURL, modelIdentifier: modelIdentifier) else { return nil }
+        return "\(requestStyle.rawValue)|\(key)"
     }
 
-    mutating func setImageInputManualOverride(_ enabled: Bool?, for modelIdentifier: String) {
-        let trimmed = modelIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+    func imageInputManualOverride(for modelIdentifier: String, apiBaseURL: String, requestStyle: ChatRequestStyle?) -> Bool? {
+        guard let key = Self.preferenceKey(apiBaseURL: apiBaseURL, requestStyle: requestStyle, modelIdentifier: modelIdentifier) else { return nil }
+        return imageInputOverrides[key]
+    }
 
-        if let enabled {
-            imageInputOverrides[trimmed] = enabled
-        } else {
-            imageInputOverrides.removeValue(forKey: trimmed)
-        }
+    mutating func setImageInputManualOverride(_ enabled: Bool?, for modelIdentifier: String, apiBaseURL: String, requestStyle: ChatRequestStyle?) {
+        guard let key = Self.preferenceKey(apiBaseURL: apiBaseURL, requestStyle: requestStyle, modelIdentifier: modelIdentifier) else { return }
+        imageInputOverrides[key] = enabled
     }
 
     func isImageInputSupportUnknown(for modelIdentifier: String, apiBaseURL: String) -> Bool {
-        let trimmed = modelIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
-        if explicitImageInputSupport(for: trimmed, apiBaseURL: apiBaseURL) != nil {
-            return false
-        }
-        return ModelCapabilityResolver.imageInputSupport(fromModelIdentifier: trimmed) == nil
+        !modelIdentifier.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            explicitImageInputSupport(for: modelIdentifier, apiBaseURL: apiBaseURL) == nil
     }
 
-    func supportsImageInput(for modelIdentifier: String, apiBaseURL: String) -> Bool {
-        let trimmed = modelIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
-
-        // Provider-reported model capabilities should override stale manual toggles.
-        if let explicit = explicitImageInputSupport(for: trimmed, apiBaseURL: apiBaseURL) {
-            return explicit
-        }
-        if let manualOverride = imageInputOverrides[trimmed] {
-            return manualOverride
-        }
-        if let inferred = ModelCapabilityResolver.imageInputSupport(fromModelIdentifier: trimmed) {
-            return inferred
-        }
-        return false
+    func supportsImageInput(for modelIdentifier: String, apiBaseURL: String, requestStyle: ChatRequestStyle?) -> Bool {
+        if let explicit = explicitImageInputSupport(for: modelIdentifier, apiBaseURL: apiBaseURL) { return explicit }
+        return imageInputManualOverride(for: modelIdentifier, apiBaseURL: apiBaseURL, requestStyle: requestStyle) ?? false
     }
 
-    func thinkingCapability(
-        for modelIdentifier: String,
-        apiBaseURL: String,
-        provider: ChatProvider,
-        requestStyle: ChatRequestStyle?
-    ) -> ModelThinkingCapability? {
-        let trimmed = modelIdentifier.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
+    func reportedThinkingCapability(for modelIdentifier: String, apiBaseURL: String) -> ModelThinkingCapability? {
+        guard let key = Self.scopedKey(apiBaseURL: apiBaseURL, modelIdentifier: modelIdentifier) else { return nil }
+        return thinkingCapabilities[key]
+    }
 
-        if let key = Self.scopedKey(apiBaseURL: apiBaseURL, modelIdentifier: trimmed),
-           let explicit = thinkingCapabilities[key] {
-            return explicit
-        }
+    func manualThinkingOptions(for modelIdentifier: String, apiBaseURL: String, requestStyle: ChatRequestStyle?) -> [ModelThinkingOption]? {
+        guard let key = Self.preferenceKey(apiBaseURL: apiBaseURL, requestStyle: requestStyle, modelIdentifier: modelIdentifier) else { return nil }
+        return thinkingOptionOverrides[key]
+    }
 
-        return ModelCapabilityResolver.thinkingCapability(
-            fromModelIdentifier: trimmed,
-            provider: provider,
-            requestStyle: requestStyle
-        )
+    mutating func setManualThinkingOptions(_ options: [ModelThinkingOption], for modelIdentifier: String, apiBaseURL: String, requestStyle: ChatRequestStyle?) {
+        guard let key = Self.preferenceKey(apiBaseURL: apiBaseURL, requestStyle: requestStyle, modelIdentifier: modelIdentifier) else { return }
+        thinkingOptionOverrides[key] = options
+    }
+
+    func thinkingCapability(for modelIdentifier: String, apiBaseURL: String, requestStyle: ChatRequestStyle?) -> ModelThinkingCapability? {
+        let reported = reportedThinkingCapability(for: modelIdentifier, apiBaseURL: apiBaseURL)
+        if reported?.hasKnownOptions == true { return reported }
+        guard let requestStyle,
+              let options = manualThinkingOptions(for: modelIdentifier, apiBaseURL: apiBaseURL, requestStyle: requestStyle) else { return reported }
+        return ModelCapabilityResolver.applyingManualThinkingOptions(options, to: reported, style: requestStyle)
     }
 
     func selectedThinkingOption(
         for modelIdentifier: String,
         apiBaseURL: String,
+        requestStyle: ChatRequestStyle?,
         capability: ModelThinkingCapability
     ) -> ModelThinkingOption? {
-        guard let key = Self.scopedKey(apiBaseURL: apiBaseURL, modelIdentifier: modelIdentifier) else {
+        guard let key = Self.preferenceKey(apiBaseURL: apiBaseURL, requestStyle: requestStyle, modelIdentifier: modelIdentifier) else {
             return nil
         }
         return capability.normalizedSelection(thinkingPreferences[key])
@@ -208,9 +199,10 @@ struct ChatModelCapabilityStore: Equatable {
         _ option: ModelThinkingOption?,
         for modelIdentifier: String,
         apiBaseURL: String,
+        requestStyle: ChatRequestStyle?,
         capability: ModelThinkingCapability
     ) {
-        guard let key = Self.scopedKey(apiBaseURL: apiBaseURL, modelIdentifier: modelIdentifier) else {
+        guard let key = Self.preferenceKey(apiBaseURL: apiBaseURL, requestStyle: requestStyle, modelIdentifier: modelIdentifier) else {
             return
         }
         guard let normalized = capability.normalizedSelection(option) else { return }

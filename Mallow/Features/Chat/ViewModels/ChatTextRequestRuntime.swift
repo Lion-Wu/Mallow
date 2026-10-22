@@ -233,21 +233,17 @@ final class ChatTextRequestRuntime {
         )
     }
 
-    func applyStreamMetadata(to message: ChatMessage, firstTokenTimestamp: Date) {
+    func applyStreamMetadata(to message: ChatMessage) {
         streamTelemetryCoordinator.applyStreamMetadata(
             to: message,
-            firstTokenTimestamp: firstTokenTimestamp,
             fallbackConfiguration: configuration
         )
     }
 
-    func estimatedTokenCountFromCharacters(_ characterCount: Int) -> Int {
-        streamTelemetryCoordinator.estimatedTokenCountFromCharacters(characterCount)
+    func applyGenerationRounds(to message: ChatMessage) {
+        streamTelemetryCoordinator.applyGenerationRounds(to: message)
     }
 
-    func bumpStreamCounters(for message: ChatMessage, delta: String) {
-        streamTelemetryCoordinator.bumpStreamCounters(for: message, delta: delta)
-    }
 
     func shouldForceImmediatePersist(afterAppending addedChars: Int) -> Bool {
         streamTelemetryCoordinator.shouldForceImmediatePersist(afterAppending: addedChars)
@@ -325,6 +321,7 @@ final class ChatTextRequestRuntime {
             finishedAt: now,
             errorDescription: error.localizedDescription
         )
+        if interrupted != nil { errorMessage.generationRounds = [] }
         interruptedAssistantMessageID = interrupted?.id
         currentAssistantMessageID = nil
         resetStreamingPersistenceState()
@@ -393,6 +390,7 @@ final class ChatTextRequestRuntime {
             finishedAt: finishedAt,
             errorDescription: displayText
         )
+        if interrupted != nil { errorMessage.generationRounds = [] }
         let assistantIDForBranchRestore = currentAssistantMessageID
         clearAssistantTracking()
         resetStreamingPersistenceState()

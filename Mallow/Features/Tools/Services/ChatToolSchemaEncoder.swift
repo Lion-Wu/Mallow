@@ -77,15 +77,15 @@ enum ChatToolSchemaEncoder {
 
         case .openAIChatCompletionsAPI:
             var messages = requestBody["messages"] as? [[String: Any]] ?? []
-            if let systemIndex = messages.firstIndex(where: {
-                (($0["role"] as? String) ?? "").lowercased() == "system"
+            if let developerIndex = messages.firstIndex(where: {
+                (($0["role"] as? String) ?? "").lowercased() == "developer"
             }) {
-                messages[systemIndex]["content"] = appending(
+                messages[developerIndex]["content"] = appending(
                     instruction,
-                    to: messages[systemIndex]["content"] as? String
+                    to: messages[developerIndex]["content"] as? String
                 )
             } else {
-                messages.insert(["role": "system", "content": instruction], at: 0)
+                messages.insert(["role": "developer", "content": instruction], at: 0)
             }
             requestBody["messages"] = messages
 

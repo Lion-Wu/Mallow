@@ -141,8 +141,6 @@
 "Detected API Format: %@" = "Format d’API détecté : %@";
 "Developer Defaults" = "Réglages développeur";
 "Developer Mode" = "Mode développeur";
-"Developer Prompt Characters" = "Nombre de caractères du prompt développeur";
-"Developer Prompt Hash" = "Hachage du prompt développeur";
 "Device Context" = "Informations sur l’appareil";
 "Device context was read." = "Les informations de l’appareil ont été obtenues.";
 "Device motion is not available on this platform." = "Les données de mouvement de l’appareil ne sont pas disponibles sur cette plateforme.";
@@ -170,7 +168,6 @@
 "Enabled Endpoints" = "Points de terminaison activés";
 "Enabled Tools" = "Outils activés";
 "Enables Stateful Chat for conversations that support it." = "Active Stateful Chat pour les conversations compatibles.";
-"Endpoint URL Hash" = "Hachage de l’URL du point de terminaison";
 "English" = "Anglais";
 "Enter API key" = "Saisissez la clé d’API";
 "Enter preset name" = "Saisissez le nom du préréglage";
@@ -179,10 +176,6 @@
 "Event" = "Événement";
 "Event end must be after start." = "La fin de l’événement doit être postérieure à son début.";
 "Exit" = "Quitter";
-"Extended thinking high budget_tokens" = "budget_tokens élevés du raisonnement étendu";
-"Extended thinking low budget_tokens" = "budget_tokens bas du raisonnement étendu";
-"Extended thinking medium budget_tokens" = "budget_tokens moyens du raisonnement étendu";
-"Extended thinking response reserve tokens" = "Jetons réservés à la réponse de raisonnement étendu";
 "Extra High" = "Très élevé";
 "Failed" = "Échec";
 "Failed to start audio playback: %@" = "Échec du démarrage de la lecture audio : %@";
@@ -222,7 +215,6 @@
 "JavaScript, %d characters" = "JavaScript, %d caractères";
 "JSON mode" = "Mode JSON";
 "Keywords: %@" = "Mots-clés : %@";
-"Last Seen At" = "Dernière utilisation";
 "List" = "Liste";
 "Listening" = "Écoute";
 "Listing Calendar Events" = "Consultation des événements du calendrier";
@@ -271,6 +263,7 @@
 "No device motion sample was received." = "Aucun échantillon de mouvement de l’appareil n’a été reçu.";
 "No endpoint URLs are enabled." = "Aucune URL de point de terminaison n’est activée.";
 "No internet connection for TTS requests." = "Aucune connexion Internet pour les requêtes TTS.";
+"Models have not been loaded. You cannot send messages until models are available. Check the server connection and refresh the model list in Settings." = "Les modèles ne sont pas encore chargés. Vous ne pouvez pas envoyer de messages tant qu’ils ne sont pas disponibles. Vérifiez la connexion au serveur et actualisez la liste des modèles dans les réglages.";
 "No models returned from %@" = "Aucun modèle renvoyé par %@";
 "No parameters" = "Aucun paramètre";
 "No recent replies" = "Aucune réponse récente";
@@ -342,7 +335,6 @@
 "Received audio data could not be played." = "Les données audio reçues n’ont pas pu être lues.";
 "Recorded Locally" = "Enregistré localement";
 "Reference Audio Path" = "Chemin de l’audio de référence";
-"Reference Count" = "Nombre de références";
 "Reference Language" = "Langue du texte de référence";
 "Reference Text" = "Texte de référence";
 "Reference text (optional)" = "Texte de référence (optionnel)";
@@ -436,6 +428,7 @@
 "Take Photo" = "Prendre une photo";
 "Tap to reconnect" = "Touchez pour vous reconnecter";
 "Text Generation Issue" = "Problème de génération de texte";
+"Unable to Send Messages" = "Impossible d’envoyer des messages";
 "Text Language" = "Langue du texte";
 "text must contain at most 10000 characters." = "text doit contenir au maximum 10000 caractères.";
 "Text server unreachable" = "Serveur de texte inaccessible";
@@ -461,7 +454,7 @@
 "This message contains only images. Edit it before retrying with this model." = "Ce message contient uniquement des images. Modifiez-le avant de réessayer avec ce modèle.";
 "This message contains only images. Edit it or delete it." = "Ce message contient uniquement des images. Modifiez-le ou supprimez-le.";
 "This message will be deleted." = "Ce message sera supprimé.";
-"This model's metadata does not clearly report image-input capability. Turn this on only if you are sure the backend can accept image content for this model." = "Les métadonnées de ce modèle n’indiquent pas clairement s’il prend en charge l’entrée d’images. Activez cette option uniquement si vous êtes certain que le backend peut accepter du contenu image pour ce modèle.";
+"Unable to confirm whether this model supports image input. Enable it if supported." = "Impossible de confirmer si ce modèle accepte les images. Activez cette option si c’est le cas.";
 "This tool is disabled for the current endpoint." = "Cet outil est désactivé pour le point de terminaison actuel.";
 "This will allow location, clipboard, URL, and JavaScript Runtime tools to run automatically when permitted by the authorization mode. This may increase the risk of privacy exposure." = "Cela permettra aux outils de localisation, de presse-papiers, d’URL et d’environnement d’exécution JavaScript de s’exécuter automatiquement lorsque le mode d’autorisation le permet. Cela peut accroître le risque de fuite de données privées.";
 "This will reset all developer options to their default values." = "Cette action réinitialisera toutes les options développeur à leurs valeurs par défaut.";
@@ -483,12 +476,9 @@
 "Tool call was denied by the user." = "L’utilisateur a refusé l’appel d’outil.";
 "Tool Calls" = "Appels d’outils";
 "Tool Name" = "Nom de l’outil";
-"Tool Schema Digest" = "Empreinte du schéma d’outil";
-"Tool Schema Metadata" = "Métadonnées du schéma d’outil";
 "Tool Trace" = "Trace des outils";
 "Tool Use" = "Utilisation des outils";
 "Tool Use Details" = "Détails d’utilisation des outils";
-"Tool Use Enabled" = "Utilisation des outils activée";
 "Tool use is disabled." = "L’utilisation des outils est désactivée.";
 "Traditional Chinese" = "Chinois traditionnel";
 "Try a different search." = "Essayez une autre recherche.";
@@ -524,7 +514,6 @@
 "URL Actions" = "Actions URL";
 "URL scheme is not allowed." = "Le schéma d’URL n’est pas autorisé.";
 "URL was opened." = "L’URL a été ouverte.";
-"Use Provider Continuation IDs" = "Utiliser les ID de continuation du fournisseur";
 "Used for chat mode" = "Utilisé pour le mode chat";
 "Used for voice mode" = "Utilisé pour le mode vocal";
 "Used Tools" = "Outils utilisés";
@@ -605,7 +594,6 @@
 "Voice Server Presets" = "Préréglages du serveur vocal";
 "Voice Presets" = "Préréglages vocaux";
 "System Prompt Presets" = "Préréglages des instructions système";
-"Request Metadata" = "Métadonnées des requêtes";
 "Unrecoverable Items" = "Éléments irrécupérables";
 // Data reset confirmation
 "Reset Data?" = "Réinitialiser les données ?";
@@ -660,7 +648,6 @@
 "This message will be added:" = "Ce message sera ajouté :";
 "Server Address" = "Adresse du serveur";
 "Message Date" = "Date du message";
-"Request Content" = "Contenu de la requête";
 "Response Content" = "Contenu de la réponse";
 "Conversation Context" = "Contexte de conversation";
 "Tool Activity" = "Activité des outils";
@@ -694,7 +681,6 @@
 "Largest First" = "Les plus volumineux d’abord";
 "Message" = "Message";
 "Missing Chat Ownership" = "Message sans conversation";
-"Missing Request Metadata" = "Métadonnées de requête manquantes";
 "Missing or Duplicate Identity" = "Identifiant manquant ou dupliqué";
 "Model Data" = "Données des modèles";
 "Name" = "Nom";
@@ -707,7 +693,6 @@
 "Stored Content" = "Contenu enregistré";
 "Issues Found" = "Problèmes détectés";
 "New Branch" = "Nouvelle branche";
-"Applies to this model across all servers." = "S’applique à ce modèle sur tous les serveurs.";
 "Selected chats and all their branches and attachments will be removed." = "Les conversations sélectionnées, leurs branches et pièces jointes seront supprimées.";
 "The database structure check failed. Export the original data before attempting recovery." = "La vérification de la structure a échoué. Exportez les données originales avant toute récupération.";
 "Selected image attachments will be removed from this message." = "Les images sélectionnées seront retirées de ce message.";
@@ -716,9 +701,7 @@
 "Another instance of the app is using this data. Close that instance, then try again." = "Une autre instance de l’app utilise ces données. Fermez cette instance, puis réessayez.";
 "Try Again" = "Réessayer";
 // Storage breakdown
-"Request Snapshots and Continuation Data" = "Instantanés de requêtes et données de continuation";
 "Messages and Other Chat Data" = "Messages et autres données de discussion";
-"Shared Request Metadata" = "Métadonnées de requêtes partagées";
 "Unassigned Messages" = "Messages non attribués";
 "Search" = "Rechercher";
 "A required value is missing." = "Une valeur requise est absente.";
@@ -739,7 +722,6 @@
 "Source" = "Source";
 "The database structure check reported an error." = "La vérification de la structure de la base de données a signalé une erreur.";
 "The preceding message is missing, belongs to another chat, or forms a circular chain." = "Le message précédent est absent, appartient à une autre conversation ou forme une chaîne circulaire.";
-"The request metadata referenced by this message is missing." = "Les métadonnées de requête référencées par ce message sont absentes.";
 "The selected branch no longer exists in this chat." = "La branche sélectionnée n’existe plus dans cette conversation.";
 "The stored data is not valid for this field." = "Les données enregistrées ne respectent pas le format de ce champ.";
 "The stored value has the wrong type." = "Le type de la valeur enregistrée est incorrect.";
@@ -747,13 +729,11 @@
 "This message does not reference an existing chat." = "Ce message n’est lié à aucune conversation existante.";
 "This record has a missing or duplicate identifier and cannot be safely selected for deletion." = "L’identifiant de cet enregistrement est absent ou dupliqué ; sa sélection pour suppression n’est pas sûre.";
 "Tool Positions" = "Positions des outils";
-"Tool positions refer to missing message segments." = "Les positions des outils référencent des segments de message absents.";
 "Unable to Preview" = "Aperçu impossible";
 "Unreadable Fields" = "Champs illisibles";
 "Delete Chat" = "Supprimer la conversation";
 "All attachments in the selected messages will be deleted. Message text will be kept." = "Toutes les pièces jointes des messages sélectionnés seront supprimées. Le texte sera conservé.";
 "Delete Selected" = "Supprimer la sélection";
-"Delete Request Snapshots and Continuation Data" = "Supprimer les instantanés de requête et les données de continuation";
 "Confirm deletion?" = "Confirmer la suppression ?";
 "Deselect All" = "Tout désélectionner";
 "This will permanently delete this chat. This action cannot be undone." = "Cette conversation sera définitivement supprimée. Cette action est irréversible.";
@@ -777,13 +757,11 @@
 "Removing Files..." = "Suppression des fichiers…";
 "Export Selected" = "Exporter la sélection";
 "This will delete the selected setting." = "Le réglage sélectionné sera supprimé.";
-"This will delete the selected request snapshots and continuation data." = "Les instantanés de requête et les données de continuation sélectionnés seront supprimés.";
 "%lld Selected" = "%lld sélectionnés";
 "Your data changed. Review the updated list before continuing. No data was deleted." = "Les données ont changé. Consultez la liste actualisée avant de continuer. Aucune donnée n’a été supprimée.";
 "No Data" = "Aucune donnée";
 "The selected messages and their related history will be restored as separate chats." = "Les messages sélectionnés et leur historique associé seront restaurés dans des conversations distinctes.";
 "The selected model settings will be deleted." = "Les réglages de modèle sélectionnés seront supprimés.";
-"Request snapshots and continuation data will be deleted for the selected models across all servers." = "Les instantanés de requêtes et les données de continuation des modèles sélectionnés seront supprimés pour tous les serveurs.";
 "The API key file could not be read because its format is invalid." = "Le format du fichier de clés API est invalide et ne peut pas être lu.";
 "API key %lld: %@" = "Clé API %lld : %@";
 "This record has no valid account identifier." = "Cet enregistrement ne contient pas d’identifiant de compte valide.";
@@ -793,3 +771,30 @@
 "The records in this category could not be fully read. The number of affected records is unknown." = "Les enregistrements de cette catégorie n’ont pas pu être lus entièrement. Le nombre d’enregistrements concernés est inconnu.";
 "Import File Records Not Fully Merged" = "Enregistrements du fichier importé partiellement ou non fusionnés";
 "Data Not Fully Merged" = "Données partiellement ou non fusionnées";
+"Request Metadata" = "Métadonnées de la requête";
+"Generation Round %d" = "Tour de génération %d";
+"Provider Model" = "Modèle du fournisseur";
+"Uncached Input Tokens" = "Tokens d’entrée hors cache";
+"Input Token Count" = "Nombre de tokens d’entrée";
+"Total Token Count" = "Nombre total de tokens";
+"Cached Tokens" = "Tokens lus en cache";
+"Cache Write Tokens" = "Tokens écrits en cache";
+"Reported Cost" = "Coût déclaré";
+"First Output At" = "Première sortie à";
+"Time To First Output" = "Délai de première sortie";
+"Response Duration" = "Durée de réponse";
+"Provider Created At" = "Création côté serveur";
+"Provider Completed At" = "Fin côté serveur";
+"Returned Provider Data" = "Données renvoyées par le fournisseur";
+"Request URL" = "URL de la requête";
+"Automatic budget" = "Budget automatique";
+"thinking.type" = "thinking.type";
+"budget_tokens" = "budget_tokens";
+"output_config.effort" = "output_config.effort";
+"Model information is not ready. Wait for loading to finish, or fetch models again in Settings." = "Les informations du modèle ne sont pas encore disponibles. Attendez la fin du chargement ou récupérez à nouveau les modèles dans les réglages.";
+"Your latest chat changes could not be saved. They may be lost if you close the app.\n%@" = "Les dernières modifications de vos conversations n’ont pas pu être enregistrées. Elles risquent d’être perdues si vous fermez l’application.\n%@";
+"Supported Thinking Options" = "Options de raisonnement prises en charge";
+"Fixed-budget Thinking" = "Raisonnement à budget fixe";
+"Unable to confirm this model's supported thinking options. Select them manually." = "Impossible de confirmer les options de raisonnement prises en charge par ce modèle. Sélectionnez-les manuellement.";
+"Requested Thinking Parameters" = "Paramètres de raisonnement demandés";
+"Reported Thinking Parameters" = "Paramètres de raisonnement renvoyés par le serveur";

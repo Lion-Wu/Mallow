@@ -128,9 +128,6 @@ struct SettingsChatServerSection: View {
         } header: {
             header
         }
-        .onChange(of: viewModel.selectedChatServerPresetID) {
-            viewModel.fetchAvailableModels()
-        }
     }
 
     @ViewBuilder

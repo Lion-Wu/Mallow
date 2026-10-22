@@ -101,7 +101,7 @@ private struct LMStudioRESTModelRecord: Decodable {
             return nil
         }
 
-        let capabilityModalities = capabilities?.input_modalities ?? capabilities?.modalities
+        let capabilityModalities = capabilities?.input_modalities
         let mergedInputModalities = input_modalities ?? capabilityModalities
         let mergedModalities = modalities ?? capabilityModalities
 
@@ -275,46 +275,22 @@ struct ModelInfo: Codable {
     }
 
     var supportsImageInputHint: Bool? {
-        if let explicit = supports_image_input ?? supports_vision ?? vision {
-            return explicit
-        }
-        if let explicit = multimodal {
-            return explicit
-        }
-
-        let modalityCandidates: [[String]?] = [
-            architecture?.input_modalities,
-            input_modalities,
-            modalities,
-            capabilities?.input_modalities,
-            capabilities?.modalities,
-            details?.input_modalities,
-            details?.modalities,
-            model_info?.input_modalities,
-            model_info?.modalities
+        let metadata = rawMetadata?.jsonObject as? [String: Any]
+        let imageCapability = (metadata?["capabilities"] as? [String: Any])?["image_input"] as? [String: Any]
+        let explicitFlags = [
+            supports_image_input, supports_vision, vision, imageCapability?["supported"] as? Bool,
+            capabilities?.supports_image_input, capabilities?.supports_vision, capabilities?.vision,
+            details?.supports_image_input, details?.supports_vision, details?.vision,
+            model_info?.supports_image_input, model_info?.supports_vision, model_info?.vision
         ]
-        let resolvedModalities = modalityCandidates.compactMap { $0 }.first
-        let tokens = normalizedTokens(resolvedModalities)
-        if !tokens.isEmpty {
-            return tokens.contains("image") || tokens.contains("vision")
-        }
-
-        let typeCandidates: [String?] = [
-            type,
-            arch,
-            capabilities?.type,
-            details?.type,
-            model_info?.type,
-            capabilities?.architecture,
-            details?.architecture,
-            model_info?.architecture
-        ]
-        let typeTokens = normalizedTokens(typeCandidates.compactMap { $0 })
-        if typeTokens.contains("vlm") || typeTokens.contains("vision") || typeTokens.contains("multimodal") {
-            return true
-        }
-
-        return nil
+        if let explicit = explicitFlags.compactMap({ $0 }).first { return explicit }
+        let inputModalities = [
+            architecture?.input_modalities, input_modalities, capabilities?.input_modalities,
+            details?.input_modalities, model_info?.input_modalities
+        ].compactMap { $0 }.first
+        guard let inputModalities else { return nil }
+        let tokens = normalizedTokens(inputModalities)
+        return tokens.contains("image") || tokens.contains("vision")
     }
 
     var thinkingCapabilityHint: ModelThinkingCapability? {
@@ -325,6 +301,9 @@ struct ModelInfo: Codable {
         provider: ChatProvider?,
         requestStyle: ChatRequestStyle?
     ) -> ModelThinkingCapability? {
+        if requestStyle == .anthropicMessages || (requestStyle == nil && provider == .anthropic) {
+            return anthropicCapabilityHint
+        }
         let explicitCandidates: [ModelThinkingCapabilityDescriptor?] = [
             reasoning,
             capabilities?.reasoning,
@@ -344,43 +323,44 @@ struct ModelInfo: Codable {
             }
         }
 
-        let normalizedParameters = Set(
-            parameterCandidates
-                .compactMap { $0 }
-                .flatMap { $0 }
-                .map {
-                    $0
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                        .lowercased()
-                        .replacingOccurrences(of: "-", with: "_")
-                }
-                .filter { !$0.isEmpty }
-        )
-        if normalizedParameters.contains("reasoning_effort") ||
-            normalizedParameters.contains("reasoning.effort") {
-            return ModelThinkingCapability(
-                options: [.low, .medium, .high],
-                defaultOption: .medium,
-                requestParameter: .reasoningEffort
-            )
-        }
-        if normalizedParameters.contains("thinking") ||
-            normalizedParameters.contains("reasoning") {
-            if Self.shouldTreatGenericThinkingParameterAsCompatibleEffort(provider: provider, requestStyle: requestStyle) {
-                return ModelThinkingCapability(
-                    options: [.off, .minimal, .low, .medium, .high, .xhigh],
-                    defaultOption: .off,
-                    requestParameter: requestParameter
-                )
-            }
-            return ModelThinkingCapability(
-                options: [.off, .on],
-                defaultOption: .off,
-                requestParameter: requestParameter
-            )
-        }
+        return ModelThinkingCapability(options: [], requestParameter: requestParameter, hasKnownOptions: false)
+    }
 
-        return nil
+    private var anthropicCapabilityHint: ModelThinkingCapability {
+        let metadata = rawMetadata?.jsonObject as? [String: Any] ?? [:]
+        let capabilities = metadata["capabilities"] as? [String: Any] ?? [:]
+        let thinking = capabilities["thinking"] as? [String: Any] ?? [:]
+        let types = thinking["types"] as? [String: [String: Any]] ?? [:]
+        let modes = thinking["supported"] as? Bool == true
+            ? ["adaptive", "enabled", "disabled"].filter { types[$0]?["supported"] as? Bool == true }
+            : []
+        let effort = capabilities["effort"] as? [String: Any] ?? [:]
+        let effortNames = effort["supported"] as? Bool == true ? effort.keys.filter {
+            (effort[$0] as? [String: Any])?["supported"] as? Bool == true
+        } : []
+        let order = ["minimal", "low", "medium", "high", "xhigh", "max", "ultra"]
+        let efforts = effortNames.sorted {
+            let lhs = order.firstIndex(of: $0) ?? order.count
+            let rhs = order.firstIndex(of: $1) ?? order.count
+            return lhs == rhs ? $0 < $1 : lhs < rhs
+        }.map { ModelThinkingOption(rawValue: $0) }
+        var options: [ModelThinkingOption] = thinking["supported"] as? Bool == false ? [] : [.serverDefault]
+        if modes.contains("disabled") { options.append(.off) }
+        if modes.contains("adaptive"), !efforts.isEmpty {
+            options.append(contentsOf: efforts)
+        } else if modes.contains("enabled") || modes.contains("adaptive") {
+            options.append(.on)
+        }
+        let maxTokens = (metadata["max_tokens"] as? Double).flatMap { Int(exactly: $0) }
+        return ModelThinkingCapability(
+            options: options,
+            requestParameter: .thinking,
+            anthropicThinkingModes: modes,
+            anthropicEfforts: efforts,
+            maxOutputTokens: maxTokens.flatMap { $0 > 0 ? $0 : nil },
+            hasKnownOptions: thinking["supported"] as? Bool == false ||
+                (!modes.isEmpty && (!modes.contains("adaptive") || effort["supported"] as? Bool == false || !efforts.isEmpty))
+        )
     }
 
     private static func requestParameterHint(from parameterCandidates: [[String]?]) -> ModelThinkingRequestParameter? {
@@ -396,27 +376,16 @@ struct ModelInfo: Codable {
                 }
                 .filter { !$0.isEmpty }
         )
-        if normalizedParameters.contains("reasoning_effort") ||
-            normalizedParameters.contains("reasoning.effort") {
+        if normalizedParameters.contains("reasoning_effort") {
             return .reasoningEffort
         }
-        if normalizedParameters.contains("reasoning") {
+        if normalizedParameters.contains("reasoning") || normalizedParameters.contains("reasoning.effort") {
             return .reasoning
         }
         if normalizedParameters.contains("thinking") {
             return .thinking
         }
         return nil
-    }
-
-    private static func shouldTreatGenericThinkingParameterAsCompatibleEffort(
-        provider: ChatProvider?,
-        requestStyle: ChatRequestStyle?
-    ) -> Bool {
-        guard requestStyle == .openAIResponses || requestStyle == .openAIChatCompletions else {
-            return false
-        }
-        return provider != .anthropic && provider != .lmStudio
     }
 
     private func normalizedTokens(_ values: [String]?) -> Set<String> {

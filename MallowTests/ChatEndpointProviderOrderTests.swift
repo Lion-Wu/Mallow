@@ -94,14 +94,15 @@ final class ChatEndpointProviderOrderTests: XCTestCase {
                 ]
             ),
             EndpointRoutingCase(
-                name: "OpenRouter messages path manual Anthropic",
+                name: "OpenRouter excludes manual Anthropic",
                 base: "https://openrouter.ai/api/v1/messages",
                 providerHint: .anthropic,
                 styleHint: .anthropicMessages,
-                expectedProvider: .anthropic,
-                expectedStyle: .anthropicMessages,
-                expectedChatURL: "https://openrouter.ai/api/v1/messages",
-                expectedModelsURL: "https://openrouter.ai/api/v1/models"
+                expectedProvider: .openAI,
+                expectedStyle: .openAIResponses,
+                expectedChatURL: "https://openrouter.ai/api/v1/responses",
+                expectedModelsURL: "https://openrouter.ai/api/v1/models",
+                forbiddenProviders: [.anthropic]
             ),
             EndpointRoutingCase(
                 name: "OpenAI API base",

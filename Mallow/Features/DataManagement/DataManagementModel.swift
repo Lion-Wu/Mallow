@@ -8,7 +8,7 @@ final class DataManagementModel: ObservableObject {
     enum OperationKind {
         case loadUsage, loadCatalog, exportBackup, exportUnusedFiles, readImport, mergeImport
         case cleanNetworkCache, cleanTemporaryFiles, scanData, deleteUnusedFiles
-        case deleteChats, deleteAttachments, deletePreference, deleteModelData, clearContext, deleteIssues, recoverMessages
+        case deleteChats, deleteAttachments, deletePreference, deleteModelData, deleteIssues, recoverMessages
     }
 
     struct OperationProgress {
@@ -217,7 +217,6 @@ final class DataManagementModel: ObservableObject {
         case .deleteAttachments, .deleteAllAttachments: .deleteAttachments
         case .deletePreference: .deletePreference
         case .deleteModelData: .deleteModelData
-        case .clearContext: .clearContext
         case .deleteIssues: .deleteIssues
         case .recoverUnowned: .recoverMessages
         }

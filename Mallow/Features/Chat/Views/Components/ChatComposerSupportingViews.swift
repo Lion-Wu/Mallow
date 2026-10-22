@@ -21,6 +21,7 @@ struct ChatComposerPanel: View {
     let isLoading: Bool
     let isPriming: Bool
     let canSendDraft: Bool
+    let isModelReady: Bool
     let queuedDrafts: [QueuedChatDraft]
     let pendingAttachments: [ChatImageAttachment]
     let thinkingCapability: ModelThinkingCapability?
@@ -56,7 +57,6 @@ struct ChatComposerPanel: View {
     let onPreviewAttachment: (ChatImageAttachment) -> Void
     let onRemoveAttachment: (ChatImageAttachment) -> Void
     let onSelectThinkingOption: (ModelThinkingOption) -> Void
-    let onToggleThinking: () -> Void
     let onCancelEditing: () -> Void
     let onQueueDraft: () -> Void
     let onCancelGeneration: () -> Void
@@ -167,8 +167,7 @@ struct ChatComposerPanel: View {
                     capability: thinkingCapability,
                     currentOption: thinkingOption,
                     height: thinkingControlHeight,
-                    onSelectOption: onSelectThinkingOption,
-                    onToggle: onToggleThinking
+                    onSelectOption: onSelectThinkingOption
                 )
             }
 
@@ -210,6 +209,7 @@ struct ChatComposerPanel: View {
             isLoading: isLoading,
             isPriming: isPriming,
             canSendDraft: canSendDraft,
+            isModelReady: isModelReady,
             buttonHeight: floatingInputButtonHeight,
             trackHeight: composerDefaultTrailingButtonTrackHeight,
             onQueueDraft: onQueueDraft,

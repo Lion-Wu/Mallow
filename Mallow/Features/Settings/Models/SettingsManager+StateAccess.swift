@@ -10,6 +10,14 @@ import Foundation
 import SwiftData
 
 extension SettingsManager {
+    var isChatModelReady: Bool {
+        guard let catalog = readyChatModelCatalog,
+              catalog.matches(settings: chatSettings, format: chatModelCapabilities.selectedChatAPIFormatPreference()) else {
+            return false
+        }
+        return catalog.modelIDs.contains(chatSettings.selectedModel.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
     var activeAPIAdvancedSettings: APIAdvancedSettings {
         DeveloperRuntimeSettingsPolicy.apiAdvancedSettings(
             configured: apiAdvancedSettings,

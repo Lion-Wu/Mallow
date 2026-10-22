@@ -13,6 +13,7 @@ final class AppChatRuntimeCoordinator {
     private struct ChatEndpointSignature: Equatable {
         let apiURL: String
         let apiKey: String
+        let formatPreference: ChatAPIFormatPreference
     }
 
     private struct ChatRuntimeSignature: Equatable {
@@ -50,8 +51,8 @@ final class AppChatRuntimeCoordinator {
     private func startLaunchTasks() {
         Task { [settingsManager] in
             await settingsManager.applyPresetOnLaunchIfNeeded()
-            await settingsManager.prefetchChatModelsOnLaunchIfNeeded()
         }
+        settingsManager.fetchAvailableChatModels()
     }
 
     private func observeSettingsChanges() {
@@ -87,19 +88,19 @@ final class AppChatRuntimeCoordinator {
             .store(in: &cancellables)
 
         settingsManager.$chatSettings
-            .map { settings in
+            .combineLatest(settingsManager.$chatServerPresets, settingsManager.$selectedChatServerPresetID)
+            .map { settings, presets, selectedID in
                 ChatEndpointSignature(
                     apiURL: settings.apiURL.trimmingCharacters(in: .whitespacesAndNewlines),
-                    apiKey: settings.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+                    apiKey: settings.apiKey,
+                    formatPreference: ChatServerPresetStore.apiFormatPreference(for: selectedID, in: presets)
                 )
             }
             .removeDuplicates()
             .dropFirst()
             .sink { [settingsManager] _ in
-                let requestID = settingsManager.chatModelCatalogRefreshCoordinator.activeRequestID
                 Task { [settingsManager] in
-                    guard settingsManager.chatModelCatalogRefreshCoordinator.activeRequestID == requestID else { return }
-                    await settingsManager.refreshChatProviderHintsAndModels()
+                    settingsManager.fetchAvailableChatModels()
                 }
             }
             .store(in: &cancellables)
@@ -121,6 +122,7 @@ final class AppChatRuntimeCoordinator {
             .store(in: &cancellables)
 
         settingsManager.chatModelCapabilityChanges
+            .receive(on: RunLoop.main)
             .removeDuplicates()
             .dropFirst()
             .sink { [weak self] _ in

@@ -141,8 +141,6 @@
 "Detected API Format: %@" = "تنسيق API المكتشف: %@";
 "Developer Defaults" = "إعدادات المطور الافتراضية";
 "Developer Mode" = "وضع المطور";
-"Developer Prompt Characters" = "عدد أحرف مطالبة المطور";
-"Developer Prompt Hash" = "بصمة مطالبة المطور";
 "Device Context" = "معلومات الجهاز";
 "Device context was read." = "تمت قراءة معلومات الجهاز.";
 "Device motion is not available on this platform." = "بيانات حركة الجهاز غير متاحة على هذه المنصة.";
@@ -170,7 +168,6 @@
 "Enabled Endpoints" = "نقاط النهاية المُمكّنة";
 "Enabled Tools" = "الأدوات المُمكّنة";
 "Enables Stateful Chat for conversations that support it." = "يُمكّن Stateful Chat للمحادثات التي تدعمه.";
-"Endpoint URL Hash" = "بصمة عنوان URL لنقطة النهاية";
 "English" = "الإنجليزية";
 "Enter API key" = "أدخل مفتاح API";
 "Enter preset name" = "أدخل اسم الإعداد المسبق";
@@ -179,10 +176,6 @@
 "Event" = "حدث";
 "Event end must be after start." = "يجب أن تكون نهاية الحدث بعد بدايته.";
 "Exit" = "خروج";
-"Extended thinking high budget_tokens" = "budget_tokens عالية للتفكير الموسع";
-"Extended thinking low budget_tokens" = "budget_tokens منخفضة للتفكير الموسع";
-"Extended thinking medium budget_tokens" = "budget_tokens متوسطة للتفكير الموسع";
-"Extended thinking response reserve tokens" = "رموز احتياطية لاستجابة التفكير الموسع";
 "Extra High" = "عالٍ جدًا";
 "Failed" = "فشل";
 "Failed to start audio playback: %@" = "تعذر بدء تشغيل الصوت: %@";
@@ -222,7 +215,6 @@
 "JavaScript, %d characters" = "JavaScript، %d حرفًا";
 "JSON mode" = "وضع JSON";
 "Keywords: %@" = "الكلمات المفتاحية: %@";
-"Last Seen At" = "آخر استخدام";
 "List" = "القائمة";
 "Listening" = "جارٍ الاستماع";
 "Listing Calendar Events" = "جارٍ سرد أحداث التقويم";
@@ -271,6 +263,7 @@
 "No device motion sample was received." = "لم يتم تلقي عينة لحركة الجهاز.";
 "No endpoint URLs are enabled." = "لا توجد عناوين URL لنقاط نهاية مُمكّنة.";
 "No internet connection for TTS requests." = "لا يوجد اتصال بالإنترنت لطلبات TTS.";
+"Models have not been loaded. You cannot send messages until models are available. Check the server connection and refresh the model list in Settings." = "لم يتم تحميل النماذج بعد. لا يمكنك إرسال الرسائل حتى تتوفر النماذج. تحقق من الاتصال بالخادم وحدّث قائمة النماذج في الإعدادات.";
 "No models returned from %@" = "لم يتم إرجاع أي نماذج من %@";
 "No parameters" = "لا توجد معلمات";
 "No recent replies" = "لا توجد ردود حديثة";
@@ -342,7 +335,6 @@
 "Received audio data could not be played." = "تعذر تشغيل بيانات الصوت المستلمة.";
 "Recorded Locally" = "تم تسجيله محليًا";
 "Reference Audio Path" = "مسار الصوت المرجعي";
-"Reference Count" = "عدد المراجع";
 "Reference Language" = "لغة النص المرجعي";
 "Reference Text" = "النص المرجعي";
 "Reference text (optional)" = "نص مرجعي (اختياري)";
@@ -436,6 +428,7 @@
 "Take Photo" = "التقاط صورة";
 "Tap to reconnect" = "اضغط لإعادة الاتصال";
 "Text Generation Issue" = "مشكلة في توليد النص";
+"Unable to Send Messages" = "تعذّر إرسال الرسائل";
 "Text Language" = "لغة النص";
 "text must contain at most 10000 characters." = "يجب ألا يتجاوز text ‏10000 حرف.";
 "Text server unreachable" = "لا يمكن الوصول إلى خادم النص";
@@ -461,7 +454,7 @@
 "This message contains only images. Edit it before retrying with this model." = "تحتوي هذه الرسالة على صور فقط. عدّلها قبل إعادة المحاولة باستخدام هذا النموذج.";
 "This message contains only images. Edit it or delete it." = "تحتوي هذه الرسالة على صور فقط. عدّلها أو احذفها.";
 "This message will be deleted." = "سيتم حذف هذه الرسالة.";
-"This model's metadata does not clearly report image-input capability. Turn this on only if you are sure the backend can accept image content for this model." = "لا توضّح البيانات الوصفية لهذا النموذج بشكل صريح ما إذا كان يدعم إدخال الصور. فعّل هذا الخيار فقط إذا كنت متأكدًا من أن الواجهة الخلفية يمكنها قبول محتوى الصور لهذا النموذج.";
+"Unable to confirm whether this model supports image input. Enable it if supported." = "يتعذر التأكد مما إذا كان هذا النموذج يدعم إدخال الصور. فعّل الخيار إذا كان يدعمه.";
 "This tool is disabled for the current endpoint." = "هذه الأداة معطلة لنقطة النهاية الحالية.";
 "This will allow location, clipboard, URL, and JavaScript Runtime tools to run automatically when permitted by the authorization mode. This may increase the risk of privacy exposure." = "سيسمح هذا بتشغيل أدوات الموقع والحافظة وعناوين URL وبيئة تشغيل JavaScript تلقائيًا عندما يسمح وضع التفويض بذلك. قد يزيد هذا من مخاطر كشف المعلومات الخاصة.";
 "This will reset all developer options to their default values." = "سيؤدي هذا إلى إعادة تعيين جميع خيارات المطور إلى قيمها الافتراضية.";
@@ -483,12 +476,9 @@
 "Tool call was denied by the user." = "رفض المستخدم استدعاء الأداة.";
 "Tool Calls" = "استدعاءات الأدوات";
 "Tool Name" = "اسم الأداة";
-"Tool Schema Digest" = "بصمة مخطط الأداة";
-"Tool Schema Metadata" = "البيانات الوصفية لمخطط الأداة";
 "Tool Trace" = "سجل استدعاءات الأدوات";
 "Tool Use" = "استخدام الأدوات";
 "Tool Use Details" = "تفاصيل استخدام الأدوات";
-"Tool Use Enabled" = "استخدام الأدوات مفعّل";
 "Tool use is disabled." = "استخدام الأدوات معطل.";
 "Traditional Chinese" = "الصينية التقليدية";
 "Try a different search." = "جرّب بحثًا مختلفًا.";
@@ -524,7 +514,6 @@
 "URL Actions" = "إجراءات عناوين URL";
 "URL scheme is not allowed." = "مخطط عنوان URL غير مسموح به.";
 "URL was opened." = "تم فتح عنوان URL.";
-"Use Provider Continuation IDs" = "استخدام معرّفات متابعة المزوّد";
 "Used for chat mode" = "يُستخدم لوضع الدردشة";
 "Used for voice mode" = "يُستخدم للوضع الصوتي";
 "Used Tools" = "الأدوات المستخدمة";
@@ -605,7 +594,6 @@
 "Voice Server Presets" = "إعدادات خادم الصوت المسبقة";
 "Voice Presets" = "الإعدادات الصوتية المسبقة";
 "System Prompt Presets" = "إعدادات تعليمات النظام المسبقة";
-"Request Metadata" = "البيانات الوصفية للطلبات";
 "Unrecoverable Items" = "العناصر غير القابلة للاسترداد";
 // Data reset confirmation
 "Reset Data?" = "إعادة تعيين البيانات؟";
@@ -660,7 +648,6 @@
 "This message will be added:" = "ستُضاف هذه الرسالة:";
 "Server Address" = "عنوان الخادم";
 "Message Date" = "تاريخ الرسالة";
-"Request Content" = "محتوى الطلب";
 "Response Content" = "محتوى الاستجابة";
 "Conversation Context" = "سياق المحادثة";
 "Tool Activity" = "نشاط الأدوات";
@@ -694,7 +681,6 @@
 "Largest First" = "الأكبر أولاً";
 "Message" = "رسالة";
 "Missing Chat Ownership" = "لا توجد محادثة مرتبطة";
-"Missing Request Metadata" = "بيانات الطلب الوصفية مفقودة";
 "Missing or Duplicate Identity" = "معرّف مفقود أو مكرر";
 "Model Data" = "بيانات النماذج";
 "Name" = "الاسم";
@@ -707,7 +693,6 @@
 "Stored Content" = "المحتوى المحفوظ";
 "Issues Found" = "تم اكتشاف مشكلات";
 "New Branch" = "فرع جديد";
-"Applies to this model across all servers." = "ينطبق على هذا النموذج عبر جميع الخوادم.";
 "Selected chats and all their branches and attachments will be removed." = "ستُحذف المحادثات المحددة وجميع فروعها ومرفقاتها.";
 "The database structure check failed. Export the original data before attempting recovery." = "فشل فحص بنية قاعدة البيانات. صدّر البيانات الأصلية قبل محاولة الاسترداد.";
 "Selected image attachments will be removed from this message." = "ستُزال مرفقات الصور المحددة من هذه الرسالة.";
@@ -716,9 +701,7 @@
 "Another instance of the app is using this data. Close that instance, then try again." = "هناك نسخة أخرى من التطبيق تستخدم هذه البيانات. أغلق تلك النسخة، ثم حاول مرة أخرى.";
 "Try Again" = "المحاولة مجددًا";
 // Storage breakdown
-"Request Snapshots and Continuation Data" = "لقطات الطلبات وبيانات متابعة المحادثة";
 "Messages and Other Chat Data" = "الرسائل وبيانات المحادثة الأخرى";
-"Shared Request Metadata" = "البيانات الوصفية المشتركة للطلبات";
 "Unassigned Messages" = "الرسائل غير المنسوبة";
 "Search" = "بحث";
 "A required value is missing." = "قيمة مطلوبة مفقودة.";
@@ -739,7 +722,6 @@
 "Source" = "المصدر";
 "The database structure check reported an error." = "كشف فحص بنية قاعدة البيانات عن خطأ.";
 "The preceding message is missing, belongs to another chat, or forms a circular chain." = "الرسالة السابقة مفقودة أو تنتمي إلى محادثة أخرى أو تشكّل سلسلة دائرية.";
-"The request metadata referenced by this message is missing." = "بيانات الطلب الوصفية التي تشير إليها هذه الرسالة مفقودة.";
 "The selected branch no longer exists in this chat." = "الفرع المحدد لم يعد موجودًا في هذه المحادثة.";
 "The stored data is not valid for this field." = "البيانات المخزنة لا تطابق تنسيق هذا الحقل.";
 "The stored value has the wrong type." = "نوع القيمة المخزنة غير صحيح.";
@@ -747,13 +729,11 @@
 "This message does not reference an existing chat." = "هذه الرسالة غير مرتبطة بمحادثة موجودة.";
 "This record has a missing or duplicate identifier and cannot be safely selected for deletion." = "معرّف هذا السجل مفقود أو مكرر، ولا يمكن تحديده للحذف بأمان.";
 "Tool Positions" = "مواضع الأدوات";
-"Tool positions refer to missing message segments." = "تشير مواضع الأدوات إلى مقاطع رسائل مفقودة.";
 "Unable to Preview" = "تعذرت المعاينة";
 "Unreadable Fields" = "حقول غير قابلة للقراءة";
 "Delete Chat" = "حذف المحادثة";
 "All attachments in the selected messages will be deleted. Message text will be kept." = "ستُحذف جميع مرفقات الرسائل المحددة. سيبقى نص الرسائل.";
 "Delete Selected" = "حذف المحدد";
-"Delete Request Snapshots and Continuation Data" = "حذف لقطات الطلب وبيانات متابعة المحادثة";
 "Confirm deletion?" = "هل تريد تأكيد الحذف؟";
 "Deselect All" = "إلغاء تحديد الكل";
 "This will permanently delete this chat. This action cannot be undone." = "سيُحذف هذا الحوار نهائيًا. لا يمكن التراجع عن هذا الإجراء.";
@@ -777,13 +757,11 @@
 "Removing Files..." = "جارٍ حذف الملفات…";
 "Export Selected" = "تصدير المحدد";
 "This will delete the selected setting." = "سيتم حذف الإعداد المحدد.";
-"This will delete the selected request snapshots and continuation data." = "سيتم حذف لقطات الطلبات وبيانات متابعة المحادثة المحددة.";
 "%lld Selected" = "تم تحديد %lld";
 "Your data changed. Review the updated list before continuing. No data was deleted." = "تغيّرت بياناتك. راجع القائمة المحدّثة قبل المتابعة. لم يتم حذف أي بيانات.";
 "No Data" = "لا توجد بيانات";
 "The selected messages and their related history will be restored as separate chats." = "ستتم استعادة الرسائل المحددة وسجلها المرتبط كمحادثات مستقلة.";
 "The selected model settings will be deleted." = "سيتم حذف إعدادات النماذج المحددة.";
-"Request snapshots and continuation data will be deleted for the selected models across all servers." = "سيتم حذف لقطات الطلبات وبيانات متابعة المحادثة للنماذج المحددة عبر جميع الخوادم.";
 "The API key file could not be read because its format is invalid." = "تعذرت قراءة ملف مفاتيح API لأن تنسيقه غير صالح.";
 "API key %lld: %@" = "مفتاح API رقم %lld: %@";
 "This record has no valid account identifier." = "لا يحتوي هذا السجل على معرّف حساب صالح.";
@@ -793,3 +771,30 @@
 "The records in this category could not be fully read. The number of affected records is unknown." = "تعذرت قراءة جميع السجلات في هذه الفئة. عدد السجلات المتأثرة غير معروف.";
 "Import File Records Not Fully Merged" = "سجلات ملف الاستيراد التي لم تُدمج بالكامل";
 "Data Not Fully Merged" = "البيانات التي لم تُدمج بالكامل";
+"Request Metadata" = "البيانات الوصفية للطلب";
+"Generation Round %d" = "جولة التوليد %d";
+"Provider Model" = "نموذج المزوّد";
+"Uncached Input Tokens" = "رموز الإدخال غير المخزنة مؤقتًا";
+"Input Token Count" = "عدد رموز الإدخال";
+"Total Token Count" = "إجمالي عدد الرموز";
+"Cached Tokens" = "رموز القراءة من الذاكرة المؤقتة";
+"Cache Write Tokens" = "رموز الكتابة إلى الذاكرة المؤقتة";
+"Reported Cost" = "التكلفة المُبلّغ عنها";
+"First Output At" = "وقت أول إخراج";
+"Time To First Output" = "الوقت حتى أول إخراج";
+"Response Duration" = "مدة الاستجابة";
+"Provider Created At" = "وقت الإنشاء على الخادم";
+"Provider Completed At" = "وقت الإكمال على الخادم";
+"Returned Provider Data" = "البيانات المُعادة من المزوّد";
+"Request URL" = "عنوان URL للطلب";
+"Automatic budget" = "ميزانية تلقائية";
+"thinking.type" = "thinking.type";
+"budget_tokens" = "budget_tokens";
+"output_config.effort" = "output_config.effort";
+"Model information is not ready. Wait for loading to finish, or fetch models again in Settings." = "معلومات النموذج ليست جاهزة بعد. انتظر اكتمال التحميل، أو اجلب النماذج مجددًا من الإعدادات.";
+"Your latest chat changes could not be saved. They may be lost if you close the app.\n%@" = "تعذّر حفظ أحدث تغييرات المحادثة. قد تفقد هذه التغييرات إذا أغلقت التطبيق.\n%@";
+"Supported Thinking Options" = "خيارات التفكير المدعومة";
+"Fixed-budget Thinking" = "التفكير بميزانية ثابتة";
+"Unable to confirm this model's supported thinking options. Select them manually." = "يتعذر التأكد من خيارات التفكير التي يدعمها هذا النموذج. اخترها يدويًا.";
+"Requested Thinking Parameters" = "معلمات التفكير المطلوبة";
+"Reported Thinking Parameters" = "معلمات التفكير التي أعادها الخادم";

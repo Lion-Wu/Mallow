@@ -60,6 +60,7 @@ extension ChatViewModel {
 
     @discardableResult
     func sendQueuedDraftNow(id: UUID, ignoringUnsupportedImageInputs: Bool = true) -> Bool {
+        guard ensureModelReadyForSending() else { return false }
         cancelQueuedDraftAutostart()
 
         let sendDecision = queuedDraftCoordinator.prepareManualSend(
@@ -119,6 +120,10 @@ extension ChatViewModel {
     }
 
     func scheduleQueuedDraftAutostartIfNeeded() {
+        guard isModelReady else {
+            cancelQueuedDraftAutostart()
+            return
+        }
         let autostartDecision = queuedDraftCoordinator.prepareAutostart(
             hasActiveTextRequest: hasActiveTextRequest,
             policy: queuedDraftUnsupportedImagePolicy()
@@ -127,7 +132,7 @@ extension ChatViewModel {
             decision: autostartDecision,
             canStart: { [weak self] draft in
                 guard let self else { return false }
-                guard !self.hasActiveTextRequest else { return false }
+                guard self.isModelReady, !self.hasActiveTextRequest else { return false }
                 return self.queuedDrafts.first?.id == draft.id
             },
             send: { [weak self] draft in

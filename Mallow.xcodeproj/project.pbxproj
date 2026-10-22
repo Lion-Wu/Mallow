@@ -182,7 +182,7 @@
 		FD90000000000000000001A4 /* ModelThinkingCapability.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD90000000000000000000A3 /* ModelThinkingCapability.swift */; };
 		FD90000000000000000001A6 /* ChatImageAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD90000000000000000000A5 /* ChatImageAttachment.swift */; };
 		FD90000000000000000001A8 /* QueuedChatDraft.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD90000000000000000000A7 /* QueuedChatDraft.swift */; };
-		FD90000000000000000001AA /* ChatModelCatalogRefreshCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD90000000000000000000A9 /* ChatModelCatalogRefreshCoordinator.swift */; };
+		FD90000000000000000001AA /* ChatModelCatalogReadiness.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD90000000000000000000A9 /* ChatModelCatalogReadiness.swift */; };
 		FD90000000000000000001AC /* SettingsVoicePresetSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD90000000000000000000AB /* SettingsVoicePresetSection.swift */; };
 		FD90000000000000000001AE /* ChatSendCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD90000000000000000000AD /* ChatSendCoordinator.swift */; };
 		FD90000000000000000001B0 /* ChatSSEStreamParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD90000000000000000000AF /* ChatSSEStreamParser.swift */; };
@@ -264,7 +264,6 @@
 		FDAB10092F123D0000000001 /* ChatToolAuthorizationCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAB100A2F123D0000000001 /* ChatToolAuthorizationCoordinatorTests.swift */; };
 		FDAB100B2F123D0000000001 /* JavaScriptRuntimeToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAB100C2F123D0000000001 /* JavaScriptRuntimeToolTests.swift */; };
 		FDABCD000000000000000002 /* OpenAIResponsesStreamItemReducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDABCD000000000000000001 /* OpenAIResponsesStreamItemReducer.swift */; };
-		FDAC20010000000000000001 /* ChatRequestContextMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAC10010000000000000001 /* ChatRequestContextMetadata.swift */; };
 		FDAC20010000000000000002 /* ChatRequestContextBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAC10010000000000000002 /* ChatRequestContextBuilder.swift */; };
 		FDAC71000000000000000002 /* ChatAssistantRenderTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAC71000000000000000001 /* ChatAssistantRenderTimeline.swift */; };
 		FDAC72000000000000000002 /* AppleSpeechSynthesisSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAC72000000000000000001 /* AppleSpeechSynthesisSession.swift */; };
@@ -593,7 +592,7 @@
 		FD90000000000000000000A3 /* ModelThinkingCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ModelThinkingCapability.swift; path = Mallow/Features/Chat/Models/ModelThinkingCapability.swift; sourceTree = SOURCE_ROOT; };
 		FD90000000000000000000A5 /* ChatImageAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatImageAttachment.swift; path = Mallow/Features/Chat/Models/ChatImageAttachment.swift; sourceTree = SOURCE_ROOT; };
 		FD90000000000000000000A7 /* QueuedChatDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = QueuedChatDraft.swift; path = Mallow/Features/Chat/Models/QueuedChatDraft.swift; sourceTree = SOURCE_ROOT; };
-		FD90000000000000000000A9 /* ChatModelCatalogRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatModelCatalogRefreshCoordinator.swift; path = Mallow/Features/Settings/Models/ChatModelCatalogRefreshCoordinator.swift; sourceTree = SOURCE_ROOT; };
+		FD90000000000000000000A9 /* ChatModelCatalogReadiness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatModelCatalogReadiness.swift; path = Mallow/Features/Settings/Models/ChatModelCatalogReadiness.swift; sourceTree = SOURCE_ROOT; };
 		FD90000000000000000000AB /* SettingsVoicePresetSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsVoicePresetSection.swift; path = Mallow/Features/Settings/Views/SettingsVoicePresetSection.swift; sourceTree = SOURCE_ROOT; };
 		FD90000000000000000000AD /* ChatSendCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatSendCoordinator.swift; path = Mallow/Features/Chat/Views/Components/ChatSendCoordinator.swift; sourceTree = SOURCE_ROOT; };
 		FD90000000000000000000AF /* ChatSSEStreamParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatSSEStreamParser.swift; path = Mallow/Features/Chat/Services/ChatSSEStreamParser.swift; sourceTree = SOURCE_ROOT; };
@@ -675,7 +674,6 @@
 		FDAB100A2F123D0000000001 /* ChatToolAuthorizationCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatToolAuthorizationCoordinatorTests.swift; path = MallowTests/ChatToolAuthorizationCoordinatorTests.swift; sourceTree = SOURCE_ROOT; };
 		FDAB100C2F123D0000000001 /* JavaScriptRuntimeToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = JavaScriptRuntimeToolTests.swift; path = MallowTests/JavaScriptRuntimeToolTests.swift; sourceTree = SOURCE_ROOT; };
 		FDABCD000000000000000001 /* OpenAIResponsesStreamItemReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OpenAIResponsesStreamItemReducer.swift; path = Mallow/Features/Chat/Services/OpenAIResponsesStreamItemReducer.swift; sourceTree = SOURCE_ROOT; };
-		FDAC10010000000000000001 /* ChatRequestContextMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatRequestContextMetadata.swift; path = Mallow/Features/Chat/Models/ChatRequestContextMetadata.swift; sourceTree = SOURCE_ROOT; };
 		FDAC10010000000000000002 /* ChatRequestContextBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatRequestContextBuilder.swift; path = Mallow/Features/Chat/Services/ChatRequestContextBuilder.swift; sourceTree = SOURCE_ROOT; };
 		FDAC71000000000000000001 /* ChatAssistantRenderTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatAssistantRenderTimeline.swift; path = Mallow/Features/Chat/Views/Components/ChatAssistantRenderTimeline.swift; sourceTree = SOURCE_ROOT; };
 		FDAC72000000000000000001 /* AppleSpeechSynthesisSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppleSpeechSynthesisSession.swift; path = Mallow/Core/Audio/Services/AppleSpeechSynthesisSession.swift; sourceTree = SOURCE_ROOT; };
@@ -1213,7 +1211,6 @@
 			isa = PBXGroup;
 			children = (
 				FD0B94E62CD90A2500DBFA1D /* ChatMessage.swift */,
-				FDAC10010000000000000001 /* ChatRequestContextMetadata.swift */,
 				FD0C3AC62C9F54A9009095A1 /* Models.swift */,
 				FD900000000000000000000B /* ChatModelMetadata.swift */,
 				FD90000000000000000000A1 /* JSONValue.swift */,
@@ -1446,7 +1443,7 @@
 				FDFE0B202F12400000000001 /* SettingsManager+StateAccess.swift */,
 				FDFE0B222F12400000000001 /* SettingsManager+Initialization.swift */,
 				FD900000000000000000001D /* ModelCatalogService.swift */,
-				FD90000000000000000000A9 /* ChatModelCatalogRefreshCoordinator.swift */,
+				FD90000000000000000000A9 /* ChatModelCatalogReadiness.swift */,
 				FD9000000000000000000035 /* ModelCapabilityResolver.swift */,
 				FD900000000000000000006B /* ChatModelCapabilityStore.swift */,
 				FD90000000000000000000C7 /* ChatModelCapabilityFacade.swift */,
@@ -1949,7 +1946,7 @@
 				FDFE0A272F123D0000000001 /* SettingsChatModelSection.swift in Sources */,
 				FD900000000000000000016C /* ChatModelCapabilityStore.swift in Sources */,
 				FD90000000000000000001C8 /* ChatModelCapabilityFacade.swift in Sources */,
-				FD90000000000000000001AA /* ChatModelCatalogRefreshCoordinator.swift in Sources */,
+				FD90000000000000000001AA /* ChatModelCatalogReadiness.swift in Sources */,
 				FD900000000000000000016E /* TTSPresetApplyCoordinator.swift in Sources */,
 				FDFE0A452F123D0000000001 /* SettingsPresetApplyController.swift in Sources */,
 				FDFE0A492F123D0000000001 /* SettingsChatModelCapabilityController.swift in Sources */,
@@ -1994,7 +1991,6 @@
 				FDAA1001000000000000011B /* ChatToolTimeFormatter.swift in Sources */,
 				FDAA1001000000000000011C /* ChatToolTemporalResolver.swift in Sources */,
 				FD90000000000000000001A4 /* ModelThinkingCapability.swift in Sources */,
-				FDAC20010000000000000001 /* ChatRequestContextMetadata.swift in Sources */,
 				FD90000000000000000001A6 /* ChatImageAttachment.swift in Sources */,
 				FD90000000000000000001A8 /* QueuedChatDraft.swift in Sources */,
 				FDFE0A232F123D0000000001 /* ChatProviderDescriptor.swift in Sources */,
@@ -2403,12 +2399,12 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lionwu.mallow;
 				PRODUCT_MODULE_NAME = Mallow;
@@ -2421,7 +2417,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = "$(RECOMMENDED_XROS_DEPLOYMENT_TARGET)";
+				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Debug;
 		};
@@ -2469,12 +2465,12 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lionwu.mallow;
 				PRODUCT_MODULE_NAME = Mallow;
@@ -2487,7 +2483,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = "$(RECOMMENDED_XROS_DEPLOYMENT_TARGET)";
+				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Release;
 		};
@@ -2499,13 +2495,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = XTXQFBJ88M;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lionwu.mallow.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -2517,7 +2513,7 @@
 				"TEST_HOST[sdk=iphone*]" = "$(BUILT_PRODUCTS_DIR)/Mallow.app/Mallow";
 				"TEST_HOST[sdk=macosx*]" = "$(BUILT_PRODUCTS_DIR)/Mallow.app/Contents/MacOS/Mallow";
 				"TEST_HOST[sdk=xr*]" = "$(BUILT_PRODUCTS_DIR)/Mallow.app/Mallow";
-				XROS_DEPLOYMENT_TARGET = "$(RECOMMENDED_XROS_DEPLOYMENT_TARGET)";
+				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Debug;
 		};
@@ -2529,13 +2525,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = XTXQFBJ88M;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = "$(RECOMMENDED_IPHONEOS_DEPLOYMENT_TARGET)";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lionwu.mallow.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -2547,7 +2543,7 @@
 				"TEST_HOST[sdk=iphone*]" = "$(BUILT_PRODUCTS_DIR)/Mallow.app/Mallow";
 				"TEST_HOST[sdk=macosx*]" = "$(BUILT_PRODUCTS_DIR)/Mallow.app/Contents/MacOS/Mallow";
 				"TEST_HOST[sdk=xr*]" = "$(BUILT_PRODUCTS_DIR)/Mallow.app/Mallow";
-				XROS_DEPLOYMENT_TARGET = "$(RECOMMENDED_XROS_DEPLOYMENT_TARGET)";
+				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Release;
 		};

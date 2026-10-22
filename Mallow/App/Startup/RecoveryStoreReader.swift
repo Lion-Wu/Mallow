@@ -240,7 +240,7 @@ final class RecoveryRow {
         fieldProblems[field] = explanation
     }
 
-    private func decodingLoss(_ field: String, error: Error) {
+    func decodingLoss(_ field: String, error: Error) {
         let context: DecodingError.Context?
         let reason: String
         switch error {

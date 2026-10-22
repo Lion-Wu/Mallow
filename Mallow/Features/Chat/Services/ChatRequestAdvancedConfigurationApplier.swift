@@ -24,7 +24,7 @@ struct ChatRequestAdvancedConfigurationApplier: Sendable {
             case .openAI, .lmStudio, .unknown:
                 applyPositiveInteger(
                     settings.openAIChatMaxCompletionTokens,
-                    key: openAIChatTokenLimitKey(for: endpoint),
+                    key: "max_completion_tokens",
                     to: &requestBody
                 )
                 applyOpenAIChatSamplingConfiguration(settings.openAIChatSampling, to: &requestBody)
@@ -44,16 +44,6 @@ struct ChatRequestAdvancedConfigurationApplier: Sendable {
     private func applyPositiveInteger(_ value: Int, key: String, to requestBody: inout [String: Any]) {
         guard value > 0 else { return }
         requestBody[key] = value
-    }
-
-    private func openAIChatTokenLimitKey(for endpoint: ChatAPIEndpointCandidate) -> String {
-        let host = (endpoint.chatURL.host ?? "").lowercased()
-        if ChatEndpointBaseURL.hostMatchesOfficialDomain(host, domain: "openai.com") ||
-            ChatEndpointBaseURL.hostMatchesOfficialDomain(host, domain: "openrouter.ai") ||
-            ChatEndpointBaseURL.hostMatchesOfficialDomain(host, domain: "openai.azure.com") {
-            return "max_completion_tokens"
-        }
-        return "max_tokens"
     }
 
     private func applyIntegerOverride(_ isEnabled: Bool, _ value: Int, key: String, to requestBody: inout [String: Any]) {
@@ -103,12 +93,12 @@ struct ChatRequestAdvancedConfigurationApplier: Sendable {
         to requestBody: inout [String: Any]
     ) {
         if sampling.temperatureEnabled {
-            requestBody["temperature"] = min(sampling.temperature, 1)
+            requestBody["temperature"] = sampling.temperature
         }
         if sampling.topPEnabled {
             requestBody["top_p"] = sampling.topP
         }
-        applyIntegerOverride(sampling.topKEnabled, sampling.topK, key: "top_k", to: &requestBody)
+        if sampling.topKEnabled { requestBody["top_k"] = sampling.topK }
     }
 
     private func applyOpenAIResponsesSamplingConfiguration(

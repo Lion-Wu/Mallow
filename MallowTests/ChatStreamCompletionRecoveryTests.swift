@@ -87,7 +87,7 @@ final class ChatStreamCompletionRecoveryTests: XCTestCase {
         XCTAssertEqual(message, "stream failed")
     }
 
-    func testPrimaryOutputCompletesWithoutParsingBufferedBody() {
+    func testEOFWithPrimaryOutputFailsWithoutParsingBufferedBody() {
         let parser = StubBufferedResponseParser { _, _ in
             XCTFail("buffered response should not be parsed after primary output")
             return ChatBufferedResponseParseResult(text: nil, errorMessage: nil, metadata: .empty)
@@ -107,9 +107,10 @@ final class ChatStreamCompletionRecoveryTests: XCTestCase {
             streamPayloadExtractor: StubStreamPayloadExtractor()
         )
 
-        guard case .finish = decision.outcome else {
-            return XCTFail("expected finish")
+        guard case let .networkError(error) = decision.outcome else {
+            return XCTFail("expected interrupted stream error")
         }
+        XCTAssertEqual((error as? URLError)?.code, .networkConnectionLost)
         XCTAssertNil(decision.metadata)
     }
 
@@ -135,9 +136,9 @@ final class ChatStreamCompletionRecoveryTests: XCTestCase {
         }
     }
 
-    func testCleanCompletionWithPendingToolsContinuesBeforeEmptyResponseRecovery() {
+    func testEOFWithPendingToolsFailsWithoutExecutingTools() {
         let parser = StubBufferedResponseParser { _, _ in
-            XCTFail("tool-only completion should continue before buffered text recovery")
+            XCTFail("incomplete tool response should fail before buffered text recovery")
             return ChatBufferedResponseParseResult(text: nil, errorMessage: nil, metadata: .empty)
         }
 
@@ -155,9 +156,10 @@ final class ChatStreamCompletionRecoveryTests: XCTestCase {
             streamPayloadExtractor: StubStreamPayloadExtractor()
         )
 
-        guard case .continueWithPendingTools = decision.outcome else {
-            return XCTFail("expected pending tool continuation")
+        guard case let .networkError(error) = decision.outcome else {
+            return XCTFail("expected interrupted stream error")
         }
+        XCTAssertEqual((error as? URLError)?.code, .networkConnectionLost)
     }
 }
 

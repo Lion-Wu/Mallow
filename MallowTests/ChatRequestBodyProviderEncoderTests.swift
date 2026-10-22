@@ -15,7 +15,7 @@ final class ChatRequestBodyProviderEncoderTests: XCTestCase {
             messagePayload: [["role": "user", "content": "hello"]],
             developerPrompt: "answer tersely",
             endpoint: endpoint,
-            apiAdvancedSettings: APIAdvancedSettings(anthropicMaxTokens: 1234)
+            apiAdvancedSettings: APIAdvancedSettings(anthropicMaxTokens: 1234, anthropicMaxTokensEnabled: true)
         )
 
         XCTAssertEqual(body["model"] as? String, "claude-sonnet-4")

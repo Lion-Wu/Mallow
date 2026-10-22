@@ -51,8 +51,8 @@ final class ChatSettingsAndDraftSeamTests: XCTestCase {
             provider: .anthropic,
             requestStyle: .anthropicMessages
         ))
-        XCTAssertEqual(anthropic.options, [.off, .low, .medium, .high, .max])
-        XCTAssertEqual(anthropic.defaultOption, .off)
+        XCTAssertEqual(anthropic.options, [.serverDefault, .on])
+        XCTAssertEqual(anthropic.defaultSelection, .serverDefault)
 
         let openAICompatibleModel = try XCTUnwrap(ModelCapabilityResolver.thinkingCapability(
             fromModelIdentifier: "deepseek-reasoner",
@@ -101,8 +101,8 @@ final class ChatSettingsAndDraftSeamTests: XCTestCase {
                 verbosity: "LOUD"
             ),
             anthropicMaxTokens: 0,
-            anthropicThinkingResponseReserve: 0,
-            anthropicLowThinkingBudget: 1
+            anthropicMaxTokensEnabled: true,
+            anthropicThinkingBudget: 1
         ).sanitized
 
         XCTAssertEqual(settings.openAIChatMaxCompletionTokens, 0)
@@ -110,9 +110,8 @@ final class ChatSettingsAndDraftSeamTests: XCTestCase {
         XCTAssertEqual(settings.openAIChatSampling.topP, 0)
         XCTAssertEqual(settings.openAIChatSampling.topLogprobs, 20)
         XCTAssertEqual(settings.openAIChatSampling.verbosity, "medium")
-        XCTAssertEqual(settings.anthropicMaxTokens, 1)
-        XCTAssertEqual(settings.anthropicThinkingResponseReserve, 1)
-        XCTAssertEqual(settings.anthropicLowThinkingBudget, 1024)
+        XCTAssertEqual(settings.anthropicMaxTokens, 0)
+        XCTAssertEqual(settings.anthropicThinkingBudget, 1)
     }
 
     func testModelListResponseDecodesOpenAIAndLMStudioCatalogs() throws {

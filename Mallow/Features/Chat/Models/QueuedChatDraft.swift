@@ -5,14 +5,14 @@ struct QueuedChatDraft: Identifiable, Equatable, Sendable {
     var text: String
     var imageAttachments: [ChatImageAttachment]
     var editingBaseMessageID: UUID?
-    var createdAt: Date
+    var createdAt: Date?
 
     init(
         id: UUID = UUID(),
         text: String,
         imageAttachments: [ChatImageAttachment] = [],
         editingBaseMessageID: UUID? = nil,
-        createdAt: Date = Date()
+        createdAt: Date? = Date()
     ) {
         self.id = id
         self.text = text

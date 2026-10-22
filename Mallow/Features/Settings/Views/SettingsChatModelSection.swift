@@ -45,7 +45,34 @@ struct SettingsChatModelSection: View {
                     )
                 )
 
-                Text("This model's metadata does not clearly report image-input capability. Turn this on only if you are sure the backend can accept image content for this model.")
+                Text("Unable to confirm whether this model supports image input. Enable it if supported.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if viewModel.shouldShowUnknownModelThinkingOptions {
+                LabeledContent("Supported Thinking Options") {
+                    Menu {
+                        ForEach(viewModel.availableManualThinkingOptions) { option in
+                            Toggle(isOn: Binding(
+                                get: { viewModel.selectedManualThinkingOptions.contains(option) },
+                                set: { viewModel.setManualThinkingOption(option, enabled: $0) }
+                            )) {
+                                if option == .on && viewModel.usesAnthropicFixedBudgetThinking {
+                                    Text("Fixed-budget Thinking")
+                                } else {
+                                    Text(option.displayName)
+                                }
+                            }
+                        }
+                    } label: {
+                        Text(viewModel.selectedManualThinkingOptions.isEmpty
+                             ? String(localized: "None")
+                             : viewModel.selectedManualThinkingOptions.map(\.displayName).joined(separator: ", "))
+                    }
+                }
+                Text("Unable to confirm this model's supported thinking options. Select them manually.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

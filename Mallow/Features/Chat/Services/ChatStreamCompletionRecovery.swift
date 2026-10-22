@@ -10,8 +10,6 @@ import Foundation
 enum ChatStreamCompletionRecovery {
     enum Outcome {
         case ignore
-        case continueWithPendingTools
-        case finish
         case recoveredText(String)
         case serverError(statusCode: Int?, message: String)
         case networkError(Error)
@@ -60,12 +58,10 @@ enum ChatStreamCompletionRecovery {
             return Decision(metadata: nil, outcome: .networkError(error))
         }
 
-        if hasPendingToolCalls {
-            return Decision(metadata: nil, outcome: .continueWithPendingTools)
-        }
-
-        if sawAnyPrimaryAssistantToken {
-            return Decision(metadata: nil, outcome: .finish)
+        // Terminal protocol events finish or hand off the active request before transport completion.
+        // Reaching EOF with partial output or collected tool calls is not a successful response.
+        if sawAnyPrimaryAssistantToken || hasPendingToolCalls {
+            return Decision(metadata: nil, outcome: .networkError(URLError(.networkConnectionLost)))
         }
 
         let parsedBufferedResponse = bufferedResponseParser.parse(successResponseData, style: activeStyle)

@@ -71,11 +71,11 @@ struct ChatModelCapabilityFacade {
     }
 
     func imageInputManualOverride(for modelIdentifier: String) -> Bool? {
-        store.imageInputManualOverride(for: modelIdentifier)
+        store.imageInputManualOverride(for: modelIdentifier, apiBaseURL: chatSettings.apiURL, requestStyle: resolvedRequestStyle(for: chatSettings.apiURL))
     }
 
     mutating func setImageInputManualOverride(_ enabled: Bool?, for modelIdentifier: String) {
-        store.setImageInputManualOverride(enabled, for: modelIdentifier)
+        store.setImageInputManualOverride(enabled, for: modelIdentifier, apiBaseURL: chatSettings.apiURL, requestStyle: resolvedRequestStyle(for: chatSettings.apiURL))
     }
 
     func isImageInputSupportUnknown(for modelIdentifier: String) -> Bool {
@@ -88,7 +88,8 @@ struct ChatModelCapabilityFacade {
     func supportsImageInput(for modelIdentifier: String) -> Bool {
         store.supportsImageInput(
             for: modelIdentifier,
-            apiBaseURL: chatSettings.apiURL
+            apiBaseURL: chatSettings.apiURL,
+            requestStyle: resolvedRequestStyle(for: chatSettings.apiURL)
         )
     }
 
@@ -97,16 +98,36 @@ struct ChatModelCapabilityFacade {
         guard !trimmed.isEmpty else { return nil }
 
         let requestStyle = resolvedRequestStyle(for: chatSettings.apiURL)
-        let provider = resolvedProvider(for: chatSettings.apiURL)
-            ?? ModelCapabilityResolver.providerHint(from: requestStyle)
-            ?? ChatAPIEndpointResolver.officialProviderHint(for: chatSettings.apiURL)
-            ?? .unknown
         return store.thinkingCapability(
             for: trimmed,
             apiBaseURL: chatSettings.apiURL,
-            provider: provider,
             requestStyle: requestStyle
         )
+    }
+
+    func isThinkingCapabilityUnknown(for modelIdentifier: String) -> Bool {
+        store.reportedThinkingCapability(for: modelIdentifier, apiBaseURL: chatSettings.apiURL)?.hasKnownOptions != true
+    }
+
+    func availableManualThinkingOptions(for modelIdentifier: String) -> [ModelThinkingOption] {
+        guard resolvedRequestStyle(for: chatSettings.apiURL) != nil,
+              isThinkingCapabilityUnknown(for: modelIdentifier) else { return [] }
+        let reported = store.reportedThinkingCapability(for: modelIdentifier, apiBaseURL: chatSettings.apiURL)
+        return ModelCapabilityResolver.manualThinkingOptions.filter {
+            reported?.allowsDisabling != false || !$0.isDisabled
+        }
+    }
+
+    func manualThinkingOptions(for modelIdentifier: String) -> [ModelThinkingOption] {
+        let options = store.manualThinkingOptions(for: modelIdentifier, apiBaseURL: chatSettings.apiURL,
+                                                 requestStyle: resolvedRequestStyle(for: chatSettings.apiURL)) ?? []
+        let available = availableManualThinkingOptions(for: modelIdentifier)
+        return options.filter { available.contains($0) }
+    }
+
+    mutating func setManualThinkingOptions(_ options: [ModelThinkingOption], for modelIdentifier: String) {
+        store.setManualThinkingOptions(options, for: modelIdentifier, apiBaseURL: chatSettings.apiURL,
+                                       requestStyle: resolvedRequestStyle(for: chatSettings.apiURL))
     }
 
     func selectedThinkingOption(for modelIdentifier: String? = nil) -> ModelThinkingOption? {
@@ -115,6 +136,7 @@ struct ChatModelCapabilityFacade {
         return store.selectedThinkingOption(
             for: model,
             apiBaseURL: chatSettings.apiURL,
+            requestStyle: resolvedRequestStyle(for: chatSettings.apiURL),
             capability: capability
         )
     }
@@ -129,6 +151,7 @@ struct ChatModelCapabilityFacade {
             option,
             for: model,
             apiBaseURL: chatSettings.apiURL,
+            requestStyle: resolvedRequestStyle(for: chatSettings.apiURL),
             capability: capability
         )
         return true

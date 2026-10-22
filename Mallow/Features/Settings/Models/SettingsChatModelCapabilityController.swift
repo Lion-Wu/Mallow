@@ -113,6 +113,23 @@ final class SettingsChatModelCapabilityController {
         facade.thinkingCapability(for: modelIdentifier)
     }
 
+    func isThinkingCapabilityUnknown(for modelIdentifier: String) -> Bool {
+        facade.isThinkingCapabilityUnknown(for: modelIdentifier)
+    }
+
+    func availableManualThinkingOptions(for modelIdentifier: String) -> [ModelThinkingOption] {
+        facade.availableManualThinkingOptions(for: modelIdentifier)
+    }
+
+    func manualThinkingOptions(for modelIdentifier: String) -> [ModelThinkingOption] {
+        facade.manualThinkingOptions(for: modelIdentifier)
+    }
+
+    func setManualThinkingOptions(_ options: [ModelThinkingOption], for modelIdentifier: String) {
+        updateStore { $0.setManualThinkingOptions(options, for: modelIdentifier) }
+        savePreferences()
+    }
+
     func selectedThinkingOption(for modelIdentifier: String? = nil) -> ModelThinkingOption? {
         facade.selectedThinkingOption(for: modelIdentifier)
     }

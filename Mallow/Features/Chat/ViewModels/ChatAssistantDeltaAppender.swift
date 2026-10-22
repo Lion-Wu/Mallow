@@ -29,7 +29,9 @@ enum ChatAssistantDeltaAppender {
         if let id = currentAssistantMessageID,
            let existing = messageLookup[id] {
             let previousFingerprint = (streamingAssistantMessageID == existing.id) ? streamingAssistantFingerprint : nil
-            existing.content += piece
+            if !piece.isEmpty {
+                existing.content += piece
+            }
             let fingerprint = previousFingerprint?.appending(piece) ?? ContentFingerprint.make(existing.content)
             return ChatAssistantDeltaAppendResult(
                 message: existing,

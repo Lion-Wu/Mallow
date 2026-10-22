@@ -8,6 +8,14 @@
 import Foundation
 
 struct SettingsModelCatalogState {
+    static let empty = SettingsModelCatalogState(
+        availableModels: [],
+        isLoadingModels: false,
+        isRetryingModels: false,
+        modelRetryAttempt: 0,
+        lastFetchedModelMetadata: []
+    )
+
     var availableModels: [String]
     var isLoadingModels: Bool
     var isRetryingModels: Bool
@@ -145,11 +153,18 @@ struct SettingsModelCatalogDetection {
 @MainActor
 final class SettingsModelCatalogController {
     private let modelCatalogFetchCoordinator: ModelCatalogFetchCoordinator
+    private let noticePublisher: any AppNoticePublishing
     private var activeRequestID = UUID()
+    private(set) var requestedCatalog: ChatModelCatalogReadiness?
     private var task: Task<Void, Never>?
+    private var modelWaitNoticeTask: Task<Void, Never>?
 
-    init(modelCatalogFetchCoordinator: ModelCatalogFetchCoordinator = ModelCatalogFetchCoordinator()) {
+    init(
+        modelCatalogFetchCoordinator: ModelCatalogFetchCoordinator = ModelCatalogFetchCoordinator(),
+        noticePublisher: any AppNoticePublishing = NoopAppNoticePublisher.shared
+    ) {
         self.modelCatalogFetchCoordinator = modelCatalogFetchCoordinator
+        self.noticePublisher = noticePublisher
     }
 
     func fetch(
@@ -158,9 +173,33 @@ final class SettingsModelCatalogController {
         applyState: @escaping @MainActor (SettingsModelCatalogState) -> Void,
         applyDetection: @escaping @MainActor (SettingsModelCatalogDetection) -> Void
     ) {
+        requestedCatalog = ChatModelCatalogReadiness(
+            apiURL: request.apiURL,
+            apiKey: request.apiKey,
+            formatPreference: request.formatPreference,
+            modelIDs: []
+        )
         let requestID = UUID()
         activeRequestID = requestID
         task?.cancel()
+        modelWaitNoticeTask?.cancel()
+        noticePublisher.clear(category: .modelCatalog)
+        modelWaitNoticeTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(NetworkRequestTimeouts.connection))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled, let self, self.activeRequestID == requestID else { return }
+            self.noticePublisher.publishCritical(
+                title: NSLocalizedString("Unable to Send Messages", comment: "Model catalog unavailable notice title"),
+                message: NSLocalizedString(
+                    "Models have not been loaded. You cannot send messages until models are available. Check the server connection and refresh the model list in Settings.",
+                    comment: "Shown when no model catalog is available after the server connection timeout"
+                ),
+                category: .modelCatalog
+            )
+        }
 
         let loadingState = SettingsModelCatalogState.loading(from: currentState)
         applyState(loadingState)
@@ -231,11 +270,20 @@ final class SettingsModelCatalogController {
                         availableModels: result.modelIDs
                     )
                 ))
+                if !result.modelIDs.isEmpty {
+                    modelWaitNoticeTask?.cancel()
+                    modelWaitNoticeTask = nil
+                    noticePublisher.clear(category: .modelCatalog)
+                }
             } catch {
                 guard activeRequestID == requestID else { return }
                 applyState(SettingsModelCatalogState.failure(from: loadingState, error: error))
             }
         }
+    }
+
+    deinit {
+        modelWaitNoticeTask?.cancel()
     }
 
     private static func nextSelectedModel(

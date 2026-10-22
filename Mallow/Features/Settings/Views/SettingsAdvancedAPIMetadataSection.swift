@@ -75,7 +75,12 @@ private struct SettingsAdvancedAPISelectedModelMetadataDisclosure: View {
                 provider: context.currentProvider,
                 requestStyle: context.currentRequestStyle
             ) {
-                SettingsAdvancedAPIMetadataRow("Thinking Options", thinking.options.map(\.rawValue).joined(separator: ", "))
+                SettingsAdvancedAPIMetadataRow(
+                    "Thinking Options",
+                    thinking.hasKnownOptions
+                        ? context.joined(thinking.options.filter { $0 != .serverDefault }.map(\.rawValue))
+                        : String(localized: "Not detected")
+                )
                 SettingsAdvancedAPIMetadataRow("Thinking Parameter", thinking.requestParameter?.rawValue ?? String(localized: "Provider default"))
             } else {
                 SettingsAdvancedAPIMetadataRow("Thinking Options", String(localized: "Not detected"))

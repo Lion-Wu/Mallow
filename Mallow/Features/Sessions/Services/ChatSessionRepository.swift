@@ -69,11 +69,16 @@ final class SwiftDataChatSessionRepository: ChatSessionRepository {
     private var pendingSessions: [UUID: ChatSession] = [:]
     private var pendingSaveTasks: [UUID: Task<Void, Never>] = [:]
     private let throttleInterval: TimeInterval
+    private let onSaveError: (Error?) -> Void
     private var immediatePersistenceEnabled = false
     var didPersistSessions: ((Set<UUID>) -> Void)?
 
-    init(throttleInterval: TimeInterval = 1.0) {
+    init(
+        throttleInterval: TimeInterval = 1.0,
+        onSaveError: @escaping (Error?) -> Void = { _ in }
+    ) {
         self.throttleInterval = throttleInterval
+        self.onSaveError = onSaveError
     }
 
     func attach(context: ModelContext) {
@@ -89,6 +94,7 @@ final class SwiftDataChatSessionRepository: ChatSessionRepository {
         pendingSessions.removeAll()
         lastSaveTime.removeAll()
         context = nil
+        onSaveError(nil)
     }
 
     func fetchSessions() throws -> [ChatSession] {
@@ -205,22 +211,23 @@ final class SwiftDataChatSessionRepository: ChatSessionRepository {
     ) throws -> Bool {
         guard let context else { return false }
         let savedSessionIDs = pendingSessionIDs
-        for sessionID in savedSessionIDs {
-            pendingSessions[sessionID]?.synchronizeTransientMessageStateForPersistence()
-        }
-        guard context.hasChanges else {
-            for sessionID in savedSessionIDs {
-                pendingSessions[sessionID]?.markTransientMessageStatePersisted()
-            }
-            pendingSessionIDs.subtract(savedSessionIDs)
-            for sessionID in savedSessionIDs {
-                pendingSessions.removeValue(forKey: sessionID)
-            }
-            cancelPendingSaveTasks(for: savedSessionIDs)
-            return false
-        }
-
         do {
+            for sessionID in savedSessionIDs {
+                try pendingSessions[sessionID]?.synchronizeTransientMessageStateForPersistence()
+            }
+            guard context.hasChanges else {
+                for sessionID in savedSessionIDs {
+                    pendingSessions[sessionID]?.markTransientMessageStatePersisted()
+                }
+                pendingSessionIDs.subtract(savedSessionIDs)
+                for sessionID in savedSessionIDs {
+                    pendingSessions.removeValue(forKey: sessionID)
+                }
+                cancelPendingSaveTasks(for: savedSessionIDs)
+                onSaveError(nil)
+                return false
+            }
+
             try context.save()
             for sessionID in savedSessionIDs {
                 pendingSessions[sessionID]?.markTransientMessageStatePersisted()
@@ -231,6 +238,7 @@ final class SwiftDataChatSessionRepository: ChatSessionRepository {
                 pendingSessions.removeValue(forKey: sessionID)
             }
             cancelPendingSaveTasks(for: savedSessionIDs)
+            onSaveError(nil)
             let shouldNotifyObserver = notifyObserver || savedSessionIDs.count > 1
             if shouldNotifyObserver, !savedSessionIDs.isEmpty {
                 didPersistSessions?(savedSessionIDs)
@@ -240,6 +248,7 @@ final class SwiftDataChatSessionRepository: ChatSessionRepository {
             for sessionID in savedSessionIDs {
                 pendingSessions[sessionID]?.markTransientMessageStatePersistenceFailed()
             }
+            onSaveError(error)
             throw error
         }
     }

@@ -30,7 +30,6 @@ nonisolated enum DataStorageInspector {
         let images = try reader.payloadSize(entity: "ChatMessage", only: "imageAttachmentsData")
         let chats = try reader.payloadSize(entity: "ChatMessage", excluding: "imageAttachmentsData")
             + reader.payloadSize(entity: "ChatSession")
-            + reader.payloadSize(entity: "ChatRequestContextMetadata")
         let settings = try ["AppSettings", "ChatServerPreset", "VoiceServerPreset", "VoicePreset", "SystemPromptPreset"]
             .reduce(Int64(0)) { try $0 + reader.payloadSize(entity: $1) }
 

@@ -16,6 +16,18 @@ extension ChatService {
             apiKey: configurationProvider.apiKey
         )
 
+        let body = (try? JSONSerialization.jsonObject(with: requestBodyData)) as? [String: Any]
+        pendingResponseMetadata.generationRound = ChatGenerationRound(
+            id: UUID(), requestStyle: endpoint.style,
+            requestedModel: body?["model"] as? String ?? configurationProvider.modelIdentifier,
+            requestURL: endpoint.chatURL.absoluteString,
+            startedAt: Date(), previousResponseID: body?["previous_response_id"] as? String,
+            requestedThinking: body.map { body in
+                body.filter { ChatGenerationRound.thinkingParameterKeys.contains($0.key) }
+                    .mapValues(JSONValue.normalized)
+            }
+        )
+        deliverResponseMetadata(pendingResponseMetadata)
         let task = session.dataTask(with: request)
         activeStreamRequest = ChatActiveStreamRequest(task: task, endpoint: endpoint)
 
@@ -104,8 +116,14 @@ extension ChatService {
     func deliverResponseMetadata(_ metadata: ChatResponseMetadata) {
         let token = currentStreamCallbackToken()
         DispatchQueue.main.async { [weak self] in
-            guard let self, self.isValidStreamCallbackToken(token) else { return }
-            self.onResponseMetadata?(metadata)
+            guard let self else { return }
+            if self.isValidStreamCallbackToken(token) {
+                self.onResponseMetadata?(metadata)
+            } else if let round = metadata.generationRound, round.endedAt != nil,
+                      self.stateQueue.sync(execute: { token.epoch == self.streamCallbackEpoch }) {
+                // Retrying invalidates text callbacks, not the completed attempt's measurements.
+                self.onResponseMetadata?(ChatResponseMetadata(generationRound: round))
+            }
         }
     }
 
@@ -177,6 +195,39 @@ extension ChatService {
         }
     }
 
+    func captureGenerationMetadata(_ dictionary: [String: Any]) {
+        guard var round = pendingResponseMetadata.generationRound else { return }
+        let previous = round
+        round.absorb(dictionary)
+        let type = dictionary["type"] as? String ?? ""
+        let delta = dictionary["delta"] as? [String: Any]
+        let choices = dictionary["choices"] as? [[String: Any]] ?? []
+        let hasToolOutput = type == "response.function_call_arguments.delta"
+            || (dictionary["item"] as? [String: Any])?["type"] as? String == "function_call"
+            || (dictionary["content_block"] as? [String: Any])?["type"] as? String == "tool_use"
+            || delta?["type"] as? String == "input_json_delta"
+            || choices.contains { ($0["delta"] as? [String: Any])?["tool_calls"] != nil }
+        if hasToolOutput, round.firstOutputAt == nil { round.firstOutputAt = Date() }
+        guard round != previous else { return }
+        pendingResponseMetadata.generationRound = round
+        deliverResponseMetadata(pendingResponseMetadata)
+    }
+
+    func markGenerationOutput() {
+        guard var round = pendingResponseMetadata.generationRound, round.firstOutputAt == nil else { return }
+        round.firstOutputAt = Date()
+        pendingResponseMetadata.generationRound = round
+        deliverResponseMetadata(pendingResponseMetadata)
+    }
+
+    func finishGenerationRound(outcome: String) {
+        guard var round = pendingResponseMetadata.generationRound, round.endedAt == nil else { return }
+        round.endedAt = Date()
+        round.outcome = outcome
+        pendingResponseMetadata.generationRound = round
+        deliverResponseMetadata(pendingResponseMetadata)
+    }
+
     func mergeResponseMetadata(_ update: ChatResponseMetadata) {
         pendingResponseMetadata.merge(update)
         let snapshot = pendingResponseMetadata
@@ -196,6 +247,7 @@ extension ChatService {
     }
 
     func failCurrentStream(with error: Error) {
+        finishGenerationRound(outcome: "error")
         isCancelled = true
         updateLongWaitNotice(nil)
         advanceRequestGeneration()
@@ -213,6 +265,7 @@ extension ChatService {
         guard !isCancelled else { return }
         waitMonitor?.markResponseProgress()
         updateLongWaitNotice(nil)
+        if !piece.isEmpty && piece != "<think>\n" && piece != thinkCloseLine { markGenerationOutput() }
         deliverDelta(piece)
         sawAnyAssistantToken = true
         if marksPrimaryOutput {
@@ -224,6 +277,7 @@ extension ChatService {
         guard !isCancelled else { return }
         waitMonitor?.markResponseProgress()
         updateLongWaitNotice(nil)
+        markGenerationOutput()
         deliverSegment(segment)
         sawAnyAssistantToken = true
         if marksPrimaryOutput {
@@ -238,6 +292,7 @@ extension ChatService {
 
     func finishStreamOrRunPendingTools() {
         guard !isCancelled, !isToolContinuationStarting else { return }
+        finishGenerationRound(outcome: "completed")
         recordCurrentOpenAIResponsesOutputItemsIfNeeded()
         if shouldRunToolLoopInsteadOfFinishing() {
             runPendingToolCallsAndContinue()

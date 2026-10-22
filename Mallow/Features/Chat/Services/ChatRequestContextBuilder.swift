@@ -8,172 +8,74 @@
 import CryptoKit
 import Foundation
 
-struct ChatRequestContextState: Equatable, Sendable {
-    let fingerprint: String
-    let snapshot: ChatRequestContextSnapshot
-}
-
-struct ChatRequestContextSnapshot: Equatable, Sendable {
-    let fingerprint: String
-    let version: Int
-    let modelIdentifier: String
-    let endpointURLHash: String
-    let providerRawValue: String
-    let requestStyleRawValue: String
-    let developerPromptHash: String
-    let developerPromptCharacterCount: Int
-    let thinkingOptionRawValue: String?
-    let toolUseEnabled: Bool
-    let enabledToolIDsJSON: String
-    let toolSchemaDigest: String
-    let toolSchemaSummaryJSON: String
-    let toolAuthorizationModeRawValue: String
-    let allowHighRiskToolAutoExecution: Bool
-    let useProviderContinuationIDs: Bool
-}
-
 enum ChatRequestContextBuilder {
-    static let version = 1
-
-    static func make(
-        model: String,
+    /// Hash the effective transport configuration, excluding the history.
+    /// History is hashed separately with the completed assistant output at the same logical boundary.
+    static func fingerprint(
+        request: URLRequest,
         endpoint: ChatAPIEndpointCandidate,
-        developerPrompt: String?,
-        toolUseSettings: ToolUseSettings,
-        apiAdvancedSettings: APIAdvancedSettings = .defaults,
-        thinkingOption: ModelThinkingOption?,
-        sourceMessages: [ChatRequestSourceMessage] = [],
-        includeImagesInUserContent: Bool = false
-    ) -> ChatRequestContextState {
-        let normalizedModel = model.trimmingCharacters(in: .whitespacesAndNewlines)
-        let normalizedPrompt = developerPrompt?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let developerPromptFingerprintValue = ChatRequestBodyProviderEncoder.previousResponseCarriesInstructions(endpoint)
-            ? normalizedPrompt
-            : ""
-        let enabledIDs = toolUseSettings.isEnabled
-            ? toolUseSettings.enabledToolIDs
-            : Set<ChatToolID>()
-        let definitions = ChatToolDefinitions.definitions(enabledIDs: enabledIDs)
-        let enabledToolIDs = definitions.map { $0.id.rawValue }
-        let toolMetadata = definitions.map { definition in
-            [
-                "name": definition.id.rawValue,
-                "description": definition.description,
-                "parameters": definition.parametersSchema.jsonObject
-            ] as [String: Any]
-        }
-        let imageInputSummary = makeImageInputSummary(
-            sourceMessages: sourceMessages,
-            includeImagesInUserContent: includeImagesInUserContent
-        )
-        let advancedSettingsSummary = makeAdvancedSettingsSummary(apiAdvancedSettings)
-        let effectiveUseProviderContinuationIDs = toolUseSettings.useProviderContinuationIDs(for: endpoint)
-        let canonicalPayload: [String: Any] = [
-            "version": version,
-            "model": normalizedModel,
-            "provider": endpoint.provider.rawValue,
-            "style": endpoint.style.rawValue,
-            "chatURL": endpoint.chatURL.absoluteString,
-            "developerPrompt": developerPromptFingerprintValue,
-            "thinkingOption": thinkingOption?.rawValue ?? "",
-            "imageInput": imageInputSummary,
-            "advancedSettings": advancedSettingsSummary,
-            "providerContinuation": [
-                "useProviderContinuationIDs": effectiveUseProviderContinuationIDs
-            ],
-            "tools": toolMetadata
-        ]
-        let toolSchemaSummary: [String: Any] = [
-            "enabledToolIDs": enabledToolIDs,
-            "tools": toolMetadata
-        ]
-        let toolSchemaSummaryJSON = compactJSONString(from: toolSchemaSummary)
-        let fingerprint = digestString(for: canonicalPayload)
-        let snapshot = ChatRequestContextSnapshot(
-            fingerprint: fingerprint,
-            version: version,
-            modelIdentifier: normalizedModel,
-            endpointURLHash: digestString(for: endpoint.chatURL.absoluteString),
-            providerRawValue: endpoint.provider.rawValue,
-            requestStyleRawValue: endpoint.style.rawValue,
-            developerPromptHash: digestString(for: normalizedPrompt),
-            developerPromptCharacterCount: normalizedPrompt.count,
-            thinkingOptionRawValue: thinkingOption?.rawValue,
-            toolUseEnabled: toolUseSettings.isEnabled,
-            enabledToolIDsJSON: compactJSONString(from: enabledToolIDs),
-            toolSchemaDigest: digestString(for: toolSchemaSummaryJSON),
-            toolSchemaSummaryJSON: toolSchemaSummaryJSON,
-            toolAuthorizationModeRawValue: toolUseSettings.authorizationMode.rawValue,
-            allowHighRiskToolAutoExecution: toolUseSettings.allowHighRiskToolAutoExecution,
-            useProviderContinuationIDs: effectiveUseProviderContinuationIDs
-        )
-        return ChatRequestContextState(fingerprint: fingerprint, snapshot: snapshot)
-    }
-
-    private static func compactJSONString(from value: Any) -> String {
-        guard JSONSerialization.isValidJSONObject(value),
-              let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
-              let string = String(data: data, encoding: .utf8) else {
-            return "[]"
-        }
-        return string
-    }
-
-    private static func digestString(for value: Any) -> String {
-        let data: Data
-        if let string = value as? String {
-            data = Data(string.utf8)
-        } else if let value = value as? Data {
-            data = value
-        } else if JSONSerialization.isValidJSONObject(value),
-                  let encoded = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]) {
-            data = encoded
-        } else {
-            data = Data()
-        }
-        let digest = SHA256.hash(data: data)
-        return "sha256:" + digest.map { String(format: "%02x", $0) }.joined()
-    }
-
-    private static func makeImageInputSummary(
-        sourceMessages: [ChatRequestSourceMessage],
         includeImagesInUserContent: Bool
-    ) -> [String: Any] {
-        guard includeImagesInUserContent else {
-            return [
-                "includeImagesInUserContent": false,
-                "attachments": []
-            ]
+    ) throws -> String {
+        guard let data = request.httpBody,
+              var body = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let url = request.url,
+              let method = request.httpMethod else {
+            throw ChatNetworkError.invalidRequestHistory
         }
-
-        let attachments = sourceMessages.enumerated().flatMap { messageIndex, message -> [[String: Any]] in
-            guard message.isUser, !message.content.hasPrefix("!error:") else { return [] }
-            return message.imageAttachments.enumerated().compactMap { attachmentIndex, attachment in
-                guard !attachment.data.isEmpty else { return nil }
-                return [
-                    "messageIndex": messageIndex,
-                    "attachmentIndex": attachmentIndex,
-                    "mimeType": attachment.mimeType,
-                    "byteCount": attachment.data.count,
-                    "dataHash": digestString(for: attachment.data)
-                ] as [String: Any]
-            }
+        for key in ["input", "messages", "previous_response_id"] {
+            body.removeValue(forKey: key)
         }
-
-        return [
-            "includeImagesInUserContent": true,
-            "attachments": attachments
+        let payload: [String: Any] = [
+            "version": 2,
+            "provider": endpoint.provider.rawValue,
+            "format": endpoint.style.rawValue,
+            "method": method,
+            "url": url.absoluteString,
+            "headers": request.allHTTPHeaderFields ?? [:],
+            "body": body,
+            "includeImages": includeImagesInUserContent
         ]
+        let encoded = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
+        return SHA256.hash(data: encoded).map { String(format: "%02x", $0) }.joined()
     }
+}
 
-    private static func makeAdvancedSettingsSummary(_ settings: APIAdvancedSettings) -> [String: Any] {
+/// Captured before transport starts. Only the completed history digest is persisted.
+struct ChatContinuationSeed: Equatable, Sendable {
+    let configurationFingerprint: String
+    let history: [JSONValue]
+
+    func fingerprint(appending message: ChatRequestSourceMessage? = nil) throws -> String {
+        var items = history
+        if let message { items.append(try Self.historyItem(message)) }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys]
-        guard let data = try? encoder.encode(settings.sanitized),
-              let object = try? JSONSerialization.jsonObject(with: data),
-              let dictionary = object as? [String: Any] else {
-            return [:]
+        let data = try encoder.encode(JSONValue.object([
+            "configuration": .string(configurationFingerprint),
+            "history": .array(items)
+        ]))
+        return "history-v2:" + SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    static func historyItem(_ message: ChatRequestSourceMessage) throws -> JSONValue {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        func value<T: Encodable>(_ value: T) throws -> JSONValue {
+            try JSONDecoder().decode(JSONValue.self, from: encoder.encode(value))
         }
-        return dictionary
+        return .object([
+            "role": .string(message.isUser ? "user" : "assistant"),
+            "content": .string(message.content),
+            "requestContent": .string(ChatRequestPayloadProjector.requestContent(for: message)),
+            "segments": try value(message.assistantSegments),
+            "protocolItems": .array(message.openAIResponsesConversationItems),
+            "tools": try value(message.toolActivityPlacements),
+            "images": .array(message.imageAttachments.map { image in
+                .object([
+                    "mimeType": .string(image.mimeType),
+                    "digest": .string(SHA256.hash(data: image.data).map { String(format: "%02x", $0) }.joined())
+                ])
+            })
+        ])
     }
 }

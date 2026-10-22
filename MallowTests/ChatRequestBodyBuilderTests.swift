@@ -33,7 +33,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
         XCTAssertEqual(messages.first?["content"] as? String, "hello")
     }
 
-    func testOpenAIChatCompletionsUsesSystemMessageForPrompts() throws {
+    func testOpenAIChatCompletionsUsesDeveloperMessageForPrompts() throws {
         let endpoint = ChatAPIEndpointCandidate(
             provider: .openAI,
             style: .openAIChatCompletions,
@@ -57,7 +57,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
         let messages = try XCTUnwrap(body["messages"] as? [[String: Any]])
 
         XCTAssertEqual(messages.count, 2)
-        XCTAssertEqual(messages[0]["role"] as? String, "system")
+        XCTAssertEqual(messages[0]["role"] as? String, "developer")
         XCTAssertEqual(messages[0]["content"] as? String, "You are concise.")
         XCTAssertEqual(messages[1]["role"] as? String, "user")
         XCTAssertFalse(String(describing: messages).contains("\"developer\""))
@@ -152,101 +152,6 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
         XCTAssertFalse(String(describing: input).contains("Developer prompt."))
     }
 
-    func testOfficialOpenAIResponsesAddsStablePromptCacheKeyWithoutForcingRetention() throws {
-        let endpoint = ChatAPIEndpointCandidate(
-            provider: .openAI,
-            style: .openAIResponses,
-            chatURL: try XCTUnwrap(URL(string: "https://api.openai.com/v1/responses")),
-            modelsURL: try XCTUnwrap(URL(string: "https://api.openai.com/v1/models"))
-        )
-
-        let first = try decodedBody(from: ChatRequestBodyBuilder().buildRequestBodyData(
-            model: "gpt-5",
-            messagePayload: [["role": "user", "content": "first variable tail"]],
-            developerPrompt: "stable instructions",
-            endpoint: endpoint,
-            apiAdvancedSettings: APIAdvancedSettings(),
-            thinkingCapability: nil,
-            thinkingOption: nil
-        ))
-        let second = try decodedBody(from: ChatRequestBodyBuilder().buildRequestBodyData(
-            model: "gpt-5",
-            messagePayload: [["role": "user", "content": "second variable tail"]],
-            developerPrompt: "stable instructions",
-            endpoint: endpoint,
-            apiAdvancedSettings: APIAdvancedSettings(),
-            thinkingCapability: nil,
-            thinkingOption: nil
-        ))
-
-        let firstKey = try XCTUnwrap(first["prompt_cache_key"] as? String)
-        XCTAssertTrue(firstKey.hasPrefix("mallow-"))
-        XCTAssertLessThanOrEqual(firstKey.count, 64)
-        XCTAssertEqual(second["prompt_cache_key"] as? String, firstKey)
-        XCTAssertNil(first["prompt_cache_retention"])
-        XCTAssertNil(second["prompt_cache_retention"])
-    }
-
-    func testOfficialOpenAIResponsesDoesNotInferPromptCacheRetentionFromModelName() throws {
-        let endpoint = ChatAPIEndpointCandidate(
-            provider: .openAI,
-            style: .openAIResponses,
-            chatURL: try XCTUnwrap(URL(string: "https://api.openai.com/v1/responses")),
-            modelsURL: try XCTUnwrap(URL(string: "https://api.openai.com/v1/models"))
-        )
-
-        for model in ["gpt-5-mini", "gpt-4o"] {
-            let body = try decodedBody(from: ChatRequestBodyBuilder().buildRequestBodyData(
-                model: model,
-                messagePayload: [["role": "user", "content": "hello"]],
-                developerPrompt: nil,
-                endpoint: endpoint,
-                apiAdvancedSettings: APIAdvancedSettings(),
-                thinkingCapability: nil,
-                thinkingOption: nil
-            ))
-
-            XCTAssertTrue(
-                (body["prompt_cache_key"] as? String)?.hasPrefix("mallow-") == true,
-                "Expected an official OpenAI cache key for \(model)"
-            )
-            XCTAssertNil(
-                body["prompt_cache_retention"],
-                "Model names must not imply a cache retention policy for \(model)"
-            )
-        }
-    }
-
-    func testOfficialOpenAIResponsesPromptCacheKeyChangesWithStaticPrefix() throws {
-        let endpoint = ChatAPIEndpointCandidate(
-            provider: .openAI,
-            style: .openAIResponses,
-            chatURL: try XCTUnwrap(URL(string: "https://api.openai.com/v1/responses")),
-            modelsURL: try XCTUnwrap(URL(string: "https://api.openai.com/v1/models"))
-        )
-
-        let first = try decodedBody(from: ChatRequestBodyBuilder().buildRequestBodyData(
-            model: "gpt-5",
-            messagePayload: [["role": "user", "content": "same tail"]],
-            developerPrompt: "stable instructions",
-            endpoint: endpoint,
-            apiAdvancedSettings: APIAdvancedSettings(),
-            thinkingCapability: nil,
-            thinkingOption: nil
-        ))
-        let second = try decodedBody(from: ChatRequestBodyBuilder().buildRequestBodyData(
-            model: "gpt-5",
-            messagePayload: [["role": "user", "content": "same tail"]],
-            developerPrompt: "changed instructions",
-            endpoint: endpoint,
-            apiAdvancedSettings: APIAdvancedSettings(),
-            thinkingCapability: nil,
-            thinkingOption: nil
-        ))
-
-        XCTAssertNotEqual(first["prompt_cache_key"] as? String, second["prompt_cache_key"] as? String)
-    }
-
     func testOpenRouterResponsesDoesNotReceiveOpenAIPromptCacheBodyParameters() throws {
         let endpoint = ChatAPIEndpointCandidate(
             provider: .openAI,
@@ -296,8 +201,10 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
                     topKEnabled: true,
                     topK: 20
                 ),
-                anthropicThinkingResponseReserve: 1,
-                anthropicHighThinkingBudget: 1024
+                anthropicMaxTokensEnabled: true,
+                anthropicThinkingModeOverride: "enabled",
+                anthropicThinkingBudgetEnabled: true,
+                anthropicThinkingBudget: 1024
             ),
             thinkingCapability: nil,
             thinkingOption: .high
@@ -307,14 +214,14 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
         let thinking = try XCTUnwrap(body["thinking"] as? [String: Any])
 
         XCTAssertEqual(body["system"] as? String, "system prompt")
-        XCTAssertEqual(body["max_tokens"] as? Int, 1025)
+        XCTAssertEqual(body["max_tokens"] as? Int, 1)
         XCTAssertEqual(messages.count, 1)
         XCTAssertEqual(messages.first?["role"] as? String, "user")
         XCTAssertEqual(thinking["type"] as? String, "enabled")
         XCTAssertEqual(thinking["budget_tokens"] as? Int, 1024)
-        XCTAssertNil(body["temperature"])
-        XCTAssertNil(body["top_p"])
-        XCTAssertNil(body["top_k"])
+        XCTAssertEqual(body["temperature"] as? Double, 0.7)
+        XCTAssertEqual(body["top_p"] as? Double, 0.5)
+        XCTAssertEqual(body["top_k"] as? Int, 20)
     }
 
     func testRequestBodyBuilderBuildsLMStudioRESTMultimodalBody() throws {
@@ -349,7 +256,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
 
         XCTAssertEqual(body["model"] as? String, "local-model")
         XCTAssertEqual(body["system_prompt"] as? String, "local system")
-        XCTAssertEqual(body["store"] as? Bool, true)
+        XCTAssertNil(body["store"])
         XCTAssertNil(body["previous_response_id"])
         XCTAssertEqual(body["max_output_tokens"] as? Int, 256)
         XCTAssertEqual(input.first?["type"] as? String, "text")
@@ -390,7 +297,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
         )
         let body = try decodedBody(from: data)
 
-        XCTAssertEqual(body["store"] as? Bool, true)
+        XCTAssertNil(body["store"])
         XCTAssertEqual(body["previous_response_id"] as? String, "resp_previous123")
         XCTAssertEqual(body["input"] as? String, "what time is it?")
         XCTAssertNil(body["system_prompt"])
@@ -579,7 +486,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
         let instructions = try XCTUnwrap(body["instructions"] as? String)
         XCTAssertTrue(instructions.hasPrefix("system prompt"))
         XCTAssertTrue(instructions.contains(ChatToolDefinitions.untrustedResultInstruction))
-        XCTAssertTrue((body["prompt_cache_key"] as? String)?.hasPrefix("mallow-") == true)
+        XCTAssertNil(body["prompt_cache_key"])
         XCTAssertEqual(input.count, 1)
         XCTAssertEqual(input.first?["role"] as? String, "user")
         XCTAssertEqual(firstContent.first?["text"] as? String, "follow up only")

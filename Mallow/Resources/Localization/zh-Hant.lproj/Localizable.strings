@@ -141,8 +141,6 @@
 "Detected API Format: %@" = "偵測到的 API 格式：%@";
 "Developer Defaults" = "開發者預設設定";
 "Developer Mode" = "開發者模式";
-"Developer Prompt Characters" = "開發者提示詞字元數";
-"Developer Prompt Hash" = "開發者提示詞雜湊";
 "Device Context" = "裝置資訊";
 "Device context was read." = "已讀取裝置資訊。";
 "Device motion is not available on this platform." = "此平台不支援裝置動態資料。";
@@ -170,7 +168,6 @@
 "Enabled Endpoints" = "已啟用的端點";
 "Enabled Tools" = "已啟用的工具";
 "Enables Stateful Chat for conversations that support it." = "為支援此功能的對話啟用 Stateful Chat。";
-"Endpoint URL Hash" = "端點 URL 雜湊";
 "English" = "英文";
 "Enter API key" = "輸入 API 金鑰";
 "Enter preset name" = "輸入預設名稱";
@@ -179,10 +176,6 @@
 "Event" = "行程";
 "Event end must be after start." = "行程的結束時間必須晚於開始時間。";
 "Exit" = "結束";
-"Extended thinking high budget_tokens" = "延伸思考高檔 budget_tokens";
-"Extended thinking low budget_tokens" = "延伸思考低檔 budget_tokens";
-"Extended thinking medium budget_tokens" = "延伸思考中檔 budget_tokens";
-"Extended thinking response reserve tokens" = "延伸思考回應預留 Token";
 "Extra High" = "極高";
 "Failed" = "失敗";
 "Failed to start audio playback: %@" = "無法開始音訊播放：%@";
@@ -222,7 +215,6 @@
 "JavaScript, %d characters" = "JavaScript，%d 個字元";
 "JSON mode" = "JSON 模式";
 "Keywords: %@" = "關鍵字：%@";
-"Last Seen At" = "最後使用時間";
 "List" = "列表";
 "Listening" = "正在聆聽";
 "Listing Calendar Events" = "正在列出行事曆行程";
@@ -271,6 +263,7 @@
 "No device motion sample was received." = "未收到裝置動態樣本。";
 "No endpoint URLs are enabled." = "尚未啟用任何端點 URL。";
 "No internet connection for TTS requests." = "TTS 請求沒有可用的網路連線。";
+"Models have not been loaded. You cannot send messages until models are available. Check the server connection and refresh the model list in Settings." = "尚未取得模型，暫時無法傳送訊息。請檢查伺服器連線，並在設定中重新整理模型清單。";
 "No models returned from %@" = "%@ 未回傳任何模型";
 "No parameters" = "無參數";
 "No recent replies" = "暫無最近回覆";
@@ -342,7 +335,6 @@
 "Received audio data could not be played." = "收到的音訊資料無法播放。";
 "Recorded Locally" = "本機記錄";
 "Reference Audio Path" = "參考音訊路徑";
-"Reference Count" = "參照計數";
 "Reference Language" = "參考文字語言";
 "Reference Text" = "參考文字";
 "Reference text (optional)" = "參考文字（選填）";
@@ -436,6 +428,7 @@
 "Take Photo" = "拍照";
 "Tap to reconnect" = "點擊重連";
 "Text Generation Issue" = "文字生成問題";
+"Unable to Send Messages" = "無法傳送訊息";
 "Text Language" = "文字語言";
 "text must contain at most 10000 characters." = "text 最多可包含 10000 個字元。";
 "Text server unreachable" = "無法連線文字伺服器";
@@ -461,7 +454,7 @@
 "This message contains only images. Edit it before retrying with this model." = "此訊息僅包含圖像。請先編輯，再使用此模型重試。";
 "This message contains only images. Edit it or delete it." = "此訊息僅包含圖像。請編輯或刪除它。";
 "This message will be deleted." = "這則訊息將被刪除。";
-"This model's metadata does not clearly report image-input capability. Turn this on only if you are sure the backend can accept image content for this model." = "此模型的中繼資料未明確標示是否支援影像輸入。僅在你確認目前後端可接受此模型的影像內容時啟用。";
+"Unable to confirm whether this model supports image input. Enable it if supported." = "無法確認此模型是否支援影像輸入。若支援，請開啟。";
 "This tool is disabled for the current endpoint." = "目前端點已停用此工具。";
 "This will allow location, clipboard, URL, and JavaScript Runtime tools to run automatically when permitted by the authorization mode. This may increase the risk of privacy exposure." = "這將允許位置、剪貼簿、URL 操作和 JavaScript 執行環境工具在授權方式允許時自動執行。這可能會增加隱私洩露風險。";
 "This will reset all developer options to their default values." = "這會將所有開發者選項重設為預設值。";
@@ -483,12 +476,9 @@
 "Tool call was denied by the user." = "使用者已拒絕工具呼叫。";
 "Tool Calls" = "工具呼叫";
 "Tool Name" = "工具名稱";
-"Tool Schema Digest" = "工具 Schema 摘要";
-"Tool Schema Metadata" = "工具 Schema 中繼資料";
 "Tool Trace" = "工具呼叫軌跡";
 "Tool Use" = "工具呼叫";
 "Tool Use Details" = "工具呼叫詳細資料";
-"Tool Use Enabled" = "已啟用工具呼叫";
 "Tool use is disabled." = "工具呼叫已停用。";
 "Traditional Chinese" = "繁體中文";
 "Try a different search." = "試試其他搜尋關鍵字。";
@@ -524,7 +514,6 @@
 "URL Actions" = "URL 操作";
 "URL scheme is not allowed." = "不允許使用此 URL 配置。";
 "URL was opened." = "已開啟 URL。";
-"Use Provider Continuation IDs" = "使用提供者續接 ID";
 "Used for chat mode" = "用於聊天模式";
 "Used for voice mode" = "用於語音模式";
 "Used Tools" = "已使用的工具";
@@ -605,7 +594,6 @@
 "Voice Server Presets" = "語音伺服器預設";
 "Voice Presets" = "語音預設";
 "System Prompt Presets" = "系統提示詞預設";
-"Request Metadata" = "請求中繼資料";
 "Unrecoverable Items" = "無法復原的項目";
 // Data reset confirmation
 "Reset Data?" = "重置資料？";
@@ -660,7 +648,6 @@
 "This message will be added:" = "將新增這則訊息：";
 "Server Address" = "伺服器位址";
 "Message Date" = "訊息時間";
-"Request Content" = "請求內容";
 "Response Content" = "回應內容";
 "Conversation Context" = "對話上下文";
 "Tool Activity" = "工具呼叫記錄";
@@ -694,7 +681,6 @@
 "Largest First" = "由大到小";
 "Message" = "訊息";
 "Missing Chat Ownership" = "缺少聊天歸屬";
-"Missing Request Metadata" = "缺少請求中繼資料";
 "Missing or Duplicate Identity" = "識別碼缺失或重複";
 "Model Data" = "模型資料";
 "Name" = "名稱";
@@ -707,7 +693,6 @@
 "Stored Content" = "已儲存內容";
 "Issues Found" = "發現問題";
 "New Branch" = "新增分支";
-"Applies to this model across all servers." = "套用至所有伺服器上的此模型。";
 "Selected chats and all their branches and attachments will be removed." = "將刪除所選聊天及其全部分支與附件。";
 "The database structure check failed. Export the original data before attempting recovery." = "資料庫結構檢查未通過。嘗試復原前，請先匯出原始資料。";
 "Selected image attachments will be removed from this message." = "將從此訊息移除所選圖片附件。";
@@ -716,9 +701,7 @@
 "Another instance of the app is using this data. Close that instance, then try again." = "另一個應用程式實例正在使用這些資料。請關閉該實例後再試一次。";
 "Try Again" = "再試一次";
 // Storage breakdown
-"Request Snapshots and Continuation Data" = "請求快照與續聊資料";
 "Messages and Other Chat Data" = "訊息與其他聊天資料";
-"Shared Request Metadata" = "共用請求中繼資料";
 "Unassigned Messages" = "未歸屬訊息";
 "Search" = "搜尋";
 "A required value is missing." = "缺少必填值。";
@@ -739,7 +722,6 @@
 "Source" = "來源";
 "The database structure check reported an error." = "資料庫結構檢查發現錯誤。";
 "The preceding message is missing, belongs to another chat, or forms a circular chain." = "前序訊息不存在、屬於其他聊天，或訊息關係形成了循環。";
-"The request metadata referenced by this message is missing." = "這則訊息引用的請求中繼資料不存在。";
 "The selected branch no longer exists in this chat." = "此聊天中已不存在所選分支。";
 "The stored data is not valid for this field." = "儲存資料不符合此欄位的格式要求。";
 "The stored value has the wrong type." = "儲存值的類型不正確。";
@@ -747,13 +729,11 @@
 "This message does not reference an existing chat." = "這則訊息沒有關聯到現存的聊天。";
 "This record has a missing or duplicate identifier and cannot be safely selected for deletion." = "這筆記錄的識別碼缺失或重複，無法安全地單獨選取刪除。";
 "Tool Positions" = "工具活動位置";
-"Tool positions refer to missing message segments." = "工具活動位置引用了不存在的訊息片段。";
 "Unable to Preview" = "無法預覽";
 "Unreadable Fields" = "欄位資料異常";
 "Delete Chat" = "刪除聊天";
 "All attachments in the selected messages will be deleted. Message text will be kept." = "將刪除所選訊息中的所有附件，保留訊息內文。";
 "Delete Selected" = "刪除所選";
-"Delete Request Snapshots and Continuation Data" = "刪除請求快照與續聊資料";
 "Confirm deletion?" = "確定刪除嗎？";
 "Deselect All" = "取消全選";
 "This will permanently delete this chat. This action cannot be undone." = "這將永久刪除此聊天。此操作無法復原。";
@@ -777,13 +757,11 @@
 "Removing Files..." = "正在刪除檔案⋯";
 "Export Selected" = "匯出所選";
 "This will delete the selected setting." = "這將刪除所選設定。";
-"This will delete the selected request snapshots and continuation data." = "這將刪除所選請求快照與續聊資料。";
 "%lld Selected" = "已選 %lld 項";
 "Your data changed. Review the updated list before continuing. No data was deleted." = "資料已變更。請查看更新後的列表再繼續，尚未刪除任何資料。";
 "No Data" = "沒有資料";
 "The selected messages and their related history will be restored as separate chats." = "將把所選訊息及其相關歷史恢復為獨立聊天。";
 "The selected model settings will be deleted." = "將刪除所選模型設定。";
-"Request snapshots and continuation data will be deleted for the selected models across all servers." = "將刪除所選模型在所有伺服器上的請求快照與續聊資料。";
 "The API key file could not be read because its format is invalid." = "API 金鑰檔案格式無效，無法讀取。";
 "API key %lld: %@" = "API 金鑰 %lld：%@";
 "This record has no valid account identifier." = "這筆記錄缺少有效的帳號識別碼。";
@@ -793,3 +771,30 @@
 "The records in this category could not be fully read. The number of affected records is unknown." = "未能完整讀取此類記錄，無法確定受影響的記錄數量。";
 "Import File Records Not Fully Merged" = "匯入檔案中未能完整合併的記錄";
 "Data Not Fully Merged" = "未能完整合併的資料";
+"Request Metadata" = "請求中繼資料";
+"Generation Round %d" = "第 %d 輪生成";
+"Provider Model" = "服務商傳回的模型";
+"Uncached Input Tokens" = "未快取輸入 Token";
+"Input Token Count" = "輸入 Token 數";
+"Total Token Count" = "總 Token 數";
+"Cached Tokens" = "快取讀取 Token";
+"Cache Write Tokens" = "快取寫入 Token";
+"Reported Cost" = "服務商回報的費用";
+"First Output At" = "首次輸出時間";
+"Time To First Output" = "首次輸出延遲";
+"Response Duration" = "回應耗時";
+"Provider Created At" = "伺服器建立時間";
+"Provider Completed At" = "伺服器完成時間";
+"Returned Provider Data" = "服務商傳回的資料";
+"Request URL" = "請求 URL";
+"Automatic budget" = "自動預算";
+"thinking.type" = "thinking.type";
+"budget_tokens" = "budget_tokens";
+"output_config.effort" = "output_config.effort";
+"Model information is not ready. Wait for loading to finish, or fetch models again in Settings." = "模型資訊尚未就緒。請等待載入完成，或在設定中重新取得模型。";
+"Your latest chat changes could not be saved. They may be lost if you close the app.\n%@" = "最近的聊天變更未能儲存。關閉應用程式可能導致這些變更遺失。\n%@";
+"Supported Thinking Options" = "支援的思考選項";
+"Fixed-budget Thinking" = "固定預算思考";
+"Unable to confirm this model's supported thinking options. Select them manually." = "無法確認此模型支援的思考選項，請手動選擇。";
+"Requested Thinking Parameters" = "請求的思考參數";
+"Reported Thinking Parameters" = "伺服器傳回的思考參數";

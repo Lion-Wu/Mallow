@@ -12,8 +12,10 @@ import Combine
 struct AppErrorNotice: Identifiable, Equatable {
     enum Category: String {
         case textModel
+        case modelCatalog
         case tts
         case realtimeVoice
+        case dataSaving
     }
 
     enum Severity {
@@ -207,10 +209,14 @@ final class AppErrorCenter: ObservableObject, AppNoticePublishing {
         switch category {
         case .textModel:
             return NSLocalizedString("Text Generation Issue", comment: "Fallback title when the LLM/text server is unavailable")
+        case .modelCatalog:
+            return NSLocalizedString("Unable to Send Messages", comment: "Model catalog unavailable notice title")
         case .tts:
             return NSLocalizedString("Voice Playback Issue", comment: "Fallback title when TTS or audio playback fails")
         case .realtimeVoice:
             return NSLocalizedString("Realtime Voice Issue", comment: "Fallback title when realtime voice mode fails")
+        case .dataSaving:
+            return NSLocalizedString("Data Saving Issue", comment: "Fallback title when chat data cannot be saved")
         }
     }
 

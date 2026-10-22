@@ -42,7 +42,6 @@ nonisolated struct AppDataBackup: Equatable, Sendable {
     var voiceServers: [VoiceServerPresetBackup]
     var voicePresets: [VoicePresetBackup]
     var prompts: [SystemPromptPresetBackup]
-    var metadata: [ChatRequestContextMetadataBackup]
     var credentials: [DataBackupCredential]
 
     static func recover(from url: URL, keychain: Data, allowSourceSidecarCreation: Bool = false) throws -> DataBackupReadResult {
@@ -87,7 +86,6 @@ nonisolated struct AppDataBackup: Equatable, Sendable {
         voiceServers = try context.fetch(FetchDescriptor<VoiceServerPreset>()).map(VoiceServerPresetBackup.init).sorted { $0.id.uuidString < $1.id.uuidString }
         voicePresets = try context.fetch(FetchDescriptor<VoicePreset>()).map(VoicePresetBackup.init).sorted { $0.id.uuidString < $1.id.uuidString }
         prompts = try context.fetch(FetchDescriptor<SystemPromptPreset>()).map(SystemPromptPresetBackup.init).sorted { $0.id.uuidString < $1.id.uuidString }
-        metadata = try context.fetch(FetchDescriptor<ChatRequestContextMetadata>()).map(ChatRequestContextMetadataBackup.init).sorted { $0.fingerprint < $1.fingerprint }
         self.credentials = credentials
         try validate()
     }
@@ -99,7 +97,6 @@ nonisolated struct AppDataBackup: Equatable, Sendable {
             try validatePayload(message.assistantSegmentsData, as: [ChatAssistantSegment].self)
             try validatePayload(message.openAIResponsesConversationItemsData, as: [JSONValue].self)
             try validatePayload(message.imageAttachmentsData, as: [ChatImageAttachment].self)
-            try validatePayload(message.providerResponseIDsData, as: [String].self)
             try validatePayload(message.toolActivityPlacementsData, as: [ChatToolActivityPlacement].self)
         }
     }
@@ -113,7 +110,7 @@ nonisolated struct AppDataBackup: Equatable, Sendable {
         try unique(sessions.map(\.id)); try unique(messages.map(\.id))
         try unique(settings.map(\.id)); try unique(chatServers.map(\.id))
         try unique(voiceServers.map(\.id)); try unique(voicePresets.map(\.id))
-        try unique(prompts.map(\.id)); try unique(metadata.map(\.fingerprint))
+        try unique(prompts.map(\.id))
         try unique(credentials.map(\.presetID))
         guard settings.count <= 1 else { throw DataBackupError.duplicateIdentity }
         let sessionIDs = Set(sessions.map(\.id))
@@ -183,9 +180,7 @@ nonisolated struct AppDataBackup: Equatable, Sendable {
         }
         for record in messages { messageModels[record.id]?.parentMessage = record.parentID.flatMap { messageModels[$0] } }
         for session in sessionModels.values {
-            let latest = session.messages.max {
-                $0.createdAt == $1.createdAt ? $0.id.uuidString < $1.id.uuidString : $0.createdAt < $1.createdAt
-            }
+            let latest = session.messages.max(by: ChatMessageBranchResolver.stableMessageOrder)
             session.lastMessageID = latest?.id
             session.lastMessageAt = latest?.createdAt
             session.sidebarPreviewText = ChatSession.sidebarPreviewText(for: latest)
@@ -195,8 +190,8 @@ nonisolated struct AppDataBackup: Equatable, Sendable {
         for record in voiceServers { context.insert(record.makeModel()) }
         for record in voicePresets { context.insert(record.makeModel()) }
         for record in prompts { context.insert(record.makeModel()) }
-        for record in metadata { context.insert(record.makeModel()) }
         try Task.checkCancellation()
+        for message in messageModels.values { try message.persistDocument() }
         try context.save()
         complete = true
         return DataRecoveryPlan(id: id, storeURL: url, container: candidate, categories: [])

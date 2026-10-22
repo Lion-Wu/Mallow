@@ -16,7 +16,6 @@ import SwiftUI
             isActive: false,
             createdAt: Date(),
             tokenCount: 1,
-            characterCount: 0,
             session: session
         )
         session.messages.append(message)
@@ -42,7 +41,7 @@ import SwiftUI
         reachability: .shared,
         audioManager: audio
     ))
-    .modelContainer(for: [ChatSession.self, ChatMessage.self, ChatRequestContextMetadata.self, AppSettings.self], inMemory: true)
+    .modelContainer(for: [ChatSession.self, ChatMessage.self, AppSettings.self], inMemory: true)
     .padding()
     .background(AppBackgroundView())
 }

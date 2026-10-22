@@ -120,6 +120,10 @@ enum AppSettingsStore {
         model.selectedPresetID = row.recover("selectedPresetID", defaultValue: model.selectedPresetID)
         model.selectedNormalSystemPromptPresetID = row.recover("selectedNormalSystemPromptPresetID", defaultValue: model.selectedNormalSystemPromptPresetID)
         model.selectedVoiceSystemPromptPresetID = row.recover("selectedVoiceSystemPromptPresetID", defaultValue: model.selectedVoiceSystemPromptPresetID)
+        model.modelThinkingOptionsJSON = row.recover("modelThinkingOptionsJSON", defaultValue: model.modelThinkingOptionsJSON)
+        if let value = model.modelThinkingOptionsJSON {
+            model.modelThinkingOptionsJSON = try row.validJSON(value, defaultValue: [String: [String]](), field: "modelThinkingOptionsJSON")
+        }
         model.modelThinkingPreferencesJSON = row.recover("modelThinkingPreferencesJSON", defaultValue: model.modelThinkingPreferencesJSON)
         model.detectedAPIFormatsJSON = row.recover("detectedAPIFormatsJSON", defaultValue: model.detectedAPIFormatsJSON)
         model.modelImageInputOverrideJSON = row.recover("modelImageInputOverrideJSON", defaultValue: model.modelImageInputOverrideJSON)

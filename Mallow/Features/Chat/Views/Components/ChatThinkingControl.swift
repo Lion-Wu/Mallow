@@ -12,11 +12,10 @@ struct ChatThinkingControl: View {
     let currentOption: ModelThinkingOption?
     let height: CGFloat
     let onSelectOption: (ModelThinkingOption) -> Void
-    let onToggle: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
-            if capability.supportsEffortSelection {
+            if capability.isConfigurable {
                 Menu {
                     ForEach(capability.options) { option in
                         Button {
@@ -31,20 +30,9 @@ struct ChatThinkingControl: View {
                     }
                 } label: {
                     thinkingPillLabel(
-                        title: currentOption?.isDisabled == true
-                        ? NSLocalizedString("Thinking", comment: "Thinking control label")
-                        : thinkingControlTitle(for: currentOption),
-                        isEnabled: currentOption?.isDisabled == false,
+                        title: thinkingControlTitle(for: currentOption),
+                        isEnabled: currentOption.map { !$0.isDisabled && $0 != .serverDefault } ?? false,
                         showsDisclosure: true
-                    )
-                }
-                .buttonStyle(.plain)
-            } else if capability.supportsToggle {
-                Button(action: onToggle) {
-                    thinkingPillLabel(
-                        title: NSLocalizedString("Thinking", comment: "Thinking control label"),
-                        isEnabled: currentOption?.isDisabled == false,
-                        showsDisclosure: false
                     )
                 }
                 .buttonStyle(.plain)

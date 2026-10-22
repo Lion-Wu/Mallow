@@ -76,7 +76,7 @@ private struct DataMaintenanceRequest: Identifiable {
 
     var isDeletion: Bool {
         switch mutation {
-        case .deleteChats, .deleteAttachments, .deleteAllAttachments, .deletePreference, .deleteModelData, .clearContext, .deleteIssues:
+        case .deleteChats, .deleteAttachments, .deleteAllAttachments, .deletePreference, .deleteModelData, .deleteIssues:
             true
         case .recoverUnowned:
             false
@@ -207,12 +207,9 @@ struct DataChatStorageList: View {
                     } label: { chatLabel(chat) }
                 }
             }
-            if let catalog = model.catalog, search.isEmpty {
+            if let catalog = model.catalog, search.isEmpty, catalog.unassignedMessageBytes > 0 {
                 Section {
-                    LabeledContent("Shared Request Metadata", value: storageSize(catalog.sharedMetadataBytes))
-                    if catalog.unassignedMessageBytes > 0 {
-                        LabeledContent("Unassigned Messages", value: storageSize(catalog.unassignedMessageBytes))
-                    }
+                    LabeledContent("Unassigned Messages", value: storageSize(catalog.unassignedMessageBytes))
                 }
             }
         }
@@ -253,16 +250,15 @@ private struct DataChatStorageDetail: View {
             Section {
                 Text(chat.title).textSelection(.enabled)
                 LabeledContent("Stored Content", value: storageSize(currentChat.bytes))
-                LabeledContent("Messages and Other Chat Data", value: storageSize(currentChat.bytes - currentChat.imageBytes - currentChat.contextBytes))
+                LabeledContent("Messages and Other Chat Data", value: storageSize(currentChat.bytes - currentChat.imageBytes))
                 LabeledContent("Images", value: storageSize(currentChat.imageBytes))
-                LabeledContent("Request Snapshots and Continuation Data", value: storageSize(currentChat.contextBytes))
                 LabeledContent("Messages", value: currentChat.messageCount.formatted())
                 NavigationLink("Preview Chat") {
                     DataChatPreviewView(chat: chat, revision: model.catalog?.revision)
                 }
             }
             Section("Messages") {
-                let messages = (model.catalog?.messages ?? []).filter { $0.sessionID == chat.id }.sorted { $0.date < $1.date }
+                let messages = (model.catalog?.messages ?? []).filter { $0.sessionID == chat.id }.sorted { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }
                 if model.catalog != nil, messages.isEmpty {
                     Text("No Messages").foregroundStyle(.secondary)
                 }
@@ -428,13 +424,14 @@ private struct DataStoredMessageView: View {
         Form {
             Section("Storage Used") {
                 LabeledContent("Stored Content", value: storageSize(currentMessage.bytes))
-                LabeledContent("Messages and Other Chat Data", value: storageSize(currentMessage.bytes - currentMessage.imageBytes - currentMessage.contextBytes))
+                LabeledContent("Messages and Other Chat Data", value: storageSize(currentMessage.bytes - currentMessage.imageBytes))
                 LabeledContent("Images", value: storageSize(currentMessage.imageBytes))
-                LabeledContent("Request Snapshots and Continuation Data", value: storageSize(currentMessage.contextBytes))
             }
             Section("Message") {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(message.date, format: .dateTime).font(.caption).foregroundStyle(.secondary)
+                    if let date = message.date {
+                        Text(date, format: .dateTime).font(.caption).foregroundStyle(.secondary)
+                    }
                     if let name = message.model { Text(name).font(.caption).foregroundStyle(.secondary) }
                     RichMarkdownView(markdown: details?.content ?? message.title)
                 }.frame(maxWidth: .infinity, alignment: .leading)
@@ -456,16 +453,6 @@ private struct DataStoredMessageView: View {
 
                 } else if let error { Text(error).foregroundStyle(.red) }
                 else { ProgressView() }
-            }
-            if currentMessage.contextBytes > 0 {
-                Section("Request Snapshots and Continuation Data") {
-                    Text(storageSize(currentMessage.contextBytes))
-                    DataDestructiveButton("Delete Request Snapshots and Continuation Data", progressMessage: model.progressMessage(for: .clearContext)) {
-                        guard let revision = model.catalog?.revision else { return }
-                        request = DataMaintenanceRequest(mutation: .clearContext([message.id]), revision: revision,
-                            title: String(localized: "Delete Request Snapshots and Continuation Data"), detail: String(localized: "This will delete the selected request snapshots and continuation data."))
-                    }
-                }
             }
         }.formStyle(.grouped).navigationTitle("Message Details")
         .modifier(DataActionControls(isVisible: details?.attachments.isEmpty == false) {
@@ -533,17 +520,12 @@ private struct DataAttachmentPreview: View {
 }
 
 struct DataModelBrowser: View {
-    private enum Selection: Hashable {
-        case preference(String)
-        case context(String)
-    }
-
     @EnvironmentObject private var environment: AppEnvironment
     @ObservedObject var model: DataManagementModel
     let commitEdits: () -> Void
     @State private var search = ""
     @State private var selecting = false
-    @State private var selected: Set<Selection> = []
+    @State private var selected: Set<String> = []
     @State private var request: DataMaintenanceRequest?
     @State private var batchRequest: DataMaintenanceRequest?
 
@@ -551,15 +533,8 @@ struct DataModelBrowser: View {
         (model.catalog?.preferences ?? []).filter { search.isEmpty || $0.key.localizedCaseInsensitiveContains(search) }
     }
 
-    private var contextGroups: [String: [DataStorageMessage]] {
-        Dictionary(grouping: model.catalog?.messages.filter { $0.contextBytes > 0 } ?? [],
-            by: { $0.model ?? String(localized: "Unknown") })
-            .filter { search.isEmpty || $0.key.localizedCaseInsensitiveContains(search) }
-    }
-
-    private var selectableIDs: Set<Selection> {
-        Set(preferences.map { Selection.preference($0.id) })
-            .union(contextGroups.keys.map { Selection.context($0) })
+    private var selectableIDs: Set<String> {
+        Set(preferences.map(\.id))
     }
 
     var body: some View {
@@ -573,8 +548,8 @@ struct DataModelBrowser: View {
                     }
                     ForEach(items) { item in
                         if selecting {
-                            DataSelectionRow(isSelected: selected.contains(.preference(item.id))) {
-                                toggleSelection(.preference(item.id))
+                            DataSelectionRow(isSelected: selected.contains(item.id)) {
+                                toggleSelection(item.id)
                             } content: { preferenceLabel(item) }
                         } else {
                             NavigationLink {
@@ -593,64 +568,28 @@ struct DataModelBrowser: View {
                         }
                     }
                 } header: {
-                    selectionHeader(kind.title, ids: Set(items.map { Selection.preference($0.id) }))
+                    selectionHeader(kind.title, ids: Set(items.map(\.id)))
                 }
-            }
-            Section {
-                let groups = contextGroups
-                let names = groups.keys.sorted()
-                if model.catalog != nil, names.isEmpty {
-                    Text(search.isEmpty ? LocalizedStringKey("No Data") : LocalizedStringKey("No Results"))
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(names, id: \.self) { name in
-                    let items = groups[name] ?? []
-                    if selecting {
-                        DataSelectionRow(isSelected: selected.contains(.context(name))) {
-                            toggleSelection(.context(name))
-                        } content: { contextLabel(name, messages: items) }
-                    } else {
-                        NavigationLink {
-                            Form {
-                                Text(name)
-                                Text(storageSize(items.reduce(0) { $0 + $1.contextBytes }))
-                                DataDestructiveButton("Delete Request Snapshots and Continuation Data", progressMessage: model.progressMessage(for: .clearContext)) {
-                                    guard let revision = model.catalog?.revision else { return }
-                                    request = DataMaintenanceRequest(mutation: .clearContext(Set(items.map(\.id))), revision: revision,
-                                        title: String(localized: "Delete Request Snapshots and Continuation Data"), detail: String(localized: "This will delete the selected request snapshots and continuation data.") + "\n" + String(localized: "Applies to this model across all servers."))
-                                }
-                            }.formStyle(.grouped).navigationTitle("Request Snapshots and Continuation Data")
-                            .modifier(DataMaintenanceControls(model: model, request: $request, commitEdits: commitEdits, dismissOnCompletion: true))
-                        } label: { contextLabel(name, messages: items) }
-                    }
-                }
-            } header: {
-                selectionHeader(String(localized: "Request Snapshots and Continuation Data"),
-                    ids: Set(contextGroups.keys.map { Selection.context($0) }))
             }
         }.navigationTitle("Model Data").modifier(DataBrowserSearch(text: $search))
         .task { if model.catalog == nil { model.loadCatalog(environment: environment, commitEdits: commitEdits) } }
         .modifier(DataSelectionControls(isSelecting: $selecting, selection: $selected, ids: selectableIDs) {
             DataDestructiveButton("Delete Selected", progressMessage: model.progressMessage(for: .deleteModelData)) {
                 guard let revision = model.catalog?.revision else { return }
-                let selectedPreferences = preferences.filter { selected.contains(.preference($0.id)) }
-                let messageIDs = Set(contextGroups.filter { selected.contains(.context($0.key)) }.values.flatMap { $0.map(\.id) })
-                var descriptions: [String] = []
-                if !selectedPreferences.isEmpty { descriptions.append(String(localized: "The selected model settings will be deleted.")) }
-                if !messageIDs.isEmpty { descriptions.append(String(localized: "Request snapshots and continuation data will be deleted for the selected models across all servers.")) }
-                guard !descriptions.isEmpty else { return }
-                batchRequest = DataMaintenanceRequest(mutation: .deleteModelData(preferences: selectedPreferences, contextMessageIDs: messageIDs),
-                    revision: revision, title: String(localized: "Delete Selected"), detail: descriptions.joined(separator: "\n"))
+                let selectedPreferences = preferences.filter { selected.contains($0.id) }
+                guard !selectedPreferences.isEmpty else { return }
+                batchRequest = DataMaintenanceRequest(mutation: .deleteModelData(preferences: selectedPreferences),
+                    revision: revision, title: String(localized: "Delete Selected"), detail: String(localized: "The selected model settings will be deleted."))
             }.disabled(selected.isEmpty)
         })
         .modifier(DataMaintenanceControls(model: model, request: $batchRequest, commitEdits: commitEdits, onCompletion: { selected.removeAll() }))
     }
 
-    private func toggleSelection(_ id: Selection) {
+    private func toggleSelection(_ id: String) {
         if !selected.insert(id).inserted { selected.remove(id) }
     }
 
-    private func selectionHeader(_ title: String, ids: Set<Selection>) -> some View {
+    private func selectionHeader(_ title: String, ids: Set<String>) -> some View {
         HStack {
             Text(title)
             Spacer()
@@ -667,14 +606,6 @@ struct DataModelBrowser: View {
             Text(item.key).lineLimit(2)
             Text(item.kind == .endpoint ? item.source + " · " + item.displayValue : item.displayValue)
                 .font(.caption).foregroundStyle(.secondary)
-        }
-    }
-
-    private func contextLabel(_ name: String, messages: [DataStorageMessage]) -> some View {
-        HStack {
-            Text(name)
-            Spacer()
-            Text(storageSize(messages.reduce(0) { $0 + $1.contextBytes })).foregroundStyle(.secondary)
         }
     }
 }
@@ -1004,7 +935,9 @@ private struct DataChatPreviewView: View {
                                 HStack {
                                     Text(message.isUser ? LocalizedStringKey("You") : LocalizedStringKey("Assistant")).font(.headline)
                                     Spacer()
-                                    Text(message.date, format: .dateTime).font(.caption).foregroundStyle(.secondary)
+                                    if let date = message.date {
+                                        Text(date, format: .dateTime).font(.caption).foregroundStyle(.secondary)
+                                    }
                                 }
                                 if let reasoning = message.reasoning {
                                     DisclosureGroup("Thinking") { RichMarkdownView(markdown: reasoning) }

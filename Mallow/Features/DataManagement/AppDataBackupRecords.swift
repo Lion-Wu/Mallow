@@ -43,37 +43,34 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
     var activeChildMessageID: UUID?
     var importSourceMessageID: UUID?
     var content: String
-    var requestContentSnapshot: String?
     var assistantSegmentsData: Data?
     var openAIResponsesConversationItemsData: Data?
     var imageAttachmentsData: Data?
     var isUser: Bool
     var isActive: Bool
-    var createdAt: Date
+    var createdAt: Date?
     var modelIdentifier: String?
     var apiBaseURL: String?
     var thinkingOptionRawValue: String?
     var requestID: UUID?
     var providerResponseID: String?
-    var providerResponseIDsData: Data?
     var requestContextFingerprint: String?
     var requestUsedPreviousResponseID: Bool?
     var requestPreviousResponseID: String?
     var streamStartedAt: Date?
     var streamFirstTokenAt: Date?
+    var streamFirstTokenAtSource: String?
     var streamCompletedAt: Date?
     var timeToFirstToken: TimeInterval?
-    var streamDuration: TimeInterval?
-    var generationDuration: TimeInterval?
     var outputTokenCount: Int?
     var reasoningOutputTokenCount: Int?
     var tokensPerSecond: Double?
-    var tokenCount: Int
+    var tokenCount: Int?
+    var generationRounds: [ChatGenerationRound]
     var tokenCountSource: String?
     var timeToFirstTokenSource: String?
     var tokensPerSecondSource: String?
     var finishReasonSource: String?
-    var characterCount: Int
     var promptMessageCount: Int?
     var promptCharacterCount: Int?
     var finishReason: String?
@@ -88,7 +85,6 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
         activeChildMessageID = model.activeChildMessageID
         importSourceMessageID = model.importSourceMessageID
         content = model.content
-        requestContentSnapshot = model.requestContentSnapshot
         assistantSegmentsData = model.assistantSegmentsData
         openAIResponsesConversationItemsData = model.openAIResponsesConversationItemsData
         imageAttachmentsData = model.imageAttachmentsData
@@ -100,25 +96,23 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
         thinkingOptionRawValue = model.thinkingOptionRawValue
         requestID = model.requestID
         providerResponseID = model.providerResponseID
-        providerResponseIDsData = model.providerResponseIDsData
         requestContextFingerprint = model.requestContextFingerprint
         requestUsedPreviousResponseID = model.requestUsedPreviousResponseID
         requestPreviousResponseID = model.requestPreviousResponseID
         streamStartedAt = model.streamStartedAt
         streamFirstTokenAt = model.streamFirstTokenAt
+        streamFirstTokenAtSource = model.streamFirstTokenAtSource
         streamCompletedAt = model.streamCompletedAt
         timeToFirstToken = model.timeToFirstToken
-        streamDuration = model.streamDuration
-        generationDuration = model.generationDuration
         outputTokenCount = model.outputTokenCount
         reasoningOutputTokenCount = model.reasoningOutputTokenCount
         tokensPerSecond = model.tokensPerSecond
+        generationRounds = model.generationRounds
         tokenCount = model.tokenCount
         tokenCountSource = model.tokenCountSource
         timeToFirstTokenSource = model.timeToFirstTokenSource
         tokensPerSecondSource = model.tokensPerSecondSource
         finishReasonSource = model.finishReasonSource
-        characterCount = model.characterCount
         promptMessageCount = model.promptMessageCount
         promptCharacterCount = model.promptCharacterCount
         finishReason = model.finishReason
@@ -134,7 +128,7 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
         model.activeChildMessageID = activeChildMessageID
         model.importSourceMessageID = importSourceMessageID
         model.content = content
-        model.requestContentSnapshot = requestContentSnapshot
+
         model.assistantSegmentsData = assistantSegmentsData
         model.openAIResponsesConversationItemsData = openAIResponsesConversationItemsData
         model.imageAttachmentsData = imageAttachmentsData
@@ -146,25 +140,23 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
         model.thinkingOptionRawValue = thinkingOptionRawValue
         model.requestID = requestID
         model.providerResponseID = providerResponseID
-        model.providerResponseIDsData = providerResponseIDsData
         model.requestContextFingerprint = requestContextFingerprint
         model.requestUsedPreviousResponseID = requestUsedPreviousResponseID
         model.requestPreviousResponseID = requestPreviousResponseID
         model.streamStartedAt = streamStartedAt
         model.streamFirstTokenAt = streamFirstTokenAt
+        model.streamFirstTokenAtSource = streamFirstTokenAtSource
         model.streamCompletedAt = streamCompletedAt
         model.timeToFirstToken = timeToFirstToken
-        model.streamDuration = streamDuration
-        model.generationDuration = generationDuration
         model.outputTokenCount = outputTokenCount
         model.reasoningOutputTokenCount = reasoningOutputTokenCount
         model.tokensPerSecond = tokensPerSecond
-        model.tokenCount = tokenCount
+        model.generationRounds = generationRounds
         model.tokenCountSource = tokenCountSource
         model.timeToFirstTokenSource = timeToFirstTokenSource
         model.tokensPerSecondSource = tokensPerSecondSource
         model.finishReasonSource = finishReasonSource
-        model.characterCount = characterCount
+
         model.promptMessageCount = promptMessageCount
         model.promptCharacterCount = promptCharacterCount
         model.finishReason = finishReason
@@ -176,7 +168,8 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
 
     func supplementing(_ existing: Self) -> Self {
         var result = self
-        result.requestContentSnapshot = requestContentSnapshot ?? existing.requestContentSnapshot
+        result.createdAt = createdAt ?? existing.createdAt
+        if generationRounds.isEmpty { result.generationRounds = existing.generationRounds }
         result.assistantSegmentsData = assistantSegmentsData ?? existing.assistantSegmentsData
         result.openAIResponsesConversationItemsData = openAIResponsesConversationItemsData ?? existing.openAIResponsesConversationItemsData
         result.imageAttachmentsData = imageAttachmentsData ?? existing.imageAttachmentsData
@@ -185,16 +178,14 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
         result.thinkingOptionRawValue = thinkingOptionRawValue ?? existing.thinkingOptionRawValue
         result.requestID = requestID ?? existing.requestID
         result.providerResponseID = providerResponseID ?? existing.providerResponseID
-        result.providerResponseIDsData = providerResponseIDsData ?? existing.providerResponseIDsData
         result.requestContextFingerprint = requestContextFingerprint ?? existing.requestContextFingerprint
         result.requestUsedPreviousResponseID = requestUsedPreviousResponseID ?? existing.requestUsedPreviousResponseID
         result.requestPreviousResponseID = requestPreviousResponseID ?? existing.requestPreviousResponseID
         result.streamStartedAt = streamStartedAt ?? existing.streamStartedAt
         result.streamFirstTokenAt = streamFirstTokenAt ?? existing.streamFirstTokenAt
+        result.streamFirstTokenAtSource = streamFirstTokenAtSource ?? existing.streamFirstTokenAtSource
         result.streamCompletedAt = streamCompletedAt ?? existing.streamCompletedAt
         result.timeToFirstToken = timeToFirstToken ?? existing.timeToFirstToken
-        result.streamDuration = streamDuration ?? existing.streamDuration
-        result.generationDuration = generationDuration ?? existing.generationDuration
         result.outputTokenCount = outputTokenCount ?? existing.outputTokenCount
         result.reasoningOutputTokenCount = reasoningOutputTokenCount ?? existing.reasoningOutputTokenCount
         result.tokensPerSecond = tokensPerSecond ?? existing.tokensPerSecond
@@ -232,6 +223,7 @@ nonisolated struct AppSettingsBackup: Equatable, Sendable {
     var selectedNormalSystemPromptPresetID: UUID?
     var selectedVoiceSystemPromptPresetID: UUID?
     var modelThinkingPreferencesJSON: String?
+    var modelThinkingOptionsJSON: String?
     var detectedAPIFormatsJSON: String?
     var modelImageInputOverrideJSON: String?
     var apiAdvancedSettingsJSON: String?
@@ -258,6 +250,7 @@ nonisolated struct AppSettingsBackup: Equatable, Sendable {
         selectedNormalSystemPromptPresetID = model.selectedNormalSystemPromptPresetID
         selectedVoiceSystemPromptPresetID = model.selectedVoiceSystemPromptPresetID
         modelThinkingPreferencesJSON = model.modelThinkingPreferencesJSON
+        modelThinkingOptionsJSON = model.modelThinkingOptionsJSON
         detectedAPIFormatsJSON = model.detectedAPIFormatsJSON
         modelImageInputOverrideJSON = model.modelImageInputOverrideJSON
         apiAdvancedSettingsJSON = model.apiAdvancedSettingsJSON
@@ -286,6 +279,7 @@ nonisolated struct AppSettingsBackup: Equatable, Sendable {
         model.selectedNormalSystemPromptPresetID = selectedNormalSystemPromptPresetID
         model.selectedVoiceSystemPromptPresetID = selectedVoiceSystemPromptPresetID
         model.modelThinkingPreferencesJSON = modelThinkingPreferencesJSON
+        model.modelThinkingOptionsJSON = modelThinkingOptionsJSON
         model.detectedAPIFormatsJSON = detectedAPIFormatsJSON
         model.modelImageInputOverrideJSON = modelImageInputOverrideJSON
         model.apiAdvancedSettingsJSON = apiAdvancedSettingsJSON
@@ -418,84 +412,6 @@ nonisolated struct SystemPromptPresetBackup: Equatable, Sendable {
         model.voicePrompt = voicePrompt
         model.createdAt = createdAt
         model.updatedAt = updatedAt
-        return model
-    }
-}
-
-nonisolated struct ChatRequestContextMetadataBackup: Equatable, Sendable {
-    var fingerprint: String
-    var version: Int
-    var createdAt: Date
-    var lastSeenAt: Date
-    var referenceCount: Int
-    var modelIdentifier: String
-    var endpointURLHash: String
-    var providerRawValue: String
-    var requestStyleRawValue: String
-    var developerPromptHash: String
-    var developerPromptCharacterCount: Int
-    var thinkingOptionRawValue: String?
-    var toolUseEnabled: Bool
-    var enabledToolIDsJSON: String
-    var toolSchemaDigest: String
-    var toolSchemaSummaryJSON: String
-    var toolAuthorizationModeRawValue: String
-    var allowHighRiskToolAutoExecution: Bool?
-    var useProviderContinuationIDs: Bool?
-
-    init(_ model: ChatRequestContextMetadata) {
-        fingerprint = model.fingerprint
-        version = model.version
-        createdAt = model.createdAt
-        lastSeenAt = model.lastSeenAt
-        referenceCount = model.referenceCount
-        modelIdentifier = model.modelIdentifier
-        endpointURLHash = model.endpointURLHash
-        providerRawValue = model.providerRawValue
-        requestStyleRawValue = model.requestStyleRawValue
-        developerPromptHash = model.developerPromptHash
-        developerPromptCharacterCount = model.developerPromptCharacterCount
-        thinkingOptionRawValue = model.thinkingOptionRawValue
-        toolUseEnabled = model.toolUseEnabled
-        enabledToolIDsJSON = model.enabledToolIDsJSON
-        toolSchemaDigest = model.toolSchemaDigest
-        toolSchemaSummaryJSON = model.toolSchemaSummaryJSON
-        toolAuthorizationModeRawValue = model.toolAuthorizationModeRawValue
-        allowHighRiskToolAutoExecution = model.allowHighRiskToolAutoExecution
-        useProviderContinuationIDs = model.useProviderContinuationIDs
-    }
-
-    func makeModel() -> ChatRequestContextMetadata {
-        let model = ChatRequestContextMetadata(snapshot: ChatRequestContextSnapshot(
-            fingerprint: fingerprint, version: version, modelIdentifier: modelIdentifier,
-            endpointURLHash: endpointURLHash, providerRawValue: providerRawValue,
-            requestStyleRawValue: requestStyleRawValue, developerPromptHash: developerPromptHash,
-            developerPromptCharacterCount: developerPromptCharacterCount, thinkingOptionRawValue: thinkingOptionRawValue,
-            toolUseEnabled: toolUseEnabled, enabledToolIDsJSON: enabledToolIDsJSON,
-            toolSchemaDigest: toolSchemaDigest, toolSchemaSummaryJSON: toolSchemaSummaryJSON,
-            toolAuthorizationModeRawValue: toolAuthorizationModeRawValue,
-            allowHighRiskToolAutoExecution: allowHighRiskToolAutoExecution ?? false,
-            useProviderContinuationIDs: useProviderContinuationIDs ?? false
-        ))
-        model.fingerprint = fingerprint
-        model.version = version
-        model.createdAt = createdAt
-        model.lastSeenAt = lastSeenAt
-        model.referenceCount = referenceCount
-        model.modelIdentifier = modelIdentifier
-        model.endpointURLHash = endpointURLHash
-        model.providerRawValue = providerRawValue
-        model.requestStyleRawValue = requestStyleRawValue
-        model.developerPromptHash = developerPromptHash
-        model.developerPromptCharacterCount = developerPromptCharacterCount
-        model.thinkingOptionRawValue = thinkingOptionRawValue
-        model.toolUseEnabled = toolUseEnabled
-        model.enabledToolIDsJSON = enabledToolIDsJSON
-        model.toolSchemaDigest = toolSchemaDigest
-        model.toolSchemaSummaryJSON = toolSchemaSummaryJSON
-        model.toolAuthorizationModeRawValue = toolAuthorizationModeRawValue
-        model.allowHighRiskToolAutoExecution = allowHighRiskToolAutoExecution
-        model.useProviderContinuationIDs = useProviderContinuationIDs
         return model
     }
 }

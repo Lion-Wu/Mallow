@@ -92,8 +92,12 @@ struct MessageDetailsView: View {
 
                         if !message.isUser {
                             assistantGenerationSection
+                            if message.generationRounds.isEmpty {
+                                assistantTimingSection
+                            } else {
+                                generationRoundsSection
+                            }
                             toolTraceSection
-                            assistantTimingSection
                         }
                     }
                     .padding(.horizontal, 16)
@@ -122,7 +126,7 @@ struct MessageDetailsView: View {
     private var identitySection: some View {
         sectionBox("Identity", systemImage: "person.text.rectangle") {
             detailRow("Message ID", fieldKey: "id", source: .local) { valueCode(message.id.uuidString) }
-            detailRow("Created At", fieldKey: "createdAt", source: .local) { valueDate(message.createdAt) }
+            detailRow("Created At", fieldKey: "createdAt", source: message.createdAt == nil ? nil : .local) { valueDate(message.createdAt) }
             detailRow("Sender", fieldKey: "isUser", source: .local) { valueText(message.isUser ? String(localized: "User") : String(localized: "Assistant")) }
             detailRow("Active", fieldKey: "isActive", source: .local) { valueText(formatBool(message.isActive)) }
         }
@@ -191,39 +195,134 @@ struct MessageDetailsView: View {
     }
 
     @ViewBuilder
+    private var generationRoundsSection: some View {
+        sectionBox("Request Metadata", systemImage: "chart.xyaxis.line") {
+            ForEach(Array(message.generationRounds.enumerated()), id: \.element.id) { index, round in
+                DisclosureGroup {
+                    generationRoundDetails(round)
+                        .padding(.top, 8)
+                } label: {
+                    Text(String(format: String(localized: "Generation Round %d"), index + 1))
+                        .font(.headline)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func generationRoundDetails(_ round: ChatGenerationRound) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            detailRow("Model Identifier", fieldKey: "requestedModel", source: .local) { valueCode(round.requestedModel) }
+            if let model = round.providerModel {
+                detailRow("Provider Model", fieldKey: "model", source: .provider) { valueCode(model) }
+            }
+            detailRow("Request ID", fieldKey: "id", source: .local) { valueCode(round.id.uuidString) }
+            detailRow("Request URL", fieldKey: "requestURL", source: .local) { valueCode(round.requestURL) }
+            detailRow("Request Style", fieldKey: "requestStyle", source: .local) { valueCode(round.requestStyle.rawValue) }
+            detailRow("Requested Thinking Parameters", fieldKey: "requestedThinking", source: round.requestedThinking == nil ? nil : .local) {
+                if let thinking = round.requestedThinking {
+                    if thinking.isEmpty {
+                        valueText(String(localized: "Default"))
+                    } else {
+                        valueCode(JSONValue.object(thinking).compactJSONString)
+                    }
+                } else {
+                    valueText(nil)
+                }
+            }
+            if !round.reportedThinking.isEmpty {
+                detailRow("Reported Thinking Parameters", fieldKey: "providerFields", source: .provider) {
+                    valueCode(JSONValue.object(round.reportedThinking).compactJSONString)
+                }
+            }
+            if let previous = round.previousResponseID {
+                detailRow("Request Previous Response ID", fieldKey: "previousResponseID", source: .local) { valueCode(previous) }
+            }
+            detailRow("Provider Response ID", fieldKey: "providerResponseID", source: round.providerResponseID == nil ? nil : .provider) { valueCode(round.providerResponseID) }
+            detailRow("Finish Reason", fieldKey: "outcome", source: round.outcome == "completed" && round.finishReason != nil ? .provider : .local) { valueText(round.outcome == "completed" ? (round.finishReason ?? round.outcome) : round.outcome) }
+            detailRow("Output Token Count", fieldKey: "usage.output_tokens", source: round.outputTokens == nil ? nil : .provider) { valueText(formatInt(round.outputTokens)) }
+            if let input = round.inputTokens {
+                detailRow(round.requestStyle == .anthropicMessages ? "Uncached Input Tokens" : "Input Token Count", fieldKey: "usage.input_tokens", source: .provider) { valueText(formatInt(input)) }
+            }
+            if let reasoning = round.reasoningTokens {
+                detailRow("Reasoning Output Tokens", fieldKey: "usage.output_tokens_details", source: .provider) { valueText(formatInt(reasoning)) }
+            }
+            if let total = round.totalTokens {
+                detailRow("Total Token Count", fieldKey: "usage.total_tokens", source: .provider) { valueText(formatInt(total)) }
+            }
+            if let cached = round.cachedTokens {
+                detailRow("Cached Tokens", fieldKey: "usage.cached_tokens", source: .provider) { valueText(formatInt(cached)) }
+            }
+            if let written = round.cacheWriteTokens {
+                detailRow("Cache Write Tokens", fieldKey: "usage.cache_write_tokens", source: .provider) { valueText(formatInt(written)) }
+            }
+            if let cost = round.reportedCost {
+                detailRow("Reported Cost", fieldKey: "usage.cost", source: .provider) { valueText(formatDouble(cost, decimals: 8)) }
+            }
+            if let rate = round.providerTokensPerSecond {
+                detailRow("Tokens Per Second", fieldKey: "tokens_per_second", source: .provider) { valueText(formatDouble(rate, decimals: 3)) }
+            }
+            if let ttft = round.providerTimeToFirstToken {
+                detailRow("Time To First Token", fieldKey: "time_to_first_token_seconds", source: .provider) { valueText(formatInterval(ttft)) }
+            }
+            detailRow("Stream Started At", fieldKey: "startedAt", source: .local) { valueDate(round.startedAt) }
+            detailRow("First Output At", fieldKey: "firstOutputAt", source: round.firstOutputAt == nil ? nil : .local) { valueDate(round.firstOutputAt) }
+            detailRow("Stream Completed At", fieldKey: "endedAt", source: round.endedAt == nil ? nil : .local) { valueDate(round.endedAt) }
+            detailRow("Time To First Output", fieldKey: "localTimeToFirstOutput", source: round.firstOutputAt == nil ? nil : .local) { valueText(formatInterval(round.localTimeToFirstOutput)) }
+            detailRow("Response Duration", fieldKey: "localDuration", source: round.endedAt == nil ? nil : .local) { valueText(formatInterval(round.localDuration)) }
+            if let created = round.providerCreatedAt {
+                detailRow("Provider Created At", fieldKey: "created_at", source: .provider) { valueDate(created) }
+            }
+            if let completed = round.providerCompletedAt {
+                detailRow("Provider Completed At", fieldKey: "completed_at", source: .provider) { valueDate(completed) }
+            }
+            if !round.toolCallIDs.isEmpty {
+                detailRow("Tool Calls", fieldKey: "toolCallIDs", source: .provider) { valueCode(round.toolCallIDs.joined(separator: "\n")) }
+            }
+            if !round.providerFields.isEmpty {
+                DisclosureGroup("Returned Provider Data") {
+                    valueCode(JSONValue.object(round.providerFields).compactJSONString)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
     private var assistantGenerationSection: some View {
         sectionBox("Generation", systemImage: "chart.xyaxis.line") {
             detailRow("Model Identifier", fieldKey: "modelIdentifier", source: .local) { valueCode(message.modelIdentifier) }
             detailRow("API Base URL", fieldKey: "apiBaseURL", source: .local) { valueCode(message.apiBaseURL) }
             detailRow("Thinking Setting", fieldKey: "thinkingOptionRawValue", source: .local) { valueText(formatThinkingOption(message.thinkingOptionRawValue)) }
             detailRow("Request ID", fieldKey: "requestID", source: .local) { valueCode(formatUUID(message.requestID)) }
-            detailRow("Provider Response ID", fieldKey: "providerResponseID", source: .provider) { valueCode(message.providerResponseID) }
-            if !message.providerResponseIDs.isEmpty {
-                detailRow("Provider Response IDs", fieldKey: "providerResponseIDs", source: .provider) {
-                    valueCode(message.providerResponseIDs.enumerated().map { index, responseID in
-                        "\(index + 1). \(responseID)"
-                    }.joined(separator: "\n"))
-                }
-            }
             detailRow("Finish Reason", fieldKey: "finishReason", source: finishReasonSourceBadge) { valueText(message.finishReason) }
             detailRow("Error Description", fieldKey: "errorDescription", source: .local) { valueWrappedText(message.errorDescription) }
-            detailRow("Output Token Count", fieldKey: "tokenCount", source: tokenCountSourceBadge) { valueText(formatInt(resolvedTokenCount)) }
-            detailRow("Reasoning Output Tokens", fieldKey: "reasoningOutputTokenCount", source: reasoningTokenSourceBadge) { valueText(formatInt(message.reasoningOutputTokenCount)) }
-            detailRow("Tokens Per Second", fieldKey: "tokensPerSecond", source: tokensPerSecondSourceBadge) { valueText(formatDouble(message.tokensPerSecond, decimals: 3)) }
-            detailRow("Prompt Message Count", fieldKey: "promptMessageCount", source: .local) { valueText(formatInt(message.promptMessageCount)) }
-            detailRow("Prompt Character Count", fieldKey: "promptCharacterCount", source: .local) { valueText(formatInt(message.promptCharacterCount)) }
+            if message.generationRounds.isEmpty {
+                detailRow("Provider Response ID", fieldKey: "providerResponseID", source: message.providerResponseID == nil ? nil : .provider) { valueCode(message.providerResponseID) }
+                if !message.providerResponseIDs.isEmpty {
+                    detailRow("Provider Response IDs", fieldKey: "providerResponseIDs", source: .provider) {
+                        valueCode(message.providerResponseIDs.enumerated().map { index, responseID in
+                            "\(index + 1). \(responseID)"
+                        }.joined(separator: "\n"))
+                    }
+                }
+                detailRow("Output Token Count", fieldKey: "tokenCount", source: tokenCountSourceBadge) { valueText(formatInt(resolvedTokenCount)) }
+                detailRow("Reasoning Output Tokens", fieldKey: "reasoningOutputTokenCount", source: reasoningTokenSourceBadge) { valueText(formatInt(message.reasoningOutputTokenCount)) }
+                detailRow("Tokens Per Second", fieldKey: "tokensPerSecond", source: tokensPerSecondSourceBadge) { valueText(formatDouble(message.tokensPerSecondSource == "provider" ? message.tokensPerSecond : nil, decimals: 3)) }
+                detailRow("Prompt Message Count", fieldKey: "promptMessageCount", source: message.promptMessageCount == nil ? nil : .local) { valueText(formatInt(message.promptMessageCount)) }
+                detailRow("Prompt Character Count", fieldKey: "promptCharacterCount", source: message.promptCharacterCount == nil ? nil : .local) { valueText(formatInt(message.promptCharacterCount)) }
+            }
         }
     }
 
     @ViewBuilder
     private var assistantTimingSection: some View {
         sectionBox("Timing", systemImage: "clock") {
-            detailRow("Stream Started At", fieldKey: "streamStartedAt", source: .local) { valueDate(message.streamStartedAt) }
+            detailRow("Stream Started At", fieldKey: "streamStartedAt", source: message.streamStartedAt == nil ? nil : .local) { valueDate(message.streamStartedAt) }
             detailRow("First Token At", fieldKey: "streamFirstTokenAt", source: firstTokenAtSourceBadge) { valueDate(message.streamFirstTokenAt) }
-            detailRow("Stream Completed At", fieldKey: "streamCompletedAt", source: .local) { valueDate(message.streamCompletedAt) }
+            detailRow("Stream Completed At", fieldKey: "streamCompletedAt", source: message.streamCompletedAt == nil ? nil : .local) { valueDate(message.streamCompletedAt) }
             detailRow("Time To First Token", fieldKey: "timeToFirstToken", source: timeToFirstTokenSourceBadge) { valueText(formatInterval(message.timeToFirstToken)) }
-            detailRow("Stream Duration", fieldKey: "streamDuration", source: .local) { valueText(formatInterval(message.streamDuration)) }
-            detailRow("Generation Duration", fieldKey: "generationDuration", source: .local) { valueText(formatInterval(message.generationDuration)) }
+            detailRow("Stream Duration", fieldKey: "streamDuration", source: message.streamDuration == nil ? nil : .local) { valueText(formatInterval(message.streamDuration)) }
+            detailRow("Generation Duration", fieldKey: "generationDuration", source: message.generationDuration == nil ? nil : .local) { valueText(formatInterval(message.generationDuration)) }
         }
     }
 
@@ -396,13 +495,20 @@ struct MessageDetailsView: View {
     }
 
     private var sourceIndicatorsHeader: some View {
-        HStack(spacing: 18) {
-            sourceLegendRow(.provider)
-            sourceLegendRow(.local)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 18) { sourceLegend }
+            VStack(alignment: .leading, spacing: 8) { sourceLegend }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .appChromedContainer(cornerRadius: 10, shadowOpacity: 0.18)
+    }
+
+    private var sourceLegend: some View {
+        Group {
+            sourceLegendRow(.provider)
+            sourceLegendRow(.local)
+        }
     }
 
     private func metricSourceBadge(from raw: String?) -> MetricSourceBadge? {
@@ -410,64 +516,49 @@ struct MessageDetailsView: View {
         switch raw {
         case "provider":
             return .provider
-        case "local":
+        case "local", "estimated":
             return .local
         default:
             return nil
         }
     }
 
-    private var tokenCountSourceBadge: MetricSourceBadge {
-        if let explicit = metricSourceBadge(from: message.tokenCountSource) {
-            return explicit
-        }
-        if message.outputTokenCount != nil && message.tokenCount <= 0 {
-            return .provider
-        }
-        return .local
+    private var tokenCountSourceBadge: MetricSourceBadge? {
+        guard resolvedTokenCount != nil else { return nil }
+        if message.outputTokenCount != nil { return .provider }
+        return metricSourceBadge(from: message.tokenCountSource)
     }
 
-    private var resolvedTokenCount: Int? {
-        if message.tokenCount > 0 {
-            return message.tokenCount
-        }
-        return nil
-    }
+    private var resolvedTokenCount: Int? { message.tokenCount }
 
     private var resolvedCharacterCount: Int {
-        message.characterCount > 0 ? message.characterCount : message.content.count
+        message.characterCount
     }
 
-    private var timeToFirstTokenSourceBadge: MetricSourceBadge {
-        if let explicit = metricSourceBadge(from: message.timeToFirstTokenSource) {
-            return explicit
-        }
-        return .local
+    private var timeToFirstTokenSourceBadge: MetricSourceBadge? {
+        guard message.timeToFirstToken != nil else { return nil }
+        return metricSourceBadge(from: message.timeToFirstTokenSource)
     }
 
-    private var tokensPerSecondSourceBadge: MetricSourceBadge {
-        if let explicit = metricSourceBadge(from: message.tokensPerSecondSource) {
-            return explicit
-        }
-        return .local
+    private var tokensPerSecondSourceBadge: MetricSourceBadge? {
+        guard message.tokensPerSecond != nil, message.tokensPerSecondSource == "provider" else { return nil }
+        return metricSourceBadge(from: message.tokensPerSecondSource)
     }
 
-    private var finishReasonSourceBadge: MetricSourceBadge {
-        if let explicit = metricSourceBadge(from: message.finishReasonSource) {
-            return explicit
-        }
-        return .local
+    private var finishReasonSourceBadge: MetricSourceBadge? {
+        guard message.finishReason != nil else { return nil }
+        return metricSourceBadge(from: message.finishReasonSource)
     }
 
-    private var reasoningTokenSourceBadge: MetricSourceBadge {
-        .provider
+    private var reasoningTokenSourceBadge: MetricSourceBadge? {
+        message.reasoningOutputTokenCount == nil ? nil : .provider
     }
 
-    private var firstTokenAtSourceBadge: MetricSourceBadge {
-        if let explicit = metricSourceBadge(from: message.timeToFirstTokenSource),
-           explicit == .provider {
-            return .provider
-        }
+    private var firstTokenAtSourceBadge: MetricSourceBadge? {
+        guard message.streamFirstTokenAt != nil else { return nil }
+        if let explicit = metricSourceBadge(from: message.streamFirstTokenAtSource) { return explicit }
+        // Legacy timestamps were recorded locally or calculated from a provider duration;
+        // the provider did not supply the absolute timestamp itself.
         return .local
     }
 
@@ -685,7 +776,7 @@ struct MessageDetailsView: View {
 
     @MainActor
     private static func makeRequestContextRows(for message: ChatMessage) -> [MessageDetailsRequestContextRow] {
-        var rows: [MessageDetailsRequestContextRow] = [
+        let rows: [MessageDetailsRequestContextRow] = [
             .code("Fingerprint", fieldKey: "requestContextFingerprint", value: message.requestContextFingerprint),
             .text(
                 "Previous Response ID Used",
@@ -694,65 +785,6 @@ struct MessageDetailsView: View {
             ),
             .code("Request Previous Response ID", fieldKey: "requestPreviousResponseID", value: message.requestPreviousResponseID)
         ]
-
-        let metadata = ChatRequestContextMetadataStore.fetch(
-            fingerprint: message.requestContextFingerprint,
-            in: message.modelContext
-        )
-        if let metadata {
-            rows.append(.text("Version", fieldKey: "requestContext.version", value: "\(metadata.version)"))
-            rows.append(.code("Model", fieldKey: "requestContext.modelIdentifier", value: metadata.modelIdentifier))
-            rows.append(.text("Provider", fieldKey: "requestContext.providerRawValue", value: metadata.providerRawValue))
-            rows.append(.text("Request Style", fieldKey: "requestContext.requestStyleRawValue", value: metadata.requestStyleRawValue))
-            rows.append(.code("Endpoint URL Hash", fieldKey: "requestContext.endpointURLHash", value: metadata.endpointURLHash))
-            rows.append(.code("Developer Prompt Hash", fieldKey: "requestContext.developerPromptHash", value: metadata.developerPromptHash))
-            rows.append(.text(
-                "Developer Prompt Characters",
-                fieldKey: "requestContext.developerPromptCharacterCount",
-                value: "\(metadata.developerPromptCharacterCount)"
-            ))
-            rows.append(.text(
-                "Thinking Setting",
-                fieldKey: "requestContext.thinkingOptionRawValue",
-                value: Self.formatThinkingOptionValue(metadata.thinkingOptionRawValue)
-            ))
-            rows.append(.text(
-                "Tool Use Enabled",
-                fieldKey: "requestContext.toolUseEnabled",
-                value: Self.formatBoolValue(metadata.toolUseEnabled)
-            ))
-            rows.append(.code(
-                "Enabled Tools",
-                fieldKey: "requestContext.enabledToolIDs",
-                value: metadata.enabledToolIDs.joined(separator: "\n")
-            ))
-            rows.append(.code("Tool Schema Digest", fieldKey: "requestContext.toolSchemaDigest", value: metadata.toolSchemaDigest))
-            rows.append(.code(
-                "Tool Schema Metadata",
-                fieldKey: "requestContext.toolSchemaSummaryJSON",
-                value: metadata.toolSchemaSummaryJSON
-            ))
-            rows.append(.text(
-                "Authorization Mode",
-                fieldKey: "requestContext.toolAuthorizationModeRawValue",
-                value: metadata.toolAuthorizationModeRawValue
-            ))
-            rows.append(.text(
-                "Automatic High-Risk Tools",
-                fieldKey: "requestContext.allowHighRiskToolAutoExecution",
-                value: Self.formatOptionalBoolValue(metadata.allowHighRiskToolAutoExecution)
-            ))
-            rows.append(.text(
-                "Use Provider Continuation IDs",
-                fieldKey: "requestContext.useProviderContinuationIDs",
-                value: Self.formatOptionalBoolValue(metadata.useProviderContinuationIDs)
-            ))
-            rows.append(.text("Reference Count", fieldKey: "requestContext.referenceCount", value: "\(metadata.referenceCount)"))
-            rows.append(.date("Created At", fieldKey: "requestContext.createdAt", value: metadata.createdAt))
-            rows.append(.date("Last Seen At", fieldKey: "requestContext.lastSeenAt", value: metadata.lastSeenAt))
-        } else if !(message.requestContextFingerprint?.isEmpty ?? true) {
-            rows.append(.text("Metadata", fieldKey: "requestContext.metadata", value: String(localized: "Not Available")))
-        }
 
         return rows
     }
@@ -830,10 +862,7 @@ private enum MessageDetailsChrome {
             streamFirstTokenAt: now.addingTimeInterval(-11),
             streamCompletedAt: now.addingTimeInterval(-10),
             timeToFirstToken: 1.0,
-            streamDuration: 2.0,
-            generationDuration: 1.0,
             tokenCount: 42,
-            characterCount: 128,
             promptMessageCount: 6,
             promptCharacterCount: 512,
             finishReason: "stop",
@@ -845,5 +874,5 @@ private enum MessageDetailsChrome {
     }()
 
     MessageDetailsView(message: message)
-        .modelContainer(for: [ChatSession.self, ChatMessage.self, ChatRequestContextMetadata.self, AppSettings.self], inMemory: true)
+        .modelContainer(for: [ChatSession.self, ChatMessage.self, AppSettings.self], inMemory: true)
 }

@@ -63,7 +63,21 @@ final class AppEnvironment: ObservableObject {
         self.chatSessionsViewModel = chatSessionsViewModel ?? ChatSessionsViewModel(
             settingsManager: self.settingsManager,
             reachability: self.reachabilityMonitor,
-            audioManager: self.audioManager
+            audioManager: self.audioManager,
+            repository: SwiftDataChatSessionRepository(onSaveError: { [errorCenter = self.errorCenter] error in
+                guard let error else {
+                    errorCenter.clear(category: .dataSaving)
+                    return
+                }
+                errorCenter.publishCritical(
+                    title: String(localized: "Data Saving Issue"),
+                    message: String(format: NSLocalizedString(
+                        "Your latest chat changes could not be saved. They may be lost if you close the app.\n%@",
+                        comment: "Chat save failure notice followed by the underlying error"
+                    ), error.localizedDescription),
+                    category: .dataSaving
+                )
+            })
         )
         AppHaptics.configure(
             feedbackPolicy: SettingsHapticFeedbackPolicy(settingsManager: self.settingsManager)
@@ -190,7 +204,7 @@ final class AppEnvironment: ObservableObject {
         let context: ModelContext
         switch mutation {
         case .deletePreference: context = settingsContext
-        case .deleteModelData(_, let messageIDs) where messageIDs.isEmpty: context = settingsContext
+        case .deleteModelData: context = settingsContext
         default: context = sessionsContext
         }
         let autosaveEnabled = context.autosaveEnabled
@@ -222,7 +236,7 @@ final class AppEnvironment: ObservableObject {
         case .deletePreference:
             // Preference-only writes do not modify chat records.
             break
-        case .deleteModelData(_, let messageIDs) where messageIDs.isEmpty:
+        case .deleteModelData:
             break
         default:
             guard chatSessionsViewModel.didApplyDataManagementChanges(deletedIDs: mutation.deletedChatIDs) else {

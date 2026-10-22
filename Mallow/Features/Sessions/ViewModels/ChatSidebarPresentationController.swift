@@ -27,6 +27,7 @@ struct ChatSidebarPresentationController {
     private struct CacheEntry {
         let title: String
         let lastMessageAt: Date?
+        let lastMessageID: UUID?
         let sidebarPreviewText: String
         let subtitle: String
         let searchCorpus: String?
@@ -122,12 +123,13 @@ struct ChatSidebarPresentationController {
         if let cached = cache[session.id],
            cached.title == session.title,
            cached.sidebarPreviewText == session.sidebarPreviewText,
-           cached.lastMessageAt == session.lastMessageAt {
+           cached.lastMessageAt == session.lastMessageAt,
+           cached.lastMessageID == session.lastMessageID {
             return cached
         }
 
         let subtitle: String
-        if session.lastMessageAt == nil {
+        if session.lastMessageID == nil && session.lastMessageAt == nil {
             subtitle = String(localized: "Fresh conversation")
         } else if session.sidebarPreviewText.isEmpty {
             subtitle = String(localized: "No recent replies")
@@ -138,6 +140,7 @@ struct ChatSidebarPresentationController {
         let entry = CacheEntry(
             title: session.title,
             lastMessageAt: session.lastMessageAt,
+            lastMessageID: session.lastMessageID,
             sidebarPreviewText: session.sidebarPreviewText,
             subtitle: subtitle,
             searchCorpus: nil
@@ -160,6 +163,7 @@ struct ChatSidebarPresentationController {
         let updatedEntry = CacheEntry(
             title: presentation.title,
             lastMessageAt: presentation.lastMessageAt,
+            lastMessageID: presentation.lastMessageID,
             sidebarPreviewText: presentation.sidebarPreviewText,
             subtitle: presentation.subtitle,
             searchCorpus: searchCorpus

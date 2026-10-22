@@ -24,6 +24,8 @@ final class SettingsManager: ObservableObject {
     @Published var modelSettings: ModelSettings
     @Published var chatSettings: ChatSettings
     @Published var chatModelCapabilityStore: ChatModelCapabilityStore
+    @Published var readyChatModelCatalog: ChatModelCatalogReadiness?
+    @Published var chatModelCatalogState: SettingsModelCatalogState = .empty
     @Published var voiceSettings: VoiceSettings
     @Published var developerModeEnabled: Bool
     @Published var hapticFeedbackEnabled: Bool
@@ -58,13 +60,10 @@ final class SettingsManager: ObservableObject {
     var pendingAPIAdvancedSettings: APIAdvancedSettings?
     var pendingToolUseSettings: ToolUseSettings?
     let chatAPIKeyStore = ChatAPIKeyStore()
-    let chatModelCatalogRefreshCoordinator = ChatModelCatalogRefreshCoordinator()
+    let modelCatalogController = SettingsModelCatalogController(noticePublisher: AppErrorCenter.shared)
     let presetApplyController = SettingsPresetApplyController()
     var onPersistentStoreReadFailure: ((Error) -> Void)?
     var isCoalescingPersistenceWrites = false
-
-    // Used to gate one-time work performed at launch.
-    var didPrefetchChatModelsOnLaunch = false
 
     private init() {
         // Initialise with defaults until `attach(context:)` loads persisted data.

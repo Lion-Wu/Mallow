@@ -11,6 +11,7 @@ struct ChatComposerTrailingButton: View {
     let isLoading: Bool
     let isPriming: Bool
     let canSendDraft: Bool
+    let isModelReady: Bool
     let buttonHeight: CGFloat
     let trackHeight: CGFloat
     let onQueueDraft: () -> Void
@@ -21,7 +22,7 @@ struct ChatComposerTrailingButton: View {
     var body: some View {
         Group {
             if isLoading || isPriming {
-                if canSendDraft {
+                if canSendDraft && isModelReady {
                     sendButton(action: onQueueDraft)
                 } else {
                     stopButton
@@ -41,10 +42,12 @@ struct ChatComposerTrailingButton: View {
             Image(systemName: "arrow.up.circle.fill")
                 .font(.system(size: 28, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(ChatTheme.accent)
+                .foregroundStyle(isModelReady ? ChatTheme.accent : Color.secondary)
                 .accessibilityLabel("Send Message")
         }
         .buttonStyle(.plain)
+        .disabled(!isModelReady)
+        .help(isModelReady ? "" : ChatNetworkError.modelInformationUnavailable.localizedDescription)
     }
 
     private var stopButton: some View {
@@ -63,9 +66,11 @@ struct ChatComposerTrailingButton: View {
             Image(systemName: "waveform.circle.fill")
                 .font(.system(size: 28, weight: .semibold))
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(ChatTheme.accent)
+                .foregroundStyle(isModelReady ? ChatTheme.accent : Color.secondary)
                 .accessibilityLabel("Start Realtime Voice Conversation")
         }
         .buttonStyle(.plain)
+        .disabled(!isModelReady)
+        .help(isModelReady ? "" : ChatNetworkError.modelInformationUnavailable.localizedDescription)
     }
 }

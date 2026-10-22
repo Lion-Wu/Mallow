@@ -55,6 +55,7 @@ extension ChatService {
         guard activeStreamRequest != nil || activeToolLoopContext != nil else { return false }
         isCancelled = true
         beginNewStreamCallbackEpoch()
+        finishGenerationRound(outcome: "error")
         activeStreamRequest?.task.cancel()
         activeStreamRequest = nil
         cancelActiveToolExecution()

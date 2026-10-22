@@ -39,6 +39,7 @@ final class AppSettings {
     var selectedNormalSystemPromptPresetID: UUID?
     var selectedVoiceSystemPromptPresetID: UUID?
     var modelThinkingPreferencesJSON: String?
+    var modelThinkingOptionsJSON: String?
     var detectedAPIFormatsJSON: String?
     var modelImageInputOverrideJSON: String?
     var apiAdvancedSettingsJSON: String?
@@ -61,6 +62,7 @@ final class AppSettings {
         selectedNormalSystemPromptPresetID: UUID? = nil,
         selectedVoiceSystemPromptPresetID: UUID? = nil,
         modelThinkingPreferencesJSON: String? = nil,
+        modelThinkingOptionsJSON: String? = nil,
         detectedAPIFormatsJSON: String? = nil,
         modelImageInputOverrideJSON: String? = nil,
         apiAdvancedSettingsJSON: String? = APIAdvancedSettingsCodec.encode(SettingsDefaults.apiAdvancedSettings),
@@ -89,6 +91,7 @@ final class AppSettings {
         self.selectedNormalSystemPromptPresetID = selectedNormalSystemPromptPresetID
         self.selectedVoiceSystemPromptPresetID = selectedVoiceSystemPromptPresetID
         self.modelThinkingPreferencesJSON = modelThinkingPreferencesJSON
+        self.modelThinkingOptionsJSON = modelThinkingOptionsJSON
         self.detectedAPIFormatsJSON = detectedAPIFormatsJSON
         self.modelImageInputOverrideJSON = modelImageInputOverrideJSON
         self.apiAdvancedSettingsJSON = apiAdvancedSettingsJSON

@@ -141,8 +141,6 @@
 "Detected API Format: %@" = "検出された API 形式: %@";
 "Developer Defaults" = "開発者向け初期設定";
 "Developer Mode" = "開発者モード";
-"Developer Prompt Characters" = "開発者プロンプトの文字数";
-"Developer Prompt Hash" = "開発者プロンプトのハッシュ";
 "Device Context" = "デバイス情報";
 "Device context was read." = "デバイス情報を取得しました。";
 "Device motion is not available on this platform." = "このプラットフォームではデバイスのモーションデータを利用できません。";
@@ -170,7 +168,6 @@
 "Enabled Endpoints" = "有効なエンドポイント";
 "Enabled Tools" = "有効なツール";
 "Enables Stateful Chat for conversations that support it." = "対応している会話で Stateful Chat を有効にします。";
-"Endpoint URL Hash" = "エンドポイント URL のハッシュ";
 "English" = "英語";
 "Enter API key" = "API キーを入力";
 "Enter preset name" = "プリセット名を入力";
@@ -179,10 +176,6 @@
 "Event" = "イベント";
 "Event end must be after start." = "イベントの終了日時は開始日時より後である必要があります。";
 "Exit" = "終了";
-"Extended thinking high budget_tokens" = "拡張思考の高 budget_tokens";
-"Extended thinking low budget_tokens" = "拡張思考の低 budget_tokens";
-"Extended thinking medium budget_tokens" = "拡張思考の中 budget_tokens";
-"Extended thinking response reserve tokens" = "拡張思考の応答予約トークン";
 "Extra High" = "非常に高い";
 "Failed" = "失敗";
 "Failed to start audio playback: %@" = "音声再生を開始できませんでした: %@";
@@ -222,7 +215,6 @@
 "JavaScript, %d characters" = "JavaScript、%d文字";
 "JSON mode" = "JSON モード";
 "Keywords: %@" = "キーワード：%@";
-"Last Seen At" = "最終使用日時";
 "List" = "リスト";
 "Listening" = "聞き取り中";
 "Listing Calendar Events" = "カレンダーイベントを取得中";
@@ -271,6 +263,7 @@
 "No device motion sample was received." = "デバイスのモーションサンプルを取得できませんでした。";
 "No endpoint URLs are enabled." = "有効なエンドポイント URL はありません。";
 "No internet connection for TTS requests." = "TTSリクエストに必要なインターネット接続がありません。";
+"Models have not been loaded. You cannot send messages until models are available. Check the server connection and refresh the model list in Settings." = "モデルを取得できていないため、メッセージを送信できません。サーバー接続を確認し、設定でモデル一覧を更新してください。";
 "No models returned from %@" = "%@ からモデルが返されませんでした";
 "No parameters" = "パラメータなし";
 "No recent replies" = "最近の返信はありません";
@@ -342,7 +335,6 @@
 "Received audio data could not be played." = "受信した音声データを再生できませんでした。";
 "Recorded Locally" = "ローカル計測値";
 "Reference Audio Path" = "参照音声パス";
-"Reference Count" = "参照数";
 "Reference Language" = "参照テキストの言語";
 "Reference Text" = "参照テキスト";
 "Reference text (optional)" = "参考テキスト（任意）";
@@ -436,6 +428,7 @@
 "Take Photo" = "写真を撮る";
 "Tap to reconnect" = "タップして再接続";
 "Text Generation Issue" = "テキスト生成の問題";
+"Unable to Send Messages" = "メッセージを送信できません";
 "Text Language" = "テキスト言語";
 "text must contain at most 10000 characters." = "text は10000文字以内である必要があります。";
 "Text server unreachable" = "テキストサーバーに接続できません";
@@ -461,7 +454,7 @@
 "This message contains only images. Edit it before retrying with this model." = "このメッセージには画像しか含まれていません。このモデルで再試行する前に編集してください。";
 "This message contains only images. Edit it or delete it." = "このメッセージには画像しか含まれていません。編集するか削除してください。";
 "This message will be deleted." = "このメッセージは削除されます。";
-"This model's metadata does not clearly report image-input capability. Turn this on only if you are sure the backend can accept image content for this model." = "このモデルのメタデータでは画像入力対応が明確ではありません。バックエンドがこのモデルの画像入力を受け付けると確信できる場合のみ有効にしてください。";
+"Unable to confirm whether this model supports image input. Enable it if supported." = "このモデルが画像入力に対応しているか確認できません。対応している場合は有効にしてください。";
 "This tool is disabled for the current endpoint." = "現在のエンドポイントではこのツールは無効です。";
 "This will allow location, clipboard, URL, and JavaScript Runtime tools to run automatically when permitted by the authorization mode. This may increase the risk of privacy exposure." = "認証方式で許可されている場合、位置情報、クリップボード、URL 操作、JavaScript ランタイムツールの自動実行が許可されます。プライバシー漏えいのリスクが高まる可能性があります。";
 "This will reset all developer options to their default values." = "すべての開発者向けオプションをデフォルト値に戻します。";
@@ -483,12 +476,9 @@
 "Tool call was denied by the user." = "ユーザーがツール呼び出しを拒否しました。";
 "Tool Calls" = "ツール呼び出し";
 "Tool Name" = "ツール名";
-"Tool Schema Digest" = "ツールスキーマのダイジェスト";
-"Tool Schema Metadata" = "ツールスキーマのメタデータ";
 "Tool Trace" = "ツール呼び出し履歴";
 "Tool Use" = "ツール使用";
 "Tool Use Details" = "ツール使用の詳細";
-"Tool Use Enabled" = "ツール使用を有効化";
 "Tool use is disabled." = "ツール使用は無効です。";
 "Traditional Chinese" = "繁体字中国語";
 "Try a different search." = "別の検索語を試してください。";
@@ -524,7 +514,6 @@
 "URL Actions" = "URL 操作";
 "URL scheme is not allowed." = "この URL スキームは許可されていません。";
 "URL was opened." = "URL を開きました。";
-"Use Provider Continuation IDs" = "プロバイダーの継続 ID を使用";
 "Used for chat mode" = "チャットモードで使用";
 "Used for voice mode" = "音声モードで使用";
 "Used Tools" = "使用したツール";
@@ -605,7 +594,6 @@
 "Voice Server Presets" = "音声サーバープリセット";
 "Voice Presets" = "音声プリセット";
 "System Prompt Presets" = "システムプロンプトプリセット";
-"Request Metadata" = "リクエストのメタデータ";
 "Unrecoverable Items" = "復元できない項目";
 // Data reset confirmation
 "Reset Data?" = "データをリセットしますか？";
@@ -660,7 +648,6 @@
 "This message will be added:" = "次のメッセージを追加します：";
 "Server Address" = "サーバーアドレス";
 "Message Date" = "メッセージ日時";
-"Request Content" = "リクエスト内容";
 "Response Content" = "応答内容";
 "Conversation Context" = "会話のコンテキスト";
 "Tool Activity" = "ツールの実行記録";
@@ -694,7 +681,6 @@
 "Largest First" = "サイズの大きい順";
 "Message" = "メッセージ";
 "Missing Chat Ownership" = "所属チャットがありません";
-"Missing Request Metadata" = "リクエスト情報がありません";
 "Missing or Duplicate Identity" = "識別子が欠落または重複";
 "Model Data" = "モデルデータ";
 "Name" = "名前";
@@ -707,7 +693,6 @@
 "Stored Content" = "保存された内容";
 "Issues Found" = "問題が見つかりました";
 "New Branch" = "新しい分岐";
-"Applies to this model across all servers." = "すべてのサーバーのこのモデルに適用されます。";
 "Selected chats and all their branches and attachments will be removed." = "選択したチャットとすべての分岐、添付ファイルを削除します。";
 "The database structure check failed. Export the original data before attempting recovery." = "データベース構造の確認に失敗しました。復元を試す前に元のデータを書き出してください。";
 "Selected image attachments will be removed from this message." = "選択した画像の添付ファイルをこのメッセージから削除します。";
@@ -716,9 +701,7 @@
 "Another instance of the app is using this data. Close that instance, then try again." = "別のアプリのインスタンスがこのデータを使用しています。そのインスタンスを終了してから、もう一度お試しください。";
 "Try Again" = "再試行";
 // Storage breakdown
-"Request Snapshots and Continuation Data" = "リクエストのスナップショットと継続データ";
 "Messages and Other Chat Data" = "メッセージとその他のチャットデータ";
-"Shared Request Metadata" = "共有リクエストメタデータ";
 "Unassigned Messages" = "未割り当てのメッセージ";
 "Search" = "検索";
 "A required value is missing." = "必須の値がありません。";
@@ -739,7 +722,6 @@
 "Source" = "ソース";
 "The database structure check reported an error." = "データベース構造の確認でエラーが見つかりました。";
 "The preceding message is missing, belongs to another chat, or forms a circular chain." = "前のメッセージが存在しないか、別のチャットに属するか、循環参照になっています。";
-"The request metadata referenced by this message is missing." = "このメッセージが参照するリクエストのメタデータがありません。";
 "The selected branch no longer exists in this chat." = "選択した分岐はこのチャットに存在しません。";
 "The stored data is not valid for this field." = "保存データがこのフィールドの形式に合いません。";
 "The stored value has the wrong type." = "保存値の型が正しくありません。";
@@ -747,13 +729,11 @@
 "This message does not reference an existing chat." = "このメッセージは既存のチャットに関連付けられていません。";
 "This record has a missing or duplicate identifier and cannot be safely selected for deletion." = "この記録のIDがないか重複しているため、安全に選択して削除できません。";
 "Tool Positions" = "ツールの位置";
-"Tool positions refer to missing message segments." = "ツールの位置が存在しないメッセージセグメントを参照しています。";
 "Unable to Preview" = "プレビューできません";
 "Unreadable Fields" = "読み取れないフィールド";
 "Delete Chat" = "チャットを削除";
 "All attachments in the selected messages will be deleted. Message text will be kept." = "選択したメッセージの添付ファイルをすべて削除します。本文は残ります。";
 "Delete Selected" = "選択した項目を削除";
-"Delete Request Snapshots and Continuation Data" = "リクエストスナップショットと会話継続データを削除";
 "Confirm deletion?" = "削除してもよろしいですか？";
 "Deselect All" = "すべての選択を解除";
 "This will permanently delete this chat. This action cannot be undone." = "このチャットを完全に削除します。この操作は取り消せません。";
@@ -777,13 +757,11 @@
 "Removing Files..." = "ファイルを削除中…";
 "Export Selected" = "選択した項目を書き出す";
 "This will delete the selected setting." = "選択した設定を削除します。";
-"This will delete the selected request snapshots and continuation data." = "選択したリクエストスナップショットと会話継続データを削除します。";
 "%lld Selected" = "%lld項目を選択中";
 "Your data changed. Review the updated list before continuing. No data was deleted." = "データが変更されました。更新されたリストを確認してから続行してください。データは削除されていません。";
 "No Data" = "データがありません";
 "The selected messages and their related history will be restored as separate chats." = "選択したメッセージと関連する履歴を独立したチャットとして復元します。";
 "The selected model settings will be deleted." = "選択したモデル設定を削除します。";
-"Request snapshots and continuation data will be deleted for the selected models across all servers." = "選択したモデルのリクエストのスナップショットと会話継続データを、すべてのサーバーで削除します。";
 "The API key file could not be read because its format is invalid." = "API キーファイルの形式が無効なため、読み取れません。";
 "API key %lld: %@" = "API キー %lld：%@";
 "This record has no valid account identifier." = "この記録には有効なアカウント識別子がありません。";
@@ -793,3 +771,30 @@
 "The records in this category could not be fully read. The number of affected records is unknown." = "このカテゴリの記録を完全に読み取れませんでした。影響を受けた記録数は不明です。";
 "Import File Records Not Fully Merged" = "インポートファイル内の完全に統合できない記録";
 "Data Not Fully Merged" = "完全に統合できないデータ";
+"Request Metadata" = "リクエストのメタデータ";
+"Generation Round %d" = "生成ラウンド %d";
+"Provider Model" = "プロバイダーのモデル";
+"Uncached Input Tokens" = "未キャッシュ入力トークン";
+"Input Token Count" = "入力トークン数";
+"Total Token Count" = "合計トークン数";
+"Cached Tokens" = "キャッシュ読み取りトークン";
+"Cache Write Tokens" = "キャッシュ書き込みトークン";
+"Reported Cost" = "報告された費用";
+"First Output At" = "最初の出力時刻";
+"Time To First Output" = "最初の出力までの時間";
+"Response Duration" = "応答時間";
+"Provider Created At" = "サーバー作成時刻";
+"Provider Completed At" = "サーバー完了時刻";
+"Returned Provider Data" = "プロバイダーの返却データ";
+"Request URL" = "リクエスト URL";
+"Automatic budget" = "自動予算";
+"thinking.type" = "thinking.type";
+"budget_tokens" = "budget_tokens";
+"output_config.effort" = "output_config.effort";
+"Model information is not ready. Wait for loading to finish, or fetch models again in Settings." = "モデル情報の準備ができていません。読み込みが完了するまで待つか、設定でモデルを再取得してください。";
+"Your latest chat changes could not be saved. They may be lost if you close the app.\n%@" = "最新のチャットの変更を保存できませんでした。アプリを閉じると、これらの変更が失われる可能性があります。\n%@";
+"Supported Thinking Options" = "対応する思考オプション";
+"Fixed-budget Thinking" = "固定予算の思考";
+"Unable to confirm this model's supported thinking options. Select them manually." = "このモデルが対応する思考オプションを確認できません。手動で選択してください。";
+"Requested Thinking Parameters" = "リクエストの思考パラメータ";
+"Reported Thinking Parameters" = "サーバーが返した思考パラメータ";

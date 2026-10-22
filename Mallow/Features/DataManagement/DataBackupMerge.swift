@@ -60,7 +60,6 @@ nonisolated enum DataBackupMerge {
         merged.voiceServers = merge(current.voiceServers, incoming.voiceServers, id: \.id, category: String(localized: "Voice Server Presets"), name: { $0.name })
         merged.voicePresets = merge(current.voicePresets, incoming.voicePresets, id: \.id, category: String(localized: "Voice Presets"), name: { $0.name })
         merged.prompts = merge(current.prompts, incoming.prompts, id: \.id, category: String(localized: "System Prompt Presets"), name: { $0.name })
-        merged.metadata = merge(current.metadata, incoming.metadata, id: \.fingerprint, category: String(localized: "Request Metadata"), name: { $0.modelIdentifier })
         merged.credentials = merge(current.credentials, incoming.credentials, id: \.presetID, category: String(localized: "API Keys"), name: { credential in
             merged.chatServers.first { $0.id == credential.presetID }?.name ?? credential.presetID.uuidString
         })
@@ -165,7 +164,7 @@ nonisolated enum DataBackupMerge {
         let originalSessions = Dictionary(uniqueKeysWithValues: current.sessions.map { ($0.id, $0) })
         for index in merged.sessions.indices {
             let latest = messagesBySession[merged.sessions[index].id]?.max {
-                $0.createdAt == $1.createdAt ? $0.id.uuidString < $1.id.uuidString : $0.createdAt < $1.createdAt
+                $0.createdAt == $1.createdAt ? $0.id.uuidString < $1.id.uuidString : ($0.createdAt ?? .distantPast) < ($1.createdAt ?? .distantPast)
             }
             merged.sessions[index].lastMessageID = latest?.id
             merged.sessions[index].lastMessageAt = latest?.createdAt

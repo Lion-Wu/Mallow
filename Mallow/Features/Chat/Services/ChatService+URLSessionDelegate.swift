@@ -21,6 +21,20 @@ extension ChatService {
         markConnectionEstablishedIfNeeded()
         if let http = response as? HTTPURLResponse {
             httpStatusCode = http.statusCode
+            if var round = pendingResponseMetadata.generationRound {
+                round.providerFields["http_status"] = .number(Double(http.statusCode))
+                let metricHeaders = ["x-request-id", "request-id", "openai-processing-ms", "x-processing-ms", "server-timing"]
+                var headers: [String: JSONValue] = [:]
+                for (key, value) in http.allHeaderFields {
+                    let name = String(describing: key).lowercased()
+                    if metricHeaders.contains(name) || name.hasPrefix("x-ratelimit-") {
+                        headers[name] = .string(String(describing: value))
+                    }
+                }
+                if !headers.isEmpty { round.providerFields["response_headers"] = .object(headers) }
+                pendingResponseMetadata.generationRound = round
+                deliverResponseMetadata(pendingResponseMetadata)
+            }
             if !(200...299).contains(http.statusCode) {
                 errorResponseData.removeAll(keepingCapacity: true)
             }
@@ -96,6 +110,15 @@ extension ChatService {
             }
 
             guard let jsonData = frame.jsonData else { continue }
+            if let dictionary = (try? JSONSerialization.jsonObject(with: jsonData)) as? [String: Any] {
+                let sequence = streamPayloadExtractor.sseSequenceNumber(from: dictionary)
+                let previous = openAIResponsesStreamItemState.lastProcessedSSESequenceNumber
+                if activeEndpoint.style == .openAIResponses, let sequence, let previous, sequence <= previous {
+                    // The reducer also ignores replayed events; their metadata must not regress the round.
+                } else {
+                    captureGenerationMetadata(dictionary)
+                }
+            }
             let activeStyle = activeEndpoint.style
 
             switch activeStyle {
@@ -143,6 +166,10 @@ extension ChatService {
             streamPayloadExtractor: streamPayloadExtractor
         )
 
+        let responseData = errorResponseData.isEmpty ? successResponseData : errorResponseData
+        if let dictionary = (try? JSONSerialization.jsonObject(with: responseData)) as? [String: Any] {
+            captureGenerationMetadata(dictionary)
+        }
         if let metadata = decision.metadata {
             mergeResponseMetadata(metadata)
         }
@@ -152,16 +179,6 @@ extension ChatService {
             activeStreamRequest = nil
             endBackgroundExecutionForCurrentRequest()
             return
-        case .continueWithPendingTools:
-            runPendingToolCallsAndContinue()
-        case .finish:
-            if shouldFinishWithBufferedPromptToolCall() {
-                return
-            }
-            emitStreamFinishedOnce()
-            if !isToolContinuationStarting {
-                endBackgroundExecutionForCurrentRequest()
-            }
         case let .recoveredText(text):
             if shouldRunRecoveredPromptToolCall(text) {
                 return
@@ -182,9 +199,14 @@ extension ChatService {
 
     @MainActor
     func cancelActiveStreamForManualRetry() -> Bool {
-        stateQueue.sync {
-            guard activeStreamRequest != nil else { return false }
-
+        let metadata: ChatResponseMetadata? = stateQueue.sync {
+            guard activeStreamRequest != nil else { return nil }
+            if var round = pendingResponseMetadata.generationRound, round.endedAt == nil {
+                round.endedAt = Date()
+                round.outcome = "stopped"
+                pendingResponseMetadata.generationRound = round
+            }
+            let snapshot = pendingResponseMetadata
             isCancelled = true
             advanceRequestGeneration()
             beginStreamCallbackAttempt(invalidatingCurrentAttempt: true)
@@ -196,11 +218,15 @@ extension ChatService {
             activeToolLoopContext = nil
             Task { await toolAuthorizationCoordinator.cancelAll() }
             endBackgroundExecutionForCurrentRequest()
-            return true
+            return snapshot
         }
+        guard let metadata else { return false }
+        onResponseMetadata?(metadata)
+        return true
     }
 
     private func resetStreamStateForActiveRequestRetry() {
+        finishGenerationRound(outcome: "error")
         beginStreamCallbackAttempt(invalidatingCurrentAttempt: true)
         activeStreamRequest?.task.cancel()
         activeStreamRequest = nil
@@ -252,11 +278,6 @@ extension ChatService {
             emitDelta(text)
             emitStreamFinishedOnce()
         }
-    }
-
-    private func shouldFinishWithBufferedPromptToolCall() -> Bool {
-        guard shouldGatePromptTools() else { return false }
-        return runBufferedPromptToolCallIfPresent()
     }
 
     private func shouldRunRecoveredPromptToolCall(_ text: String) -> Bool {
@@ -316,12 +337,12 @@ extension ChatService {
                 thinkingCapability: configurationProvider.thinkingCapability,
                 thinkingOption: configurationProvider.thinkingOption
             )
-            let requestContext = pendingResponseMetadata.requestContext
+            let continuationSeed = pendingResponseMetadata.continuationSeed
             resetStreamStateForActiveRequestRetry()
             activeToolLoopContext = context
             isCancelled = false
             mergeResponseMetadata(ChatResponseMetadata(
-                requestContext: requestContext,
+                continuationSeed: continuationSeed,
                 requestUsedPreviousResponseID: false
             ))
             startStreaming(endpoint: context.endpoint, requestBodyData: body)

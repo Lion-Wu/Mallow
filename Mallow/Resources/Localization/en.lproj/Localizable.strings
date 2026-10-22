@@ -141,8 +141,6 @@
 "Detected API Format: %@" = "Detected API Format: %@";
 "Developer Defaults" = "Developer Defaults";
 "Developer Mode" = "Developer Mode";
-"Developer Prompt Characters" = "Developer Prompt Characters";
-"Developer Prompt Hash" = "Developer Prompt Hash";
 "Device Context" = "Device Context";
 "Device context was read." = "Device context was read.";
 "Device motion is not available on this platform." = "Device motion is not available on this platform.";
@@ -170,7 +168,6 @@
 "Enabled Endpoints" = "Enabled Endpoints";
 "Enabled Tools" = "Enabled Tools";
 "Enables Stateful Chat for conversations that support it." = "Enables Stateful Chat for conversations that support it.";
-"Endpoint URL Hash" = "Endpoint URL Hash";
 "English" = "English";
 "Enter API key" = "Enter API key";
 "Enter preset name" = "Enter preset name";
@@ -179,10 +176,6 @@
 "Event" = "Event";
 "Event end must be after start." = "Event end must be after start.";
 "Exit" = "Exit";
-"Extended thinking high budget_tokens" = "Extended thinking high budget_tokens";
-"Extended thinking low budget_tokens" = "Extended thinking low budget_tokens";
-"Extended thinking medium budget_tokens" = "Extended thinking medium budget_tokens";
-"Extended thinking response reserve tokens" = "Extended thinking response reserve tokens";
 "Extra High" = "Extra High";
 "Failed" = "Failed";
 "Failed to start audio playback: %@" = "Failed to start audio playback: %@";
@@ -222,7 +215,6 @@
 "JavaScript, %d characters" = "JavaScript, %d characters";
 "JSON mode" = "JSON mode";
 "Keywords: %@" = "Keywords: %@";
-"Last Seen At" = "Last Seen At";
 "List" = "List";
 "Listening" = "Listening";
 "Listing Calendar Events" = "Listing Calendar Events";
@@ -271,6 +263,7 @@
 "No device motion sample was received." = "No device motion sample was received.";
 "No endpoint URLs are enabled." = "No endpoint URLs are enabled.";
 "No internet connection for TTS requests." = "No internet connection for TTS requests.";
+"Models have not been loaded. You cannot send messages until models are available. Check the server connection and refresh the model list in Settings." = "Models have not been loaded. You cannot send messages until models are available. Check the server connection and refresh the model list in Settings.";
 "No models returned from %@" = "No models returned from %@";
 "No parameters" = "No parameters";
 "No recent replies" = "No recent replies";
@@ -342,7 +335,6 @@
 "Received audio data could not be played." = "Received audio data could not be played.";
 "Recorded Locally" = "Recorded Locally";
 "Reference Audio Path" = "Reference Audio Path";
-"Reference Count" = "Reference Count";
 "Reference Language" = "Reference Language";
 "Reference Text" = "Reference Text";
 "Reference text (optional)" = "Reference text (optional)";
@@ -436,6 +428,7 @@
 "Take Photo" = "Take Photo";
 "Tap to reconnect" = "Tap to reconnect";
 "Text Generation Issue" = "Text Generation Issue";
+"Unable to Send Messages" = "Unable to Send Messages";
 "Text Language" = "Text Language";
 "text must contain at most 10000 characters." = "text must contain at most 10000 characters.";
 "Text server unreachable" = "Text server unreachable";
@@ -461,7 +454,7 @@
 "This message contains only images. Edit it before retrying with this model." = "This message contains only images. Edit it before retrying with this model.";
 "This message contains only images. Edit it or delete it." = "This message contains only images. Edit it or delete it.";
 "This message will be deleted." = "This message will be deleted.";
-"This model's metadata does not clearly report image-input capability. Turn this on only if you are sure the backend can accept image content for this model." = "This model's metadata does not clearly report image-input capability. Turn this on only if you are sure the backend can accept image content for this model.";
+"Unable to confirm whether this model supports image input. Enable it if supported." = "Unable to confirm whether this model supports image input. Enable it if supported.";
 "This tool is disabled for the current endpoint." = "This tool is disabled for the current endpoint.";
 "This will allow location, clipboard, URL, and JavaScript Runtime tools to run automatically when permitted by the authorization mode. This may increase the risk of privacy exposure." = "This will allow location, clipboard, URL, and JavaScript Runtime tools to run automatically when permitted by the authorization mode. This may increase the risk of privacy exposure.";
 "This will reset all developer options to their default values." = "This will reset all developer options to their default values.";
@@ -483,12 +476,9 @@
 "Tool call was denied by the user." = "Tool call was denied by the user.";
 "Tool Calls" = "Tool Calls";
 "Tool Name" = "Tool Name";
-"Tool Schema Digest" = "Tool Schema Digest";
-"Tool Schema Metadata" = "Tool Schema Metadata";
 "Tool Trace" = "Tool Trace";
 "Tool Use" = "Tool Use";
 "Tool Use Details" = "Tool Use Details";
-"Tool Use Enabled" = "Tool Use Enabled";
 "Tool use is disabled." = "Tool use is disabled.";
 "Traditional Chinese" = "Traditional Chinese";
 "Try a different search." = "Try a different search.";
@@ -524,7 +514,6 @@
 "URL Actions" = "URL Actions";
 "URL scheme is not allowed." = "URL scheme is not allowed.";
 "URL was opened." = "URL was opened.";
-"Use Provider Continuation IDs" = "Use Provider Continuation IDs";
 "Used for chat mode" = "Used for chat mode";
 "Used for voice mode" = "Used for voice mode";
 "Used Tools" = "Used Tools";
@@ -605,7 +594,6 @@
 "Voice Server Presets" = "Voice Server Presets";
 "Voice Presets" = "Voice Presets";
 "System Prompt Presets" = "System Prompt Presets";
-"Request Metadata" = "Request Metadata";
 "Unrecoverable Items" = "Unrecoverable Items";
 // Data reset confirmation
 "Reset Data?" = "Reset Data?";
@@ -660,7 +648,6 @@
 "This message will be added:" = "This message will be added:";
 "Server Address" = "Server Address";
 "Message Date" = "Message Date";
-"Request Content" = "Request Content";
 "Response Content" = "Response Content";
 "Conversation Context" = "Conversation Context";
 "Tool Activity" = "Tool Activity";
@@ -694,7 +681,6 @@
 "Largest First" = "Largest First";
 "Message" = "Message";
 "Missing Chat Ownership" = "Missing Chat Ownership";
-"Missing Request Metadata" = "Missing Request Metadata";
 "Missing or Duplicate Identity" = "Missing or Duplicate Identity";
 "Model Data" = "Model Data";
 "Name" = "Name";
@@ -707,7 +693,6 @@
 "Stored Content" = "Stored Content";
 "Issues Found" = "Issues Found";
 "New Branch" = "New Branch";
-"Applies to this model across all servers." = "Applies to this model across all servers.";
 "Selected chats and all their branches and attachments will be removed." = "Selected chats and all their branches and attachments will be removed.";
 "The database structure check failed. Export the original data before attempting recovery." = "The database structure check failed. Export the original data before attempting recovery.";
 "Selected image attachments will be removed from this message." = "Selected image attachments will be removed from this message.";
@@ -716,9 +701,7 @@
 "Another instance of the app is using this data. Close that instance, then try again." = "Another instance of the app is using this data. Close that instance, then try again.";
 "Try Again" = "Try Again";
 // Storage breakdown
-"Request Snapshots and Continuation Data" = "Request Snapshots and Continuation Data";
 "Messages and Other Chat Data" = "Messages and Other Chat Data";
-"Shared Request Metadata" = "Shared Request Metadata";
 "Unassigned Messages" = "Unassigned Messages";
 "Search" = "Search";
 "A required value is missing." = "A required value is missing.";
@@ -739,7 +722,6 @@
 "Source" = "Source";
 "The database structure check reported an error." = "The database structure check reported an error.";
 "The preceding message is missing, belongs to another chat, or forms a circular chain." = "The preceding message is missing, belongs to another chat, or forms a circular chain.";
-"The request metadata referenced by this message is missing." = "The request metadata referenced by this message is missing.";
 "The selected branch no longer exists in this chat." = "The selected branch no longer exists in this chat.";
 "The stored data is not valid for this field." = "The stored data is not valid for this field.";
 "The stored value has the wrong type." = "The stored value has the wrong type.";
@@ -747,13 +729,11 @@
 "This message does not reference an existing chat." = "This message does not reference an existing chat.";
 "This record has a missing or duplicate identifier and cannot be safely selected for deletion." = "This record has a missing or duplicate identifier and cannot be safely selected for deletion.";
 "Tool Positions" = "Tool Positions";
-"Tool positions refer to missing message segments." = "Tool positions refer to missing message segments.";
 "Unable to Preview" = "Unable to Preview";
 "Unreadable Fields" = "Unreadable Fields";
 "Delete Chat" = "Delete Chat";
 "All attachments in the selected messages will be deleted. Message text will be kept." = "All attachments in the selected messages will be deleted. Message text will be kept.";
 "Delete Selected" = "Delete Selected";
-"Delete Request Snapshots and Continuation Data" = "Delete Request Snapshots and Continuation Data";
 "Confirm deletion?" = "Confirm deletion?";
 "Deselect All" = "Deselect All";
 "This will permanently delete this chat. This action cannot be undone." = "This will permanently delete this chat. This action cannot be undone.";
@@ -777,13 +757,11 @@
 "Removing Files..." = "Removing Files...";
 "Export Selected" = "Export Selected";
 "This will delete the selected setting." = "This will delete the selected setting.";
-"This will delete the selected request snapshots and continuation data." = "This will delete the selected request snapshots and continuation data.";
 "%lld Selected" = "%lld Selected";
 "Your data changed. Review the updated list before continuing. No data was deleted." = "Your data changed. Review the updated list before continuing. No data was deleted.";
 "No Data" = "No Data";
 "The selected messages and their related history will be restored as separate chats." = "The selected messages and their related history will be restored as separate chats.";
 "The selected model settings will be deleted." = "The selected model settings will be deleted.";
-"Request snapshots and continuation data will be deleted for the selected models across all servers." = "Request snapshots and continuation data will be deleted for the selected models across all servers.";
 "The API key file could not be read because its format is invalid." = "The API key file could not be read because its format is invalid.";
 "API key %lld: %@" = "API key %lld: %@";
 "This record has no valid account identifier." = "This record has no valid account identifier.";
@@ -793,3 +771,30 @@
 "The records in this category could not be fully read. The number of affected records is unknown." = "The records in this category could not be fully read. The number of affected records is unknown.";
 "Import File Records Not Fully Merged" = "Import File Records Not Fully Merged";
 "Data Not Fully Merged" = "Data Not Fully Merged";
+"Request Metadata" = "Request Metadata";
+"Generation Round %d" = "Generation Round %d";
+"Provider Model" = "Provider Model";
+"Uncached Input Tokens" = "Uncached Input Tokens";
+"Input Token Count" = "Input Token Count";
+"Total Token Count" = "Total Token Count";
+"Cached Tokens" = "Cached Tokens";
+"Cache Write Tokens" = "Cache Write Tokens";
+"Reported Cost" = "Reported Cost";
+"First Output At" = "First Output At";
+"Time To First Output" = "Time To First Output";
+"Response Duration" = "Response Duration";
+"Provider Created At" = "Provider Created At";
+"Provider Completed At" = "Provider Completed At";
+"Returned Provider Data" = "Returned Provider Data";
+"Request URL" = "Request URL";
+"Automatic budget" = "Automatic budget";
+"thinking.type" = "thinking.type";
+"budget_tokens" = "budget_tokens";
+"output_config.effort" = "output_config.effort";
+"Model information is not ready. Wait for loading to finish, or fetch models again in Settings." = "Model information is not ready. Wait for loading to finish, or fetch models again in Settings.";
+"Your latest chat changes could not be saved. They may be lost if you close the app.\n%@" = "Your latest chat changes could not be saved. They may be lost if you close the app.\n%@";
+"Supported Thinking Options" = "Supported Thinking Options";
+"Fixed-budget Thinking" = "Fixed-budget Thinking";
+"Unable to confirm this model's supported thinking options. Select them manually." = "Unable to confirm this model's supported thinking options. Select them manually.";
+"Requested Thinking Parameters" = "Requested Thinking Parameters";
+"Reported Thinking Parameters" = "Reported Thinking Parameters";

@@ -141,8 +141,6 @@
 "Detected API Format: %@" = "감지된 API 형식: %@";
 "Developer Defaults" = "개발자 기본값";
 "Developer Mode" = "개발자 모드";
-"Developer Prompt Characters" = "개발자 프롬프트 문자 수";
-"Developer Prompt Hash" = "개발자 프롬프트 해시";
 "Device Context" = "기기 정보";
 "Device context was read." = "기기 정보를 읽었습니다.";
 "Device motion is not available on this platform." = "이 플랫폼에서는 기기 동작 데이터를 사용할 수 없습니다.";
@@ -170,7 +168,6 @@
 "Enabled Endpoints" = "활성화된 엔드포인트";
 "Enabled Tools" = "활성화된 도구";
 "Enables Stateful Chat for conversations that support it." = "지원되는 대화에서 Stateful Chat을 활성화합니다.";
-"Endpoint URL Hash" = "엔드포인트 URL 해시";
 "English" = "영어";
 "Enter API key" = "API 키 입력";
 "Enter preset name" = "프리셋 이름 입력";
@@ -179,10 +176,6 @@
 "Event" = "일정";
 "Event end must be after start." = "일정 종료 시간은 시작 시간보다 늦어야 합니다.";
 "Exit" = "종료";
-"Extended thinking high budget_tokens" = "확장 사고 높음 budget_tokens";
-"Extended thinking low budget_tokens" = "확장 사고 낮음 budget_tokens";
-"Extended thinking medium budget_tokens" = "확장 사고 중간 budget_tokens";
-"Extended thinking response reserve tokens" = "확장 사고 응답 예약 토큰";
 "Extra High" = "매우 높음";
 "Failed" = "실패";
 "Failed to start audio playback: %@" = "오디오 재생을 시작하지 못했습니다: %@";
@@ -222,7 +215,6 @@
 "JavaScript, %d characters" = "JavaScript, %d자";
 "JSON mode" = "JSON 모드";
 "Keywords: %@" = "키워드: %@";
-"Last Seen At" = "마지막 사용 시각";
 "List" = "목록";
 "Listening" = "듣는 중";
 "Listing Calendar Events" = "캘린더 일정 조회 중";
@@ -271,6 +263,7 @@
 "No device motion sample was received." = "기기 동작 샘플을 받지 못했습니다.";
 "No endpoint URLs are enabled." = "활성화된 엔드포인트 URL이 없습니다.";
 "No internet connection for TTS requests." = "TTS 요청에 사용할 인터넷 연결이 없습니다.";
+"Models have not been loaded. You cannot send messages until models are available. Check the server connection and refresh the model list in Settings." = "모델을 불러오지 못해 메시지를 보낼 수 없습니다. 서버 연결을 확인하고 설정에서 모델 목록을 새로 고치세요.";
 "No models returned from %@" = "%@에서 반환된 모델이 없습니다";
 "No parameters" = "매개변수 없음";
 "No recent replies" = "최근 답변 없음";
@@ -342,7 +335,6 @@
 "Received audio data could not be played." = "수신된 오디오 데이터를 재생할 수 없습니다.";
 "Recorded Locally" = "로컬 기록";
 "Reference Audio Path" = "참조 오디오 경로";
-"Reference Count" = "참조 수";
 "Reference Language" = "참조 텍스트 언어";
 "Reference Text" = "참조 텍스트";
 "Reference text (optional)" = "참조 텍스트(선택 사항)";
@@ -436,6 +428,7 @@
 "Take Photo" = "사진 촬영";
 "Tap to reconnect" = "탭하여 다시 연결";
 "Text Generation Issue" = "텍스트 생성 문제";
+"Unable to Send Messages" = "메시지를 보낼 수 없음";
 "Text Language" = "텍스트 언어";
 "text must contain at most 10000 characters." = "text는 최대 10000자까지 입력할 수 있습니다.";
 "Text server unreachable" = "텍스트 서버에 연결할 수 없습니다";
@@ -461,7 +454,7 @@
 "This message contains only images. Edit it before retrying with this model." = "이 메시지에는 이미지만 포함되어 있습니다. 이 모델로 다시 시도하기 전에 편집하십시오.";
 "This message contains only images. Edit it or delete it." = "이 메시지에는 이미지만 포함되어 있습니다. 편집하거나 삭제하십시오.";
 "This message will be deleted." = "이 메시지는 삭제됩니다.";
-"This model's metadata does not clearly report image-input capability. Turn this on only if you are sure the backend can accept image content for this model." = "이 모델의 메타데이터에는 이미지 입력 지원 여부가 명확히 표시되지 않습니다. 백엔드가 이 모델의 이미지 콘텐츠를 처리할 수 있다고 확신할 때만 이 옵션을 활성화하세요.";
+"Unable to confirm whether this model supports image input. Enable it if supported." = "이 모델의 이미지 입력 지원 여부를 확인할 수 없습니다. 지원하는 경우 활성화하세요.";
 "This tool is disabled for the current endpoint." = "현재 엔드포인트에서는 이 도구가 비활성화되어 있습니다.";
 "This will allow location, clipboard, URL, and JavaScript Runtime tools to run automatically when permitted by the authorization mode. This may increase the risk of privacy exposure." = "승인 방식에서 허용하는 경우 위치, 클립보드, URL 및 JavaScript 런타임 도구가 자동으로 실행됩니다. 개인 정보 유출 위험이 높아질 수 있습니다.";
 "This will reset all developer options to their default values." = "모든 개발자 옵션을 기본값으로 재설정합니다.";
@@ -483,12 +476,9 @@
 "Tool call was denied by the user." = "사용자가 도구 호출을 거부했습니다.";
 "Tool Calls" = "도구 호출";
 "Tool Name" = "도구 이름";
-"Tool Schema Digest" = "도구 스키마 다이제스트";
-"Tool Schema Metadata" = "도구 스키마 메타데이터";
 "Tool Trace" = "도구 호출 기록";
 "Tool Use" = "도구 사용";
 "Tool Use Details" = "도구 사용 세부 정보";
-"Tool Use Enabled" = "도구 사용 활성화";
 "Tool use is disabled." = "도구 사용이 비활성화되어 있습니다.";
 "Traditional Chinese" = "중국어 번체";
 "Try a different search." = "다른 검색어를 입력해 보세요.";
@@ -524,7 +514,6 @@
 "URL Actions" = "URL 작업";
 "URL scheme is not allowed." = "이 URL 스킴은 허용되지 않습니다.";
 "URL was opened." = "URL을 열었습니다.";
-"Use Provider Continuation IDs" = "제공자 연속 ID 사용";
 "Used for chat mode" = "채팅 모드에 사용";
 "Used for voice mode" = "음성 모드에 사용";
 "Used Tools" = "사용된 도구";
@@ -605,7 +594,6 @@
 "Voice Server Presets" = "음성 서버 프리셋";
 "Voice Presets" = "음성 프리셋";
 "System Prompt Presets" = "시스템 프롬프트 프리셋";
-"Request Metadata" = "요청 메타데이터";
 "Unrecoverable Items" = "복구 불가능한 항목";
 // Data reset confirmation
 "Reset Data?" = "데이터를 초기화할까요?";
@@ -660,7 +648,6 @@
 "This message will be added:" = "다음 메시지가 추가됩니다:";
 "Server Address" = "서버 주소";
 "Message Date" = "메시지 시간";
-"Request Content" = "요청 내용";
 "Response Content" = "응답 내용";
 "Conversation Context" = "대화 컨텍스트";
 "Tool Activity" = "도구 호출 기록";
@@ -694,7 +681,6 @@
 "Largest First" = "큰 순서";
 "Message" = "메시지";
 "Missing Chat Ownership" = "연결된 채팅 없음";
-"Missing Request Metadata" = "요청 메타데이터 없음";
 "Missing or Duplicate Identity" = "식별자 누락 또는 중복";
 "Model Data" = "모델 데이터";
 "Name" = "이름";
@@ -707,7 +693,6 @@
 "Stored Content" = "저장된 콘텐츠";
 "Issues Found" = "문제 발견";
 "New Branch" = "새 분기";
-"Applies to this model across all servers." = "모든 서버의 이 모델에 적용됩니다.";
 "Selected chats and all their branches and attachments will be removed." = "선택한 채팅과 모든 분기 및 첨부 파일을 삭제합니다.";
 "The database structure check failed. Export the original data before attempting recovery." = "데이터베이스 구조 검사를 통과하지 못했습니다. 복구 전에 원본 데이터를 내보내세요.";
 "Selected image attachments will be removed from this message." = "선택한 이미지 첨부 파일을 이 메시지에서 제거합니다.";
@@ -716,9 +701,7 @@
 "Another instance of the app is using this data. Close that instance, then try again." = "다른 앱 인스턴스가 이 데이터를 사용하고 있습니다. 해당 인스턴스를 닫은 후 다시 시도하세요.";
 "Try Again" = "다시 시도";
 // Storage breakdown
-"Request Snapshots and Continuation Data" = "요청 스냅샷 및 대화 계속 데이터";
 "Messages and Other Chat Data" = "메시지 및 기타 채팅 데이터";
-"Shared Request Metadata" = "공유 요청 메타데이터";
 "Unassigned Messages" = "미지정 메시지";
 "Search" = "검색";
 "A required value is missing." = "필수 값이 없습니다.";
@@ -739,7 +722,6 @@
 "Source" = "출처";
 "The database structure check reported an error." = "데이터베이스 구조 검사에서 오류가 발견되었습니다.";
 "The preceding message is missing, belongs to another chat, or forms a circular chain." = "이전 메시지가 없거나 다른 채팅에 속하거나 순환 관계를 이룹니다.";
-"The request metadata referenced by this message is missing." = "이 메시지가 참조하는 요청 메타데이터가 없습니다.";
 "The selected branch no longer exists in this chat." = "선택한 분기가 이 채팅에 더 이상 없습니다.";
 "The stored data is not valid for this field." = "저장된 데이터가 이 필드의 형식에 맞지 않습니다.";
 "The stored value has the wrong type." = "저장된 값의 유형이 잘못되었습니다.";
@@ -747,13 +729,11 @@
 "This message does not reference an existing chat." = "이 메시지가 기존 채팅에 연결되어 있지 않습니다.";
 "This record has a missing or duplicate identifier and cannot be safely selected for deletion." = "기록 ID가 없거나 중복되어 안전하게 선택하여 삭제할 수 없습니다.";
 "Tool Positions" = "도구 위치";
-"Tool positions refer to missing message segments." = "도구 위치가 없는 메시지 구간을 참조합니다.";
 "Unable to Preview" = "미리 볼 수 없음";
 "Unreadable Fields" = "읽을 수 없는 필드";
 "Delete Chat" = "채팅 삭제";
 "All attachments in the selected messages will be deleted. Message text will be kept." = "선택한 메시지의 모든 첨부 파일이 삭제됩니다. 메시지 본문은 유지됩니다.";
 "Delete Selected" = "선택 항목 삭제";
-"Delete Request Snapshots and Continuation Data" = "요청 스냅샷 및 대화 이어가기 데이터 삭제";
 "Confirm deletion?" = "삭제하시겠습니까?";
 "Deselect All" = "모두 선택 해제";
 "This will permanently delete this chat. This action cannot be undone." = "이 채팅이 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.";
@@ -777,13 +757,11 @@
 "Removing Files..." = "파일 삭제 중…";
 "Export Selected" = "선택 항목 내보내기";
 "This will delete the selected setting." = "선택한 설정이 삭제됩니다.";
-"This will delete the selected request snapshots and continuation data." = "선택한 요청 스냅샷 및 대화 이어가기 데이터가 삭제됩니다.";
 "%lld Selected" = "%lld개 선택됨";
 "Your data changed. Review the updated list before continuing. No data was deleted." = "데이터가 변경되었습니다. 업데이트된 목록을 확인한 후 계속하세요. 삭제된 데이터는 없습니다.";
 "No Data" = "데이터 없음";
 "The selected messages and their related history will be restored as separate chats." = "선택한 메시지와 관련 대화 기록을 별도의 채팅으로 복원합니다.";
 "The selected model settings will be deleted." = "선택한 모델 설정을 삭제합니다.";
-"Request snapshots and continuation data will be deleted for the selected models across all servers." = "모든 서버에서 선택한 모델의 요청 스냅샷과 대화 이어가기 데이터를 삭제합니다.";
 "The API key file could not be read because its format is invalid." = "API 키 파일의 형식이 올바르지 않아 읽을 수 없습니다.";
 "API key %lld: %@" = "API 키 %lld: %@";
 "This record has no valid account identifier." = "이 기록에 유효한 계정 식별자가 없습니다.";
@@ -793,3 +771,30 @@
 "The records in this category could not be fully read. The number of affected records is unknown." = "이 범주의 기록을 모두 읽지 못했습니다. 영향을 받은 기록 수를 알 수 없습니다.";
 "Import File Records Not Fully Merged" = "가져오기 파일에서 완전히 병합되지 않은 기록";
 "Data Not Fully Merged" = "완전히 병합되지 않은 데이터";
+"Request Metadata" = "요청 메타데이터";
+"Generation Round %d" = "생성 라운드 %d";
+"Provider Model" = "제공업체 모델";
+"Uncached Input Tokens" = "캐시되지 않은 입력 토큰";
+"Input Token Count" = "입력 토큰 수";
+"Total Token Count" = "총 토큰 수";
+"Cached Tokens" = "캐시 읽기 토큰";
+"Cache Write Tokens" = "캐시 쓰기 토큰";
+"Reported Cost" = "보고된 비용";
+"First Output At" = "첫 출력 시각";
+"Time To First Output" = "첫 출력까지의 시간";
+"Response Duration" = "응답 소요 시간";
+"Provider Created At" = "서버 생성 시각";
+"Provider Completed At" = "서버 완료 시각";
+"Returned Provider Data" = "제공업체 응답 데이터";
+"Request URL" = "요청 URL";
+"Automatic budget" = "자동 예산";
+"thinking.type" = "thinking.type";
+"budget_tokens" = "budget_tokens";
+"output_config.effort" = "output_config.effort";
+"Model information is not ready. Wait for loading to finish, or fetch models again in Settings." = "모델 정보가 아직 준비되지 않았습니다. 로딩이 완료될 때까지 기다리거나 설정에서 모델을 다시 가져오세요.";
+"Your latest chat changes could not be saved. They may be lost if you close the app.\n%@" = "최근 채팅 변경 사항을 저장하지 못했습니다. 앱을 닫으면 변경 사항이 손실될 수 있습니다.\n%@";
+"Supported Thinking Options" = "지원되는 사고 옵션";
+"Fixed-budget Thinking" = "고정 예산 사고";
+"Unable to confirm this model's supported thinking options. Select them manually." = "이 모델이 지원하는 사고 옵션을 확인할 수 없습니다. 직접 선택하세요.";
+"Requested Thinking Parameters" = "요청한 사고 매개변수";
+"Reported Thinking Parameters" = "서버가 반환한 사고 매개변수";

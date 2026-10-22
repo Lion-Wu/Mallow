@@ -47,39 +47,17 @@ struct ChatStreamingRequestFactory: ChatStreamingRequestBuilding, Sendable {
         let rawKey = rawAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
         switch endpoint.style {
         case .anthropicMessages:
-            if usesBearerAuthForAnthropicMessages(endpoint.chatURL) {
-                if !rawKey.isEmpty {
-                    let headerValue = rawKey.lowercased().hasPrefix("bearer ") ? rawKey : "Bearer \(rawKey)"
-                    request.setValue(headerValue, forHTTPHeaderField: "Authorization")
-                }
-            } else {
-                let keyForHeader = normalizedAPIKeyForXAPIKeyHeader(rawKey)
-                if !keyForHeader.isEmpty {
-                    request.setValue(keyForHeader, forHTTPHeaderField: "x-api-key")
-                }
-                request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+            let keyForHeader = normalizedAPIKeyForXAPIKeyHeader(rawKey)
+            if !keyForHeader.isEmpty {
+                request.setValue(keyForHeader, forHTTPHeaderField: "x-api-key")
             }
+            request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
 
         case .openAIResponses, .openAIChatCompletions, .lmStudioRESTV1:
             if !rawKey.isEmpty {
-                if usesAzureOpenAIAPIKeyAuth(endpoint.chatURL, rawAPIKey: rawKey) {
-                    request.setValue(normalizedAPIKeyForXAPIKeyHeader(rawKey), forHTTPHeaderField: "api-key")
-                } else {
-                    let headerValue = rawKey.lowercased().hasPrefix("bearer ") ? rawKey : "Bearer \(rawKey)"
-                    request.setValue(headerValue, forHTTPHeaderField: "Authorization")
-                }
+                let headerValue = rawKey.lowercased().hasPrefix("bearer ") ? rawKey : "Bearer \(rawKey)"
+                request.setValue(headerValue, forHTTPHeaderField: "Authorization")
             }
         }
-    }
-
-    private func usesBearerAuthForAnthropicMessages(_ url: URL) -> Bool {
-        let host = (url.host ?? "").lowercased()
-        return ChatEndpointBaseURL.hostMatchesOfficialDomain(host, domain: "openrouter.ai")
-    }
-
-    private func usesAzureOpenAIAPIKeyAuth(_ url: URL, rawAPIKey: String) -> Bool {
-        let host = (url.host ?? "").lowercased()
-        return ChatEndpointBaseURL.hostMatchesOfficialDomain(host, domain: "openai.azure.com") &&
-            !rawAPIKey.lowercased().hasPrefix("bearer ")
     }
 }

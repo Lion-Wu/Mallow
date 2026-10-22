@@ -63,7 +63,7 @@ struct DataRecoveryPlan: Identifiable, Sendable {
 /// The application always uses one fixed persistent store.
 nonisolated enum StartupPersistentStore {
     static let schema = Schema([
-        ChatSession.self, ChatMessage.self, ChatRequestContextMetadata.self,
+        ChatSession.self, ChatMessage.self,
         AppSettings.self, ChatServerPreset.self, VoiceServerPreset.self,
         VoicePreset.self, SystemPromptPreset.self
     ])
@@ -72,7 +72,14 @@ nonisolated enum StartupPersistentStore {
     private static let replacementKey = "MallowImportID"
 
     static func open(at url: URL) throws -> ModelContainer {
-        try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)])
+        let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)])
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+        for message in try context.fetch(FetchDescriptor<ChatMessage>()) {
+            guard let data = message.messageDocumentData else { throw CocoaError(.fileReadCorruptFile) }
+            _ = try JSONDecoder().decode(ChatMessageDocument.self, from: data)
+        }
+        return container
     }
 
     static func replace(with plan: DataRecoveryPlan) throws {
@@ -286,9 +293,7 @@ nonisolated enum StartupDataRecovery {
                     message.activeChildMessageID = nil
                 }
             }
-            let latest = surviving.max {
-                $0.createdAt == $1.createdAt ? $0.id.uuidString < $1.id.uuidString : $0.createdAt < $1.createdAt
-            }
+            let latest = surviving.max(by: ChatMessageBranchResolver.stableMessageOrder)
             session.lastMessageID = latest?.id
             session.lastMessageAt = latest?.createdAt
             session.sidebarPreviewText = ChatSession.sidebarPreviewText(for: latest)
@@ -299,17 +304,10 @@ nonisolated enum StartupDataRecovery {
         try recover("VoiceServerPreset", title: String(localized: "Voice Server Presets"), make: recoverVoiceServer)
         try recover("VoicePreset", title: String(localized: "Voice Presets"), make: recoverVoice)
         try recover("SystemPromptPreset", title: String(localized: "System Prompt Presets"), make: recoverPrompt)
-        var metadataIDs: Set<String> = []
-        try recover("ChatRequestContextMetadata", title: String(localized: "Request Metadata"), make: recoverMetadata, identityField: "fingerprint") { metadata, _ in
-            metadataIDs.insert(metadata.fingerprint)
+        if persist {
+            for message in try context.fetch(FetchDescriptor<ChatMessage>()) { try message.persistDocument() }
+            try context.save()
         }
-        for (key, message) in messages {
-            if let fingerprint = message.requestContextFingerprint, !metadataIDs.contains(fingerprint), let row = messageRows[key] {
-                categories[1].issues.append(DataRecoveryIssue(row: row, entity: "ChatMessage", name: message.content, reason: .metadata))
-                categories[1].hasPartialLoss = true
-            }
-        }
-        if persist { try context.save() }
         return categories
     }
 
@@ -332,57 +330,70 @@ extension StartupDataRecovery {
         model.id = try row.value("id")
         model.activeChildMessageID = row.recover("activeChildMessageID", defaultValue: model.activeChildMessageID)
         model.importSourceMessageID = row.recover("importSourceMessageID", defaultValue: model.importSourceMessageID)
-        model.content = try row.value("content")
-        model.requestContentSnapshot = row.recover("requestContentSnapshot", defaultValue: model.requestContentSnapshot)
-        model.assistantSegmentsData = row.recover("assistantSegmentsData", defaultValue: model.assistantSegmentsData)
-        model.openAIResponsesConversationItemsData = row.recover("openAIResponsesConversationItemsData", defaultValue: model.openAIResponsesConversationItemsData)
+        let documentData: Data = try row.value("messageDocumentData")
         model.imageAttachmentsData = row.recover("imageAttachmentsData", defaultValue: model.imageAttachmentsData)
         model.isUser = try row.value("isUser")
         model.isActive = row.recover("isActive", defaultValue: model.isActive)
-        model.createdAt = try row.value("createdAt")
+        model.createdAt = row.recover("createdAt", defaultValue: Optional<Date>.none)
         model.modelIdentifier = row.recover("modelIdentifier", defaultValue: model.modelIdentifier)
         model.apiBaseURL = row.recover("apiBaseURL", defaultValue: model.apiBaseURL)
         model.thinkingOptionRawValue = row.recover("thinkingOptionRawValue", defaultValue: model.thinkingOptionRawValue)
         model.requestID = row.recover("requestID", defaultValue: model.requestID)
         model.providerResponseID = row.recover("providerResponseID", defaultValue: model.providerResponseID)
-        model.providerResponseIDsData = row.recover("providerResponseIDsData", defaultValue: model.providerResponseIDsData)
         model.requestContextFingerprint = row.recover("requestContextFingerprint", defaultValue: model.requestContextFingerprint)
         model.requestUsedPreviousResponseID = row.recover("requestUsedPreviousResponseID", defaultValue: model.requestUsedPreviousResponseID)
         model.requestPreviousResponseID = row.recover("requestPreviousResponseID", defaultValue: model.requestPreviousResponseID)
         model.streamStartedAt = row.recover("streamStartedAt", defaultValue: model.streamStartedAt)
         model.streamFirstTokenAt = row.recover("streamFirstTokenAt", defaultValue: model.streamFirstTokenAt)
+        model.streamFirstTokenAtSource = row.recover("streamFirstTokenAtSource", defaultValue: model.streamFirstTokenAtSource)
         model.streamCompletedAt = row.recover("streamCompletedAt", defaultValue: model.streamCompletedAt)
         model.timeToFirstToken = row.recover("timeToFirstToken", defaultValue: model.timeToFirstToken)
-        model.streamDuration = row.recover("streamDuration", defaultValue: model.streamDuration)
-        model.generationDuration = row.recover("generationDuration", defaultValue: model.generationDuration)
         model.outputTokenCount = row.recover("outputTokenCount", defaultValue: model.outputTokenCount)
         model.reasoningOutputTokenCount = row.recover("reasoningOutputTokenCount", defaultValue: model.reasoningOutputTokenCount)
         model.tokensPerSecond = row.recover("tokensPerSecond", defaultValue: model.tokensPerSecond)
-        model.tokenCount = row.recover("tokenCount", defaultValue: model.tokenCount)
         model.tokenCountSource = row.recover("tokenCountSource", defaultValue: model.tokenCountSource)
         model.timeToFirstTokenSource = row.recover("timeToFirstTokenSource", defaultValue: model.timeToFirstTokenSource)
         model.tokensPerSecondSource = row.recover("tokensPerSecondSource", defaultValue: model.tokensPerSecondSource)
         model.finishReasonSource = row.recover("finishReasonSource", defaultValue: model.finishReasonSource)
-        model.characterCount = row.recover("characterCount", defaultValue: model.characterCount)
+
         model.promptMessageCount = row.recover("promptMessageCount", defaultValue: model.promptMessageCount)
         model.promptCharacterCount = row.recover("promptCharacterCount", defaultValue: model.promptCharacterCount)
         model.finishReason = row.recover("finishReason", defaultValue: model.finishReason)
         model.errorDescription = row.recover("errorDescription", defaultValue: model.errorDescription)
-        model.toolActivityPlacementsData = row.recover("toolActivityPlacementsData", defaultValue: model.toolActivityPlacementsData)
         // Keep readable payloads unchanged. Invalid structured display data is
         // omitted; the normal renderer can still display the original body.
-        model.assistantSegmentsData = row.validArray(model.assistantSegmentsData, of: ChatAssistantSegment.self, field: "assistantSegmentsData")
-        model.openAIResponsesConversationItemsData = row.validArray(model.openAIResponsesConversationItemsData, of: JSONValue.self, field: "openAIResponsesConversationItemsData")
         model.imageAttachmentsData = try row.readableItems(model.imageAttachmentsData, of: ChatImageAttachment.self, field: "imageAttachmentsData")
-        model.providerResponseIDsData = try row.readableItems(model.providerResponseIDsData, of: String.self, field: "providerResponseIDsData")
-        model.toolActivityPlacementsData = row.validArray(model.toolActivityPlacementsData, of: ChatToolActivityPlacement.self, field: "toolActivityPlacementsData")
-        if model.assistantSegmentsData == nil {
-            if model.toolActivityPlacements.contains(where: { $0.assistantSegmentAnchor != nil }) {
-                row.noteLoss("toolActivityPlacementsData", explanation: String(localized: "Tool positions refer to missing message segments."))
-            }
-            model.toolActivityPlacements = model.toolActivityPlacements.filter { $0.assistantSegmentAnchor == nil }
-        }
+        try recoverMessageDocument(documentData, into: model, row: row)
         return model
+    }
+
+    private static func recoverMessageDocument(_ data: Data, into model: ChatMessage, row: RecoveryRow) throws {
+        do {
+            try model.installDocument(data)
+            return
+        } catch let error as DecodingError {
+            guard var document = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                  let rounds = document["generationRounds"], !(rounds is NSNull) else {
+                row.decodingLoss("messageDocumentData", error: error)
+                throw row.invalid("messageDocumentData")
+            }
+            // Statistics are independent of conversation content. Keep readable rounds;
+            // never remove or reconstruct text, protocol items, or tool history.
+            let encoded = try JSONSerialization.data(withJSONObject: rounds, options: [.fragmentsAllowed])
+            let readable = try row.readableItems(encoded, of: ChatGenerationRound.self, field: "generationRounds")
+            guard row.lostFields.contains("generationRounds") else {
+                row.decodingLoss("messageDocumentData", error: error)
+                throw row.invalid("messageDocumentData")
+            }
+            document["generationRounds"] = try readable.map { try JSONSerialization.jsonObject(with: $0) }
+            let recovered = try JSONSerialization.data(withJSONObject: document)
+            do {
+                try model.installDocument(recovered)
+            } catch let error as DecodingError {
+                row.decodingLoss("messageDocumentData", error: error)
+                throw row.invalid("messageDocumentData")
+            }
+        }
     }
 
     private static func recoverChatServer(_ row: RecoveryRow) throws -> ChatServerPreset {
@@ -438,46 +449,5 @@ extension StartupDataRecovery {
         return model
     }
 
-    private static func recoverMetadata(_ row: RecoveryRow) throws -> ChatRequestContextMetadata {
-        let snapshot = ChatRequestContextSnapshot(
-            fingerprint: try row.value("fingerprint"),
-            version: ChatRequestContextBuilder.version,
-            modelIdentifier: "",
-            endpointURLHash: "",
-            providerRawValue: "",
-            requestStyleRawValue: "",
-            developerPromptHash: "",
-            developerPromptCharacterCount: 0,
-            thinkingOptionRawValue: nil,
-            toolUseEnabled: false,
-            enabledToolIDsJSON: "[]",
-            toolSchemaDigest: "",
-            toolSchemaSummaryJSON: "{}",
-            toolAuthorizationModeRawValue: ToolAuthorizationMode.readOnly.rawValue,
-            allowHighRiskToolAutoExecution: false,
-            useProviderContinuationIDs: false
-        )
-        let model = ChatRequestContextMetadata(snapshot: snapshot)
-        model.version = row.recover("version", defaultValue: model.version)
-        model.createdAt = row.recover("createdAt", defaultValue: model.createdAt)
-        model.lastSeenAt = row.recover("lastSeenAt", defaultValue: model.lastSeenAt)
-        model.referenceCount = row.recover("referenceCount", defaultValue: model.referenceCount)
-        model.modelIdentifier = row.recover("modelIdentifier", defaultValue: model.modelIdentifier)
-        model.endpointURLHash = row.recover("endpointURLHash", defaultValue: model.endpointURLHash)
-        model.providerRawValue = row.recover("providerRawValue", defaultValue: model.providerRawValue)
-        model.requestStyleRawValue = row.recover("requestStyleRawValue", defaultValue: model.requestStyleRawValue)
-        model.developerPromptHash = row.recover("developerPromptHash", defaultValue: model.developerPromptHash)
-        model.developerPromptCharacterCount = row.recover("developerPromptCharacterCount", defaultValue: model.developerPromptCharacterCount)
-        model.thinkingOptionRawValue = row.recover("thinkingOptionRawValue", defaultValue: model.thinkingOptionRawValue)
-        model.toolUseEnabled = row.recover("toolUseEnabled", defaultValue: model.toolUseEnabled)
-        model.enabledToolIDsJSON = row.recover("enabledToolIDsJSON", defaultValue: model.enabledToolIDsJSON)
-        model.toolSchemaDigest = row.recover("toolSchemaDigest", defaultValue: model.toolSchemaDigest)
-        model.toolSchemaSummaryJSON = row.recover("toolSchemaSummaryJSON", defaultValue: model.toolSchemaSummaryJSON)
-        model.toolAuthorizationModeRawValue = row.recover("toolAuthorizationModeRawValue", defaultValue: model.toolAuthorizationModeRawValue)
-        model.allowHighRiskToolAutoExecution = row.recover("allowHighRiskToolAutoExecution", defaultValue: model.allowHighRiskToolAutoExecution)
-        model.useProviderContinuationIDs = row.recover("useProviderContinuationIDs", defaultValue: model.useProviderContinuationIDs)
-        model.enabledToolIDsJSON = try row.validJSON(model.enabledToolIDsJSON, defaultValue: [String](), field: "enabledToolIDsJSON")
-        model.toolSchemaSummaryJSON = try row.validJSON(model.toolSchemaSummaryJSON, defaultValue: JSONValue.object([:]), field: "toolSchemaSummaryJSON")
-        return model
-    }
+
 }

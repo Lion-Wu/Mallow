@@ -150,7 +150,6 @@ struct SettingsView: View {
             .background(AppBackgroundView())
             .task {
                 viewModel.refreshFromSettingsManager()
-                viewModel.fetchAvailableModels()
             }
             .onDisappear {
                 viewModel.commitPendingEdits()

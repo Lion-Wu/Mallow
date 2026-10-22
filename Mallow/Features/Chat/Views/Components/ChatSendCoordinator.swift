@@ -30,6 +30,7 @@ struct ChatSendCoordinator {
     @discardableResult
     func sendIfPossible() -> Bool {
         guard canSendDraft else { return false }
+        guard viewModel.ensureModelReadyForSending() else { return false }
         if viewModel.isLoading || viewModel.isPriming || viewModel.isToolContinuationLoading {
             return queueCurrentDraftIfPossible()
         }
@@ -79,7 +80,7 @@ struct ChatSendCoordinator {
             cancelScrollToBottomAfterSend()
             if viewModel.isLoading || viewModel.isPriming || viewModel.isToolContinuationLoading {
                 _ = queueCurrentDraftIfPossible()
-            } else if viewModel.shouldWarnAboutUnsupportedImageInputBeforeSending() {
+            } else if viewModel.isModelReady, viewModel.shouldWarnAboutUnsupportedImageInputBeforeSending() {
                 setActiveAlert(.unsupportedImageSend)
             }
             return false
@@ -90,6 +91,7 @@ struct ChatSendCoordinator {
 
     @discardableResult
     func sendQueuedDraftImmediately(_ draftID: UUID, ignoringUnsupportedImageInputs: Bool = false) -> Bool {
+        guard viewModel.ensureModelReadyForSending() else { return false }
         if !ignoringUnsupportedImageInputs,
            let draft = viewModel.queuedDraft(id: draftID),
            viewModel.shouldWarnAboutUnsupportedImageInput(for: draft) {
@@ -128,6 +130,7 @@ struct ChatSendCoordinator {
 
     func startRealtimeVoiceOverlay() {
         guard !voiceOverlayVM.isPresented else { return }
+        guard viewModel.ensureModelReadyForSending() else { return }
         AppHaptics.trigger(.selection)
         cancelAssistantResponseHaptics()
         voiceOverlayVM.presentSession(chatSession: viewModel) { text, imageAttachments in

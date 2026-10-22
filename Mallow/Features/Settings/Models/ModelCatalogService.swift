@@ -135,41 +135,19 @@ struct DefaultModelCatalogService: ModelCatalogFetching, Sendable {
         switch candidate.style {
         case .anthropicMessages:
             let trimmed = rawAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
-            if usesBearerAuthForAnthropicMessages(candidate.modelsURL) {
-                if !trimmed.isEmpty {
-                    let headerValue = trimmed.lowercased().hasPrefix("bearer ") ? trimmed : "Bearer \(trimmed)"
-                    request.setValue(headerValue, forHTTPHeaderField: "Authorization")
-                }
-            } else {
-                let xAPIKey = normalizedAPIKeyForXAPIKeyHeader(trimmed)
-                if !xAPIKey.isEmpty {
-                    request.setValue(xAPIKey, forHTTPHeaderField: "x-api-key")
-                }
-                request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+            let keyForHeader = normalizedAPIKeyForXAPIKeyHeader(trimmed)
+            if !keyForHeader.isEmpty {
+                request.setValue(keyForHeader, forHTTPHeaderField: "x-api-key")
             }
+            request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
 
         case .openAIResponses, .openAIChatCompletions, .lmStudioRESTV1:
             let trimmed = rawAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {
-                if usesAzureOpenAIAPIKeyAuth(candidate.modelsURL, rawAPIKey: trimmed) {
-                    request.setValue(normalizedAPIKeyForXAPIKeyHeader(trimmed), forHTTPHeaderField: "api-key")
-                } else {
-                    let headerValue = trimmed.lowercased().hasPrefix("bearer ") ? trimmed : "Bearer \(trimmed)"
-                    request.setValue(headerValue, forHTTPHeaderField: "Authorization")
-                }
+                let headerValue = trimmed.lowercased().hasPrefix("bearer ") ? trimmed : "Bearer \(trimmed)"
+                request.setValue(headerValue, forHTTPHeaderField: "Authorization")
             }
         }
-    }
-
-    private static func usesBearerAuthForAnthropicMessages(_ url: URL) -> Bool {
-        let host = (url.host ?? "").lowercased()
-        return ChatEndpointBaseURL.hostMatchesOfficialDomain(host, domain: "openrouter.ai")
-    }
-
-    private static func usesAzureOpenAIAPIKeyAuth(_ url: URL, rawAPIKey: String) -> Bool {
-        let host = (url.host ?? "").lowercased()
-        return ChatEndpointBaseURL.hostMatchesOfficialDomain(host, domain: "openai.azure.com") &&
-            !rawAPIKey.lowercased().hasPrefix("bearer ")
     }
 }
 

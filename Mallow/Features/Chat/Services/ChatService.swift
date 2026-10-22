@@ -217,7 +217,6 @@ final class ChatService: NSObject, @unchecked Sendable {
                 imageAttachments: message.imageAttachments,
                 providerResponseID: isContinuationTarget ? nil : message.providerResponseID,
                 requestContextFingerprint: message.requestContextFingerprint,
-                requestContentSnapshot: isContinuationTarget ? nil : message.requestContentSnapshot,
                 assistantSegments: message.assistantSegments,
                 openAIResponsesConversationItems: isContinuationTarget
                     ? ChatRequestPayloadProjector.continuationItems(for: message)
@@ -227,22 +226,6 @@ final class ChatService: NSObject, @unchecked Sendable {
             )
         }
         let model = configurationProvider.modelIdentifier
-        let requestContext = ChatRequestContextBuilder.make(
-            model: model,
-            endpoint: endpoint,
-            developerPrompt: developerPrompt,
-            toolUseSettings: configurationProvider.toolUseSettings,
-            apiAdvancedSettings: configurationProvider.apiAdvancedSettings,
-            thinkingOption: configurationProvider.thinkingOption,
-            sourceMessages: sourceMessages,
-            includeImagesInUserContent: includeImagesInUserContent
-        )
-        let previousResponseID = continuesAssistantMessage ? nil : Self.previousResponseID(
-            in: sourceMessages,
-            endpoint: endpoint,
-            currentRequestFingerprint: requestContext.fingerprint,
-            useProviderContinuationIDs: configurationProvider.toolUseSettings.useProviderContinuationIDs(for: endpoint)
-        )
         let initialPayload = projectedRequestPayload(
             sourceMessages: sourceMessages,
             developerPrompt: developerPrompt,
@@ -250,6 +233,35 @@ final class ChatService: NSObject, @unchecked Sendable {
             endpoint: endpoint
         )
         let payload = initialPayload.messages
+        let fullBody = try requestBodyBuilder.buildRequestBodyData(
+            model: model, messagePayload: payload, developerPrompt: developerPrompt,
+            endpoint: endpoint, apiAdvancedSettings: configurationProvider.apiAdvancedSettings,
+            toolUseSettings: configurationProvider.toolUseSettings,
+            previousResponseID: nil,
+            thinkingCapability: configurationProvider.thinkingCapability,
+            thinkingOption: configurationProvider.thinkingOption
+        )
+        let configurationFingerprint = try ChatRequestContextBuilder.fingerprint(
+            request: requestFactory.makeStreamingRequest(
+                endpoint: endpoint, requestBodyData: fullBody, apiKey: configurationProvider.apiKey
+            ),
+            endpoint: endpoint,
+            includeImagesInUserContent: includeImagesInUserContent
+        )
+        let history = try sourceMessages.map(ChatContinuationSeed.historyItem)
+        let prefix = ChatContinuationSeed(
+            configurationFingerprint: configurationFingerprint,
+            history: Array(history.dropLast())
+        )
+        let previousResponseID = continuesAssistantMessage ? nil : Self.previousResponseID(
+            in: sourceMessages, endpoint: endpoint,
+            currentRequestFingerprint: try prefix.fingerprint(),
+            useProviderContinuationIDs: configurationProvider.toolUseSettings.useProviderContinuationIDs(for: endpoint)
+        )
+        let continuationSeed = ChatContinuationSeed(
+            configurationFingerprint: configurationFingerprint,
+            history: continuesAssistantMessage ? Array(history.dropLast()) : history
+        )
         // A logical assistant message may span several transport attempts. Seed its
         // native history with the same complete prefix sent for this continuation.
         let continuationItems: [JSONValue]
@@ -273,19 +285,24 @@ final class ChatService: NSObject, @unchecked Sendable {
             previousResponseID: previousResponseID
         )
 
-        let requestBodyData = try requestBodyBuilder.buildRequestBodyData(
-            model: model,
-            messagePayload: payload,
-            developerPrompt: developerPrompt,
-            endpoint: endpoint,
-            apiAdvancedSettings: configurationProvider.apiAdvancedSettings,
-            toolUseSettings: configurationProvider.toolUseSettings,
-            previousResponseID: previousResponseID,
-            thinkingCapability: configurationProvider.thinkingCapability,
-            thinkingOption: configurationProvider.thinkingOption
-        )
+        let requestBodyData: Data
+        if previousResponseID == nil {
+            requestBodyData = fullBody
+        } else {
+            requestBodyData = try requestBodyBuilder.buildRequestBodyData(
+                model: model,
+                messagePayload: payload,
+                developerPrompt: developerPrompt,
+                endpoint: endpoint,
+                apiAdvancedSettings: configurationProvider.apiAdvancedSettings,
+                toolUseSettings: configurationProvider.toolUseSettings,
+                previousResponseID: previousResponseID,
+                thinkingCapability: configurationProvider.thinkingCapability,
+                thinkingOption: configurationProvider.thinkingOption
+            )
+        }
         onResponseMetadata?(ChatResponseMetadata(
-            requestContext: requestContext.snapshot,
+            continuationSeed: continuationSeed,
             requestUsedPreviousResponseID: previousResponseID != nil,
             requestPreviousResponseID: previousResponseID
         ))
@@ -332,9 +349,10 @@ final class ChatService: NSObject, @unchecked Sendable {
         let previousFingerprint = previousMessage.requestContextFingerprint?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !previousMessage.isUser,
               !previousMessage.content.hasPrefix("!error:"),
-              now.timeIntervalSince(previousMessage.createdAt) <= Self.previousResponseIDMaxAge,
+              let createdAt = previousMessage.createdAt,
+              now.timeIntervalSince(createdAt) <= Self.previousResponseIDMaxAge,
               let currentRequestFingerprint,
-              !currentRequestFingerprint.isEmpty,
+              currentRequestFingerprint.hasPrefix("history-v2:"),
               previousFingerprint == currentRequestFingerprint,
               let responseID = ChatRequestBodyProviderEncoder.normalizedPreviousResponseID(
                 previousMessage.providerResponseID,
@@ -363,8 +381,13 @@ final class ChatService: NSObject, @unchecked Sendable {
     /// Cancels the current streaming request.
     @MainActor
     func cancelStreaming() {
-        stateQueue.async { [weak self] in
-            guard let self else { return }
+        let metadata = stateQueue.sync {
+            if var round = self.pendingResponseMetadata.generationRound, round.endedAt == nil {
+                round.endedAt = Date()
+                round.outcome = "stopped"
+                self.pendingResponseMetadata.generationRound = round
+            }
+            let metadata = self.pendingResponseMetadata
             self.isCancelled = true
             self.advanceRequestGeneration()
             self.activeStreamRequest?.task.cancel()
@@ -373,7 +396,9 @@ final class ChatService: NSObject, @unchecked Sendable {
             Task { await self.toolAuthorizationCoordinator.cancelAll() }
             self.resetStreamState()
             self.activeToolLoopContext = nil
+            return metadata
         }
+        onResponseMetadata?(metadata)
     }
 
 }

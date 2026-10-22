@@ -21,6 +21,7 @@ struct ChatComposerPanelBinder: View {
     let inputOverflow: Bool
     let layoutMetrics: ChatComposerLayoutMetrics
     let supportsImageInput: Bool
+    let isModelReady: Bool
     let thinkingCapability: ModelThinkingCapability?
     let thinkingOption: ModelThinkingOption?
     let errorCenter: AppErrorCenter
@@ -60,6 +61,7 @@ struct ChatComposerPanelBinder: View {
             isLoading: viewModel.isLoading,
             isPriming: viewModel.isPriming,
             canSendDraft: canSendDraft,
+            isModelReady: isModelReady,
             queuedDrafts: viewModel.queuedDrafts,
             pendingAttachments: viewModel.pendingImageAttachments,
             thinkingCapability: thinkingCapability,
@@ -101,7 +103,6 @@ struct ChatComposerPanelBinder: View {
                 viewModel.removePendingImageAttachment(id: attachment.id)
             },
             onSelectThinkingOption: viewModel.setCurrentThinkingOption(_:),
-            onToggleThinking: viewModel.toggleCurrentThinking,
             onCancelEditing: cancelEditing,
             onQueueDraft: { _ = onQueueDraft() },
             onCancelGeneration: onCancelGeneration,

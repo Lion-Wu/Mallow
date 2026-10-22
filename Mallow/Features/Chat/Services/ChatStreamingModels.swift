@@ -29,8 +29,9 @@ struct Choice: Decodable {
 }
 
 struct ChatResponseMetadata: Sendable, Equatable {
+    var generationRound: ChatGenerationRound?
     var providerResponseID: String?
-    var requestContext: ChatRequestContextSnapshot?
+    var continuationSeed: ChatContinuationSeed?
     var requestUsedPreviousResponseID: Bool?
     var requestPreviousResponseID: String?
     var outputTokenCount: Int?
@@ -42,8 +43,9 @@ struct ChatResponseMetadata: Sendable, Equatable {
     static let empty = ChatResponseMetadata()
 
     var hasAnyValue: Bool {
+        generationRound != nil ||
         providerResponseID != nil ||
-        requestContext != nil ||
+        continuationSeed != nil ||
         requestUsedPreviousResponseID != nil ||
         requestPreviousResponseID != nil ||
         outputTokenCount != nil ||
@@ -54,13 +56,11 @@ struct ChatResponseMetadata: Sendable, Equatable {
     }
 
     mutating func merge(_ update: ChatResponseMetadata) {
+        if let generationRound = update.generationRound { self.generationRound = generationRound }
+        if let seed = update.continuationSeed { continuationSeed = seed }
         if let providerResponseID = update.providerResponseID,
            !providerResponseID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             self.providerResponseID = providerResponseID
-        }
-        if let requestContext = update.requestContext,
-           !requestContext.fingerprint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            self.requestContext = requestContext
         }
         if let requestUsedPreviousResponseID = update.requestUsedPreviousResponseID {
             self.requestUsedPreviousResponseID = requestUsedPreviousResponseID
@@ -76,10 +76,10 @@ struct ChatResponseMetadata: Sendable, Equatable {
                 self.requestUsedPreviousResponseID = true
             }
         }
-        if let outputTokenCount = update.outputTokenCount {
+        if let outputTokenCount = update.outputTokenCount, outputTokenCount >= 0 {
             self.outputTokenCount = outputTokenCount
         }
-        if let reasoningOutputTokenCount = update.reasoningOutputTokenCount {
+        if let reasoningOutputTokenCount = update.reasoningOutputTokenCount, reasoningOutputTokenCount >= 0 {
             self.reasoningOutputTokenCount = reasoningOutputTokenCount
         }
         if let tokensPerSecond = update.tokensPerSecond, tokensPerSecond.isFinite, tokensPerSecond >= 0 {
@@ -94,6 +94,166 @@ struct ChatResponseMetadata: Sendable, Equatable {
            !finishReason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             self.finishReason = finishReason
         }
+    }
+}
+
+/// Statistics belong to one HTTP generation, including tool-call generations.
+/// Provider fields are stored once; normalized values are read-only projections.
+struct ChatGenerationRound: Codable, Equatable, Sendable, Identifiable {
+    let id: UUID
+    let requestStyle: ChatRequestStyle
+    let requestedModel: String
+    let requestURL: String
+    let startedAt: Date
+    let previousResponseID: String?
+    // Nil means unavailable; an empty dictionary means no thinking override was sent.
+    var requestedThinking: [String: JSONValue]?
+    var firstOutputAt: Date?
+    var endedAt: Date?
+    var outcome: String?
+    var hasFinalUsage = false
+    var providerFields: [String: JSONValue] = [:]
+    var toolCallIDs: [String] = []
+
+    static let thinkingParameterKeys: Set<String> = ["reasoning", "reasoning_effort", "thinking", "output_config"]
+
+    var reportedThinking: [String: JSONValue] {
+        providerFields.filter { Self.thinkingParameterKeys.contains($0.key) }
+    }
+
+    var providerResponseID: String? { string("id") ?? string("response_id") }
+    var providerModel: String? { string("model") }
+    var finishReason: String? {
+        if let reason = string("finish_reason") ?? string("stop_reason") { return reason }
+        guard let status = string("status"), ["completed", "incomplete", "failed", "cancelled"].contains(status) else { return nil }
+        return status
+    }
+    var outputTokens: Int? {
+        guard hasFinalUsage else { return nil }
+        return integer("usage", "output_tokens") ?? integer("usage", "completion_tokens")
+            ?? integer("stats", "total_output_tokens") ?? integer("timings", "predicted_n")
+    }
+    var inputTokens: Int? {
+        guard hasFinalUsage else { return nil }
+        return integer("usage", "input_tokens") ?? integer("usage", "prompt_tokens")
+            ?? integer("stats", "input_tokens") ?? integer("timings", "prompt_n")
+    }
+    var reasoningTokens: Int? {
+        guard hasFinalUsage else { return nil }
+        return integer("usage", "output_tokens_details", "reasoning_tokens")
+            ?? integer("usage", "output_tokens_details", "thinking_tokens")
+            ?? integer("usage", "completion_tokens_details", "reasoning_tokens")
+            ?? integer("stats", "reasoning_output_tokens")
+    }
+    var totalTokens: Int? { hasFinalUsage ? integer("usage", "total_tokens") : nil }
+    var cachedTokens: Int? {
+        guard hasFinalUsage else { return nil }
+        return integer("usage", "input_tokens_details", "cached_tokens")
+            ?? integer("usage", "prompt_tokens_details", "cached_tokens")
+            ?? integer("usage", "cache_read_input_tokens") ?? integer("timings", "cache_n")
+    }
+    var cacheWriteTokens: Int? {
+        guard hasFinalUsage else { return nil }
+        return integer("usage", "input_tokens_details", "cache_write_tokens")
+            ?? integer("usage", "prompt_tokens_details", "cache_write_tokens")
+            ?? integer("usage", "cache_creation_input_tokens")
+    }
+    var reportedCost: Double? { hasFinalUsage ? number("usage", "cost") : nil }
+    var providerTokensPerSecond: Double? {
+        guard hasFinalUsage else { return nil }
+        return number("stats", "tokens_per_second") ?? number("timings", "predicted_per_second")
+    }
+    var providerTimeToFirstToken: Double? {
+        number("stats", "time_to_first_token_seconds") ?? number("timings", "time_to_first_token_seconds")
+    }
+    var localTimeToFirstOutput: TimeInterval? { firstOutputAt.map { $0.timeIntervalSince(startedAt) } }
+    var localDuration: TimeInterval? { endedAt.map { $0.timeIntervalSince(startedAt) } }
+    var providerCreatedAt: Date? { (number("created_at") ?? number("created")).map(Date.init(timeIntervalSince1970:)) }
+    var providerCompletedAt: Date? { number("completed_at").map(Date.init(timeIntervalSince1970:)) }
+
+    mutating func absorb(_ dictionary: [String: Any]) {
+        let type = (dictionary["type"] as? String) ?? ""
+        let payload = (dictionary["response"] as? [String: Any])
+            ?? (dictionary["result"] as? [String: Any])
+            ?? (dictionary["message"] as? [String: Any]) ?? dictionary
+        let fields = ["id", "response_id", "model", "provider", "created", "created_at", "completed_at",
+                      "status", "finish_reason", "native_finish_reason", "stop_reason", "stop_sequence",
+                      "usage", "stats", "timings", "service_tier", "system_fingerprint", "tool_usage",
+                      "incomplete_details", "error"]
+        for key in fields + Self.thinkingParameterKeys.sorted() {
+            if let value = payload[key] {
+                providerFields[key] = Self.merging(providerFields[key], JSONValue.normalized(value))
+            }
+        }
+        if requestStyle == .lmStudioRESTV1,
+           let model = payload["model_instance_id"] as? String,
+           !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            providerFields["model"] = .string(model)
+        }
+        if let choice = (dictionary["choices"] as? [[String: Any]])?.first {
+            for key in ["finish_reason", "native_finish_reason"] {
+                if let value = choice[key] as? String { providerFields[key] = .string(value) }
+            }
+            if let delta = choice["delta"] as? [String: Any], let calls = delta["tool_calls"] as? [[String: Any]] {
+                for call in calls { recordToolCallID(call["id"] as? String) }
+            }
+        }
+        if let delta = dictionary["delta"] as? [String: Any], let reason = delta["stop_reason"] as? String {
+            providerFields["stop_reason"] = .string(reason)
+        }
+        if let item = dictionary["item"] as? [String: Any], item["type"] as? String == "function_call" {
+            recordToolCallID(item["call_id"] as? String)
+        }
+        if let block = dictionary["content_block"] as? [String: Any], block["type"] as? String == "tool_use" {
+            recordToolCallID(block["id"] as? String)
+        }
+        let containsUsage = payload["usage"] is [String: Any] || payload["stats"] is [String: Any]
+            || payload["timings"] is [String: Any]
+        switch requestStyle {
+        case .anthropicMessages:
+            if containsUsage && (type == "message_delta" && finishReason != nil || type == "message" || type.isEmpty && finishReason != nil) { hasFinalUsage = true }
+        case .openAIResponses:
+            if containsUsage && (["response.completed", "response.done", "response.incomplete", "response.failed"].contains(type)
+                || type.isEmpty && ["completed", "incomplete", "failed"].contains(string("status") ?? "")) { hasFinalUsage = true }
+        case .openAIChatCompletions:
+            let usageOnly = (dictionary["choices"] as? [[String: Any]])?.isEmpty == true
+            if containsUsage && (finishReason != nil || usageOnly || dictionary["object"] as? String == "chat.completion") { hasFinalUsage = true }
+        case .lmStudioRESTV1:
+            if containsUsage && (["chat.end", "response.completed"].contains(type) || type.isEmpty) { hasFinalUsage = true }
+        }
+    }
+
+    private mutating func recordToolCallID(_ id: String?) {
+        guard let id, !id.isEmpty, !toolCallIDs.contains(id) else { return }
+        toolCallIDs.append(id)
+    }
+
+    private static func merging(_ previous: JSONValue?, _ update: JSONValue) -> JSONValue {
+        guard case var .object(object) = previous, case let .object(changes) = update else { return update }
+        for (key, value) in changes { object[key] = merging(object[key], value) }
+        return .object(object)
+    }
+
+    private func value(_ path: [String]) -> JSONValue? {
+        var current: JSONValue = .object(providerFields)
+        for key in path {
+            guard case let .object(object) = current, let next = object[key] else { return nil }
+            current = next
+        }
+        return current
+    }
+    private func string(_ key: String) -> String? {
+        guard case let .string(value) = providerFields[key], !value.isEmpty else { return nil }
+        return value
+    }
+    private func number(_ path: String...) -> Double? {
+        guard case let .number(value) = value(path), value.isFinite, value >= 0 else { return nil }
+        return value
+    }
+    private func integer(_ path: String...) -> Int? {
+        guard case let .number(value) = value(path), value.isFinite, value >= 0,
+              value < Double(Int.max), value.rounded(.towardZero) == value else { return nil }
+        return Int(value)
     }
 }
 
@@ -112,6 +272,7 @@ struct LlamaServerTimings: Decodable {
     var prompt_n: Int?
     var predicted_n: Int?
     var predicted_per_second: Double?
+    var time_to_first_token_seconds: Double?
 }
 
 /// Decodes reasoning fields produced by LM Studio v0.3.23 and later.
@@ -257,6 +418,7 @@ enum ChatNetworkError: Error {
     case invalidURL
     case invalidRequestHistory
     case unsupportedImageInput
+    case modelInformationUnavailable
     case serverError(statusCode: Int?, message: String)
     case timeout(String)
     case emptyResponse
@@ -284,6 +446,11 @@ extension ChatNetworkError: LocalizedError {
             return NSLocalizedString(
                 "The selected model does not support image input.",
                 comment: "Shown when retry settings cannot preserve the request's image inputs"
+            )
+        case .modelInformationUnavailable:
+            return NSLocalizedString(
+                "Model information is not ready. Wait for loading to finish, or fetch models again in Settings.",
+                comment: "Shown when sending is blocked until model metadata is available"
             )
         case .serverError(_, let message):
             return message

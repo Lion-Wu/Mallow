@@ -34,7 +34,6 @@ enum ChatConversationTurnController {
         clearComposerAfterSend: Bool,
         prepareForAppend: () -> Void = {},
         fallbackParent: () -> ChatMessage?,
-        estimatedTokenCount: (Int) -> Int,
         createdAt now: Date = Date()
     ) -> ChatConversationTurnStartResult {
         let draftPlanResult = ChatTurnDraftPlanner.plan(
@@ -58,7 +57,6 @@ enum ChatConversationTurnController {
             plan: draftPlan,
             to: session,
             fallbackParent: fallbackParent,
-            estimatedTokenCount: estimatedTokenCount,
             createdAt: now
         )
 

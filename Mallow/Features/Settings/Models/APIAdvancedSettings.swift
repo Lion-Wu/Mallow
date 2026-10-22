@@ -18,10 +18,12 @@ struct APIAdvancedSettings: Codable, Equatable, Sendable {
     var lmStudioSampling: APIAdvancedSamplingSettings
     var anthropicMaxTokens: Int
     var anthropicSampling: APIAdvancedSamplingSettings
-    var anthropicThinkingResponseReserve: Int
-    var anthropicLowThinkingBudget: Int
-    var anthropicMediumThinkingBudget: Int
-    var anthropicHighThinkingBudget: Int
+    static let anthropicDefaultMaxTokens = 32_000
+    var anthropicMaxTokensEnabled: Bool
+    var anthropicThinkingModeOverride: String
+    var anthropicThinkingBudgetEnabled: Bool
+    var anthropicThinkingBudget: Int
+    var anthropicEffortOverride: String
 
     init(
         openAIResponsesMaxOutputTokens: Int = 0,
@@ -30,12 +32,13 @@ struct APIAdvancedSettings: Codable, Equatable, Sendable {
         openAIChatSampling: APIAdvancedSamplingSettings = .defaults,
         lmStudioMaxTokens: Int = 0,
         lmStudioSampling: APIAdvancedSamplingSettings = .defaults,
-        anthropicMaxTokens: Int = 4096,
+        anthropicMaxTokens: Int = Self.anthropicDefaultMaxTokens,
         anthropicSampling: APIAdvancedSamplingSettings = .defaults,
-        anthropicThinkingResponseReserve: Int = 1024,
-        anthropicLowThinkingBudget: Int = 1024,
-        anthropicMediumThinkingBudget: Int = 4096,
-        anthropicHighThinkingBudget: Int = 10_000
+        anthropicMaxTokensEnabled: Bool = false,
+        anthropicThinkingModeOverride: String = "",
+        anthropicThinkingBudgetEnabled: Bool = false,
+        anthropicThinkingBudget: Int = Self.anthropicDefaultMaxTokens - 1,
+        anthropicEffortOverride: String = ""
     ) {
         self.openAIResponsesMaxOutputTokens = openAIResponsesMaxOutputTokens
         self.openAIResponsesSampling = openAIResponsesSampling
@@ -45,10 +48,11 @@ struct APIAdvancedSettings: Codable, Equatable, Sendable {
         self.lmStudioSampling = lmStudioSampling
         self.anthropicMaxTokens = anthropicMaxTokens
         self.anthropicSampling = anthropicSampling
-        self.anthropicThinkingResponseReserve = anthropicThinkingResponseReserve
-        self.anthropicLowThinkingBudget = anthropicLowThinkingBudget
-        self.anthropicMediumThinkingBudget = anthropicMediumThinkingBudget
-        self.anthropicHighThinkingBudget = anthropicHighThinkingBudget
+        self.anthropicMaxTokensEnabled = anthropicMaxTokensEnabled
+        self.anthropicThinkingModeOverride = anthropicThinkingModeOverride
+        self.anthropicThinkingBudgetEnabled = anthropicThinkingBudgetEnabled
+        self.anthropicThinkingBudget = anthropicThinkingBudget
+        self.anthropicEffortOverride = anthropicEffortOverride
     }
 
     var sanitized: APIAdvancedSettings {
@@ -59,13 +63,48 @@ struct APIAdvancedSettings: Codable, Equatable, Sendable {
             openAIChatSampling: openAIChatSampling.sanitized,
             lmStudioMaxTokens: max(0, lmStudioMaxTokens),
             lmStudioSampling: lmStudioSampling.sanitized,
-            anthropicMaxTokens: max(1, anthropicMaxTokens),
-            anthropicSampling: anthropicSampling.sanitized,
-            anthropicThinkingResponseReserve: max(1, anthropicThinkingResponseReserve),
-            anthropicLowThinkingBudget: max(1024, anthropicLowThinkingBudget),
-            anthropicMediumThinkingBudget: max(1024, anthropicMediumThinkingBudget),
-            anthropicHighThinkingBudget: max(1024, anthropicHighThinkingBudget)
+            anthropicMaxTokens: anthropicMaxTokens,
+            anthropicSampling: anthropicSampling,
+            anthropicMaxTokensEnabled: anthropicMaxTokensEnabled,
+            anthropicThinkingModeOverride: anthropicThinkingModeOverride,
+            anthropicThinkingBudgetEnabled: anthropicThinkingBudgetEnabled,
+            anthropicThinkingBudget: anthropicThinkingBudget,
+            anthropicEffortOverride: anthropicEffortOverride
         )
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case openAIResponsesMaxOutputTokens
+        case openAIResponsesSampling
+        case openAIChatMaxCompletionTokens
+        case openAIChatSampling
+        case lmStudioMaxTokens
+        case lmStudioSampling
+        case anthropicMaxTokens
+        case anthropicSampling
+        case anthropicMaxTokensEnabled
+        case anthropicThinkingModeOverride
+        case anthropicThinkingBudgetEnabled
+        case anthropicThinkingBudget
+        case anthropicEffortOverride
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init()
+        openAIResponsesMaxOutputTokens = try container.decodeIfPresent(Int.self, forKey: .openAIResponsesMaxOutputTokens) ?? openAIResponsesMaxOutputTokens
+        openAIResponsesSampling = try container.decodeIfPresent(APIAdvancedSamplingSettings.self, forKey: .openAIResponsesSampling) ?? openAIResponsesSampling
+        openAIChatMaxCompletionTokens = try container.decodeIfPresent(Int.self, forKey: .openAIChatMaxCompletionTokens) ?? openAIChatMaxCompletionTokens
+        openAIChatSampling = try container.decodeIfPresent(APIAdvancedSamplingSettings.self, forKey: .openAIChatSampling) ?? openAIChatSampling
+        lmStudioMaxTokens = try container.decodeIfPresent(Int.self, forKey: .lmStudioMaxTokens) ?? lmStudioMaxTokens
+        lmStudioSampling = try container.decodeIfPresent(APIAdvancedSamplingSettings.self, forKey: .lmStudioSampling) ?? lmStudioSampling
+        anthropicMaxTokens = try container.decodeIfPresent(Int.self, forKey: .anthropicMaxTokens) ?? anthropicMaxTokens
+        anthropicSampling = try container.decodeIfPresent(APIAdvancedSamplingSettings.self, forKey: .anthropicSampling) ?? anthropicSampling
+        anthropicMaxTokensEnabled = try container.decodeIfPresent(Bool.self, forKey: .anthropicMaxTokensEnabled) ?? anthropicMaxTokensEnabled
+        anthropicThinkingModeOverride = try container.decodeIfPresent(String.self, forKey: .anthropicThinkingModeOverride) ?? anthropicThinkingModeOverride
+        anthropicThinkingBudgetEnabled = try container.decodeIfPresent(Bool.self, forKey: .anthropicThinkingBudgetEnabled) ?? anthropicThinkingBudgetEnabled
+        anthropicThinkingBudget = try container.decodeIfPresent(Int.self, forKey: .anthropicThinkingBudget) ?? anthropicThinkingBudget
+        anthropicEffortOverride = try container.decodeIfPresent(String.self, forKey: .anthropicEffortOverride) ?? anthropicEffortOverride
     }
 
 }
@@ -268,35 +307,35 @@ struct APIAdvancedSamplingSettings: Codable, Equatable, Sendable {
     }
 
     func encode(to encoder: Encoder) throws {
-        let sanitized = sanitized
+        let value = self
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(sanitized.temperatureEnabled, forKey: .temperatureEnabled)
-        try container.encode(sanitized.temperature, forKey: .temperature)
-        try container.encode(sanitized.topPEnabled, forKey: .topPEnabled)
-        try container.encode(sanitized.topP, forKey: .topP)
-        try container.encode(sanitized.topKEnabled, forKey: .topKEnabled)
-        try container.encode(sanitized.topK, forKey: .topK)
-        try container.encode(sanitized.minPEnabled, forKey: .minPEnabled)
-        try container.encode(sanitized.minP, forKey: .minP)
-        try container.encode(sanitized.topAEnabled, forKey: .topAEnabled)
-        try container.encode(sanitized.topA, forKey: .topA)
-        try container.encode(sanitized.presencePenaltyEnabled, forKey: .presencePenaltyEnabled)
-        try container.encode(sanitized.presencePenalty, forKey: .presencePenalty)
-        try container.encode(sanitized.frequencyPenaltyEnabled, forKey: .frequencyPenaltyEnabled)
-        try container.encode(sanitized.frequencyPenalty, forKey: .frequencyPenalty)
-        try container.encode(sanitized.repetitionPenaltyEnabled, forKey: .repetitionPenaltyEnabled)
-        try container.encode(sanitized.repetitionPenalty, forKey: .repetitionPenalty)
-        try container.encode(sanitized.seedEnabled, forKey: .seedEnabled)
-        try container.encode(sanitized.seed, forKey: .seed)
-        try container.encode(sanitized.contextLengthEnabled, forKey: .contextLengthEnabled)
-        try container.encode(sanitized.contextLength, forKey: .contextLength)
-        try container.encode(sanitized.jsonModeEnabled, forKey: .jsonModeEnabled)
-        try container.encode(sanitized.structuredOutputsEnabled, forKey: .structuredOutputsEnabled)
-        try container.encode(sanitized.logprobsEnabled, forKey: .logprobsEnabled)
-        try container.encode(sanitized.topLogprobsEnabled, forKey: .topLogprobsEnabled)
-        try container.encode(sanitized.topLogprobs, forKey: .topLogprobs)
-        try container.encode(sanitized.verbosityEnabled, forKey: .verbosityEnabled)
-        try container.encode(sanitized.verbosity, forKey: .verbosity)
+        try container.encode(value.temperatureEnabled, forKey: .temperatureEnabled)
+        try container.encode(value.temperature, forKey: .temperature)
+        try container.encode(value.topPEnabled, forKey: .topPEnabled)
+        try container.encode(value.topP, forKey: .topP)
+        try container.encode(value.topKEnabled, forKey: .topKEnabled)
+        try container.encode(value.topK, forKey: .topK)
+        try container.encode(value.minPEnabled, forKey: .minPEnabled)
+        try container.encode(value.minP, forKey: .minP)
+        try container.encode(value.topAEnabled, forKey: .topAEnabled)
+        try container.encode(value.topA, forKey: .topA)
+        try container.encode(value.presencePenaltyEnabled, forKey: .presencePenaltyEnabled)
+        try container.encode(value.presencePenalty, forKey: .presencePenalty)
+        try container.encode(value.frequencyPenaltyEnabled, forKey: .frequencyPenaltyEnabled)
+        try container.encode(value.frequencyPenalty, forKey: .frequencyPenalty)
+        try container.encode(value.repetitionPenaltyEnabled, forKey: .repetitionPenaltyEnabled)
+        try container.encode(value.repetitionPenalty, forKey: .repetitionPenalty)
+        try container.encode(value.seedEnabled, forKey: .seedEnabled)
+        try container.encode(value.seed, forKey: .seed)
+        try container.encode(value.contextLengthEnabled, forKey: .contextLengthEnabled)
+        try container.encode(value.contextLength, forKey: .contextLength)
+        try container.encode(value.jsonModeEnabled, forKey: .jsonModeEnabled)
+        try container.encode(value.structuredOutputsEnabled, forKey: .structuredOutputsEnabled)
+        try container.encode(value.logprobsEnabled, forKey: .logprobsEnabled)
+        try container.encode(value.topLogprobsEnabled, forKey: .topLogprobsEnabled)
+        try container.encode(value.topLogprobs, forKey: .topLogprobs)
+        try container.encode(value.verbosityEnabled, forKey: .verbosityEnabled)
+        try container.encode(value.verbosity, forKey: .verbosity)
     }
 }
 

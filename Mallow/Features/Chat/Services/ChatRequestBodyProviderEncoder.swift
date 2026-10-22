@@ -50,19 +50,6 @@ enum ChatRequestBodyProviderEncoder {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    static func previousResponseCarriesInstructions(_ endpoint: ChatAPIEndpointCandidate) -> Bool {
-        switch endpoint.style {
-        case .lmStudioRESTV1:
-            return true
-        case .openAIResponses:
-            return false
-        case .openAIChatCompletions:
-            return true
-        case .anthropicMessages:
-            return true
-        }
-    }
-
     static func makeBaseRequestBody(
         model: String,
         messagePayload: [[String: Any]],
@@ -108,11 +95,6 @@ enum ChatRequestBodyEndpointClassifier {
 private struct OpenAICompatibleRequestBodyEncoder: ChatRequestBodyProviderEncoding {
     func makeBaseRequestBody(_ context: ChatRequestBodyEncodingContext) -> [String: Any] {
         if context.endpoint.style == .openAIResponses {
-            let host = (context.endpoint.chatURL.host ?? "").lowercased()
-            let requiresStructuredAssistantHistory = ChatEndpointBaseURL.hostMatchesOfficialDomain(
-                host,
-                domain: "openrouter.ai"
-            )
             let input = ChatRequestBodyProviderEncoder.isPreviousResponseContinuation(
                 previousResponseID: context.previousResponseID,
                 endpoint: context.endpoint
@@ -120,8 +102,7 @@ private struct OpenAICompatibleRequestBodyEncoder: ChatRequestBodyProviderEncodi
             ? ChatProviderMessagePayloadEncoder.openAIResponsesLatestUserInput(from: context.messagePayload)
             : ChatProviderMessagePayloadEncoder.openAIResponsesInput(
                 from: context.messagePayload,
-                includeInstructionMessages: false,
-                requiresStructuredAssistantHistory: requiresStructuredAssistantHistory
+                includeInstructionMessages: false
             )
             var requestBody: [String: Any] = [
                 "model": context.model,
@@ -140,6 +121,7 @@ private struct OpenAICompatibleRequestBodyEncoder: ChatRequestBodyProviderEncodi
         return [
             "model": context.model,
             "stream": true,
+            "stream_options": ["include_usage": true],
             "messages": ChatProviderMessagePayloadEncoder.openAIChatCompletionsMessages(
                 from: context.messagePayload,
                 developerPrompt: context.developerPrompt
@@ -168,8 +150,7 @@ private struct LMStudioRESTRequestBodyEncoder: ChatRequestBodyProviderEncoding {
         var requestBody: [String: Any] = [
             "model": context.model,
             "stream": true,
-            "input": lmStudioInput,
-            "store": true
+            "input": lmStudioInput
         ]
         if isPreviousResponseContinuation, let previousResponseID {
             requestBody["previous_response_id"] = previousResponseID
@@ -188,7 +169,9 @@ private struct AnthropicMessagesRequestBodyEncoder: ChatRequestBodyProviderEncod
         var requestBody: [String: Any] = [
             "model": context.model,
             "stream": true,
-            "max_tokens": context.apiAdvancedSettings.anthropicMaxTokens,
+            "max_tokens": context.apiAdvancedSettings.anthropicMaxTokensEnabled
+                ? context.apiAdvancedSettings.anthropicMaxTokens
+                : APIAdvancedSettings.anthropicDefaultMaxTokens,
             "messages": ChatProviderMessagePayloadEncoder.anthropicMessagesInput(from: context.messagePayload)
         ]
         if let prompt = context.developerPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -238,7 +221,7 @@ enum ChatProviderMessagePayloadEncoder {
 
         if !systemPrompts.isEmpty {
             output.insert([
-                "role": "system",
+                "role": "developer",
                 "content": systemPrompts.joined(separator: "\n\n")
             ], at: 0)
         }
@@ -247,8 +230,7 @@ enum ChatProviderMessagePayloadEncoder {
 
     static func openAIResponsesInput(
         from messagePayload: [[String: Any]],
-        includeInstructionMessages: Bool = true,
-        requiresStructuredAssistantHistory: Bool = false
+        includeInstructionMessages: Bool = true
     ) -> [[String: Any]] {
         var input: [[String: Any]] = []
         input.reserveCapacity(messagePayload.count)
@@ -265,7 +247,7 @@ enum ChatProviderMessagePayloadEncoder {
                rawRole == "developer" || rawRole == "system" {
                 continue
             }
-            if requiresStructuredAssistantHistory, rawRole == "assistant" {
+            if rawRole == "assistant" {
                 guard let text = textContent(from: item), !text.isEmpty else { continue }
                 let existingID = (item["id"] as? String)?
                     .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -290,7 +272,7 @@ enum ChatProviderMessagePayloadEncoder {
             }
             let role: String
             switch rawRole {
-            case "assistant", "system", "developer":
+            case "system", "developer":
                 role = rawRole
             default:
                 role = "user"
@@ -355,6 +337,12 @@ enum ChatProviderMessagePayloadEncoder {
     }
 
     static func lmStudioRESTInput(from messagePayload: [[String: Any]]) -> Any {
+        let conversation = messagePayload.filter {
+            let role = ($0["role"] as? String)?.lowercased()
+            return role != "system" && role != "developer"
+        }
+        let isSingleUserMessage = conversation.count == 1 &&
+            (conversation.first?["role"] as? String)?.lowercased() == "user"
         var transcriptLines: [String] = []
         transcriptLines.reserveCapacity(messagePayload.count)
 
@@ -396,7 +384,7 @@ enum ChatProviderMessagePayloadEncoder {
             let trimmedText = collectedText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmedText.isEmpty {
                 let speaker = role == "assistant" ? "Assistant" : "User"
-                transcriptLines.append("\(speaker): \(trimmedText)")
+                transcriptLines.append(isSingleUserMessage ? trimmedText : "\(speaker): \(trimmedText)")
             }
 
             if role == "user", index == lastUserPayloadIndex, !collectedImages.isEmpty {

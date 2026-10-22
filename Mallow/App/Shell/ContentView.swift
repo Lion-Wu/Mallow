@@ -272,7 +272,6 @@ private extension ContentView {
         for: Schema([
             ChatSession.self,
             ChatMessage.self,
-            ChatRequestContextMetadata.self,
             AppSettings.self
         ]),
         configurations: [ModelConfiguration(isStoredInMemoryOnly: true)]
@@ -313,7 +312,6 @@ private extension ContentView {
         for: Schema([
             ChatSession.self,
             ChatMessage.self,
-            ChatRequestContextMetadata.self,
             AppSettings.self
         ]),
         configurations: [ModelConfiguration(isStoredInMemoryOnly: true)]
