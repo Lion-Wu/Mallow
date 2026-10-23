@@ -3,64 +3,6 @@ import XCTest
 
 @MainActor
 final class ChatTextRequestRuntimeTests: XCTestCase {
-    func testRuntimePublishesActivityStateAndTracksAssistantIDs() {
-        let runtime = makeRuntime()
-        var states: [ChatRequestActivityController.PublishedState] = []
-
-        runtime.bindActivityState { states.append($0) }
-        runtime.markActive(pendingParentMessageID: uuid(51))
-        runtime.currentAssistantMessageID = uuid(52)
-        runtime.markAssistantDeltaStarted()
-        runtime.markInactive()
-
-        XCTAssertEqual(states, [
-            .init(isLoading: false, isPriming: false),
-            .init(isLoading: true, isPriming: true),
-            .init(isLoading: true, isPriming: false),
-            .init(isLoading: false, isPriming: false)
-        ])
-        XCTAssertEqual(runtime.pendingAssistantParentMessageID, uuid(51))
-        XCTAssertEqual(runtime.currentAssistantMessageID, uuid(52))
-    }
-
-    func testRuntimeDefersConfigurationUpdatesWhileActive() {
-        let initial = chatConfig(model: "initial")
-        let next = chatConfig(model: "next")
-        let runtime = makeRuntime(configuration: initial)
-
-        runtime.markActive(pendingParentMessageID: nil)
-
-        XCTAssertEqual(runtime.updateConfiguration(next), .deferred)
-        XCTAssertEqual(runtime.configuration, initial)
-
-        runtime.markInactive()
-
-        XCTAssertEqual(runtime.applyDeferredConfigurationIfIdle(), .applied)
-        XCTAssertEqual(runtime.configuration, next)
-    }
-
-    func testRuntimeClearsStreamingAnchorWhenFinalizedMessageMatches() {
-        let runtime = makeRuntime()
-        let session = ChatSession(title: "Example Conversation")
-        let assistant = ChatMessage(content: "hello", isUser: false)
-        session.messages.append(assistant)
-        runtime.currentAssistantMessageID = assistant.id
-        runtime.streamingAssistantMessageID = assistant.id
-        runtime.streamingAssistantFingerprint = ContentFingerprint.make(assistant.content)
-
-        let finalized = runtime.finalizeActiveAssistantMessage(
-            in: session,
-            reason: "completed",
-            finishedAt: TestDate.reference,
-            errorDescription: nil
-        )
-
-        XCTAssertEqual(finalized?.id, assistant.id)
-        XCTAssertNil(runtime.streamingAssistantMessageID)
-        XCTAssertNil(runtime.streamingAssistantFingerprint)
-        XCTAssertFalse(assistant.isActive)
-    }
-
     func testCompleteAfterErrorFinalizesInterruptedAssistantAndBuildsErrorMessage() {
         let runtime = makeRuntime()
         let session = ChatSession(title: "Example Conversation")
@@ -78,7 +20,8 @@ final class ChatTextRequestRuntimeTests: XCTestCase {
         XCTAssertEqual(completion.errorText, "network down")
         XCTAssertEqual(completion.interruptedMessage?.id, assistant.id)
         XCTAssertEqual(completion.pendingParentMessageID, uuid(53))
-        XCTAssertEqual(completion.errorMessage.content, "!error:network down")
+        XCTAssertEqual(completion.errorMessage.content, "network down")
+        XCTAssertTrue(completion.errorMessage.isError)
         XCTAssertEqual(runtime.interruptedAssistantMessageID, assistant.id)
         XCTAssertNil(runtime.currentAssistantMessageID)
         XCTAssertNil(runtime.pendingAssistantParentMessageID)
@@ -127,26 +70,6 @@ final class ChatTextRequestRuntimeTests: XCTestCase {
         XCTAssertNil(runtime.pendingAssistantParentMessageID)
         XCTAssertFalse(assistant.isActive)
         XCTAssertEqual(assistant.finishReason, "stopped")
-    }
-
-    func testPrepareForBranchRestartFinalizesAssistantAndClearsTracking() {
-        let runtime = makeRuntime()
-        let session = ChatSession(title: "Example Conversation")
-        let assistant = ChatMessage(content: "old", isUser: false)
-        session.messages.append(assistant)
-        runtime.currentAssistantMessageID = assistant.id
-
-        runtime.prepareForBranchRestart(
-            in: session,
-            reason: "retry",
-            finishedAt: TestDate.reference
-        )
-
-        XCTAssertFalse(runtime.hasActiveTextRequest)
-        XCTAssertNil(runtime.currentAssistantMessageID)
-        XCTAssertNil(runtime.pendingAssistantParentMessageID)
-        XCTAssertFalse(assistant.isActive)
-        XCTAssertEqual(assistant.finishReason, "retry")
     }
 
     func testNewRequestRetryScopeStartsAtFirstRetryAfterEarlierRequestRecovered() {

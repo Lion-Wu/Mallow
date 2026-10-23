@@ -4,82 +4,18 @@ import XCTest
 
 @MainActor
 final class ChatModelCapabilityStoreTests: XCTestCase {
-    func testProviderReportedImageSupportOverridesManualAndIsScopedByEndpoint() {
-        var store = ChatModelCapabilityStore(
-            imageInputOverrides: ["plain-text-model": true]
-        )
-
-        XCTAssertTrue(
-            store.supportsImageInput(
-                for: "plain-text-model",
-                apiBaseURL: "http://localhost:1234"
-            )
-        )
-
-        store.updateImageInputSupport(["plain-text-model": false], for: "http://localhost:1234")
-
-        XCTAssertFalse(
-            store.supportsImageInput(
-                for: "plain-text-model",
-                apiBaseURL: "http://localhost:1234"
-            )
-        )
-        XCTAssertFalse(
-            store.isImageInputSupportUnknown(
-                for: "plain-text-model",
-                apiBaseURL: "http://localhost:1234"
-            )
-        )
-        XCTAssertTrue(
-            store.supportsImageInput(
-                for: "plain-text-model",
-                apiBaseURL: "http://other-host:1234"
-            )
-        )
-    }
-
-    func testThinkingCapabilityAndSelectionUseScopedEndpointState() {
+    func testImageSupportRespectsEndpointAndFormatAndProviderMetadata() {
         var store = ChatModelCapabilityStore()
-        let explicitCapability = ModelThinkingCapability(
-            options: [.off, .high],
-            defaultOption: .off
-        )
+        let base = "http://localhost:1234"
+        let model = "plain-text-model"
+        store.setImageInputManualOverride(true, for: model, apiBaseURL: base, requestStyle: .openAIResponses)
 
-        store.updateThinkingCapabilities(["custom-model": explicitCapability], for: "http://localhost:1234")
+        XCTAssertTrue(store.supportsImageInput(for: model, apiBaseURL: base, requestStyle: .openAIResponses))
+        XCTAssertFalse(store.supportsImageInput(for: model, apiBaseURL: base, requestStyle: .openAIChatCompletions))
+        XCTAssertFalse(store.supportsImageInput(for: model, apiBaseURL: "http://other-host:1234", requestStyle: .openAIResponses))
 
-        XCTAssertEqual(
-            store.thinkingCapability(
-                for: "custom-model",
-                apiBaseURL: "http://localhost:1234",
-                provider: .openAI,
-                requestStyle: .openAIChatCompletions
-            ),
-            explicitCapability
-        )
-        XCTAssertNil(
-            store.thinkingCapability(
-                for: "custom-model",
-                apiBaseURL: "http://other-host:1234",
-                provider: .openAI,
-                requestStyle: .openAIChatCompletions
-            )
-        )
-
-        store.setSelectedThinkingOption(
-            .high,
-            for: "custom-model",
-            apiBaseURL: "http://localhost:1234",
-            capability: explicitCapability
-        )
-
-        XCTAssertEqual(
-            store.selectedThinkingOption(
-                for: "custom-model",
-                apiBaseURL: "http://localhost:1234",
-                capability: explicitCapability
-            ),
-            .high
-        )
+        store.updateImageInputSupport([model: false], for: base)
+        XCTAssertFalse(store.supportsImageInput(for: model, apiBaseURL: base, requestStyle: .openAIResponses))
     }
 
     func testDetectionHintsAndThinkingPreferencesPersistThroughDedicatedStore() throws {
@@ -97,6 +33,7 @@ final class ChatModelCapabilityStoreTests: XCTestCase {
             .high,
             for: "reasoning-model",
             apiBaseURL: "https://api.example.com/v1",
+            requestStyle: .openAIResponses,
             capability: capability
         )
         let container = try ModelContainer(for: AppSettings.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))

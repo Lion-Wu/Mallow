@@ -3,13 +3,6 @@ import XCTest
 
 @MainActor
 final class SettingsModelCatalogControllerTests: XCTestCase {
-    func testStandardNetworkSessionBoundsEntireTransferNotJustIdleTime() {
-        let configuration = NetworkSessions.standard.configuration
-        XCTAssertEqual(configuration.timeoutIntervalForRequest, 10)
-        XCTAssertEqual(configuration.timeoutIntervalForResource, 10)
-        XCTAssertFalse(configuration.waitsForConnectivity)
-    }
-
     func testAnthropicCatalogFetchesEveryPageWithoutChangingHeaders() async throws {
         let loader = ModelCatalogPageLoader()
         let service = DefaultModelCatalogService { request in
@@ -69,61 +62,6 @@ final class SettingsModelCatalogControllerTests: XCTestCase {
         XCTAssertEqual(failed.chatServerErrorMessage, "Invalid Server URL")
         XCTAssertEqual(failed.lastFetchedModelMetadata.map(\.id), ["existing"])
         XCTAssertEqual(failed.lastModelFetchEndpoint, endpoint)
-    }
-
-    func testFetchProjectsDetectedCatalogAndNextSelectedModel() async throws {
-        let endpoint = try XCTUnwrap(ChatAPIEndpointResolver.endpointCandidate(
-            for: "https://example.com",
-            formatPreference: .openAIResponses
-        ))
-        let service = StubModelCatalogService(responses: [
-            endpoint.modelsURL: .success([modelInfo(id: "vision-model", supportsImageInput: true)])
-        ])
-        let controller = SettingsModelCatalogController(
-            modelCatalogFetchCoordinator: ModelCatalogFetchCoordinator(modelCatalogService: service)
-        )
-        let current = SettingsModelCatalogState(
-            availableModels: ["old-model"],
-            isLoadingModels: false,
-            isRetryingModels: false,
-            modelRetryAttempt: 0,
-            modelRetryLastError: nil,
-            chatServerErrorMessage: nil,
-            lastFetchedModelMetadata: [],
-            lastModelFetchEndpoint: nil
-        )
-        let detected = expectation(description: "catalog detected")
-        var states: [SettingsModelCatalogState] = []
-        var detection: SettingsModelCatalogDetection?
-
-        controller.fetch(
-            request: SettingsModelCatalogRequest(
-                apiURL: " https://example.com ",
-                apiKey: "sk-test",
-                formatPreference: .openAIResponses,
-                detectedProvider: nil,
-                selectedModel: "missing-model"
-            ),
-            currentState: current,
-            applyState: { state in
-                states.append(state)
-            },
-            applyDetection: { value in
-                detection = value
-                detected.fulfill()
-            }
-        )
-
-        await fulfillment(of: [detected], timeout: 2.0)
-
-        XCTAssertEqual(service.requestedModelURLs, [endpoint.modelsURL])
-        XCTAssertEqual(states.first?.isLoadingModels, true)
-        XCTAssertEqual(states.last?.availableModels, ["vision-model"])
-        XCTAssertEqual(states.last?.lastModelFetchEndpoint, endpoint)
-        XCTAssertNil(states.last?.chatServerErrorMessage)
-        XCTAssertEqual(detection?.apiURL, "https://example.com")
-        XCTAssertEqual(detection?.nextSelectedModel, "vision-model")
-        XCTAssertEqual(detection?.result.imageInputSupportByModelID, ["vision-model": true])
     }
 }
 

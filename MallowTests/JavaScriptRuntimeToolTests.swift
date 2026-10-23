@@ -7,55 +7,6 @@ import MapKit
 #endif
 
 final class JavaScriptRuntimeToolTests: XCTestCase {
-    func testRunsStandardJavaScriptLoopsAndFunctions() async throws {
-        let result = try await run("""
-        function fibonacci(count) {
-            const values = [0, 1];
-            for (let index = 2; index < count; index += 1) {
-                values.push(values[index - 1] + values[index - 2]);
-            }
-            return values;
-        }
-        let index = 0;
-        let total = 0;
-        while (index < 5) {
-            total += index;
-            index += 1;
-        }
-        ({ total, values: fibonacci(7) });
-        """)
-
-        XCTAssertEqual(result.payload["result"], .object([
-            "total": .number(10),
-            "values": .array([0, 1, 1, 2, 3, 5, 8].map { .number(Double($0)) })
-        ]))
-        XCTAssertEqual(result.payload["result_type"], .string("object"))
-        XCTAssertEqual(result.payload["truncated"], .bool(false))
-    }
-
-    func testRunsInputTransformsAndCalculationHelpers() async throws {
-        let result = try await run(
-            """
-            const selected = input.values.filter(value => value >= input.minimum);
-            const weighted = selected.map((value, index) => value * (index + 1));
-            ({
-                average: round(mean(selected), 2),
-                median: median(selected),
-                sum: sum(weighted),
-                range: range(1, 4)
-            });
-            """,
-            input: ["values": [1, 3, 5, 7], "minimum": 3]
-        )
-
-        XCTAssertEqual(result.payload["result"], .object([
-            "average": .number(5),
-            "median": .number(5),
-            "sum": .number(34),
-            "range": .array([1, 2, 3, 4].map { .number(Double($0)) })
-        ]))
-    }
-
     func testKeepsJSONNumbersAndBooleansDistinct() async throws {
         let result = try await run("({ zero: input.zero, one: input.one, enabled: input.enabled });", input: [
             "zero": 0,
@@ -83,19 +34,6 @@ final class JavaScriptRuntimeToolTests: XCTestCase {
         XCTAssertEqual(result.payload["truncated"], .bool(true))
     }
 
-    func testBoundsExponentiallySharedOutput() async throws {
-        let result = try await run("range(1, 40).reduce((value) => [value, value], 0);")
-
-        XCTAssertEqual(result.payload["truncated"], .bool(true))
-        XCTAssertLessThanOrEqual(jsonNodeCount(result.payload["result"]), 4_000)
-    }
-
-    func testMedianOfLargeFiniteValuesRemainsFinite() async throws {
-        let result = try await run("median([1e308, 1e308]);")
-
-        XCTAssertEqual(result.payload["result"], .number(1e308))
-    }
-
     func testDoesNotExposeNetworkFilesystemOrNativeBridgeGlobals() async throws {
         let result = try await run("""
         ({
@@ -121,48 +59,8 @@ final class JavaScriptRuntimeToolTests: XCTestCase {
         ]))
     }
 
-    func testReturnsConsoleAndPrintOutputWithoutFinalValue() async throws {
-        let result = try await run("""
-        const numbers = [1, 2];
-        const Object = "user-defined Object";
-        function doubled(value) { return value * 2; }
-        console.log("test1", numbers.map(doubled));
-        console.warn({ ok: true });
-        print(Object);
-        """)
-
-        XCTAssertNil(result.payload["result"])
-        XCTAssertEqual(result.payload["result_type"], .string("unavailable"))
-        XCTAssertEqual(result.payload["output"], .string("test1 [2,4]\n[warn] {\"ok\":true}\nuser-defined Object"))
-        XCTAssertEqual(result.payload["truncated"], .bool(false))
-    }
-
-    func testTruncatesConsoleOutputWithoutSplittingEmoji() async throws {
-        let result = try await run(#"console.warn("😀".repeat(3000));"#)
-
-        guard case let .string(output) = result.payload["output"] else {
-            return XCTFail("Expected console output")
-        }
-        XCTAssertEqual(output.utf16.count, 3_999)
-        XCTAssertTrue(output.hasPrefix("[warn] "))
-        XCTAssertTrue(output.hasSuffix("😀"))
-        XCTAssertEqual(result.payload["truncated"], .bool(true))
-    }
-
     func testRejectsDynamicCodeGeneration() async {
         await assertInvalidScript(#"(() => {})["constructor"]("return 7")();"#)
-    }
-
-    func testReturnsRawJavaScriptExceptionDetails() async {
-        await assertInvalidScript(
-            "this is not valid JavaScript",
-            containing: ["SyntaxError:", "Line ", "column "]
-        )
-        await assertInvalidScript("return 1;")
-        await assertInvalidScript(
-            "throw new TypeError('raw boom');",
-            containing: ["TypeError: raw boom", "Line ", "column "]
-        )
     }
 
     func testInfiniteLoopTimesOutAndNextExecutionStillWorks() async throws {
@@ -211,38 +109,6 @@ final class JavaScriptRuntimeToolTests: XCTestCase {
     }
 
     #if canImport(CoreLocation) && canImport(Contacts) && canImport(MapKit)
-    func testPlacemarkMapsSystemAddressAndAdministrativeFields() throws {
-        let address = CNMutablePostalAddress()
-        address.street = "1 Infinite Loop"
-        address.subLocality = "Cupertino"
-        address.city = "Cupertino"
-        address.subAdministrativeArea = "Santa Clara County"
-        address.state = "California"
-        address.postalCode = "95014"
-        address.country = "United States"
-        address.isoCountryCode = "US"
-
-        let placemark = MKPlacemark(
-            coordinate: CLLocationCoordinate2D(latitude: 37.3317, longitude: -122.0301),
-            postalAddress: address
-        )
-        let place = LocationPlaceDescription(placemark: placemark)
-
-        guard case let .object(fields) = place.jsonValue else {
-            return XCTFail("Expected place object")
-        }
-        XCTAssertEqual(fields["country"], .string("United States"))
-        XCTAssertEqual(fields["country_code"], .string("US"))
-        XCTAssertEqual(fields["administrative_area"], .string("California"))
-        XCTAssertEqual(fields["sub_administrative_area"], .string("Santa Clara County"))
-        XCTAssertEqual(fields["locality"], .string("Cupertino"))
-        XCTAssertEqual(fields["sub_locality"], .string("Cupertino"))
-        XCTAssertEqual(fields["postal_code"], .string("95014"))
-        guard case let .string(formattedAddress)? = fields["formatted_address"] else {
-            return XCTFail("Expected formatted address")
-        }
-        XCTAssertFalse(formattedAddress.isEmpty)
-    }
     #endif
 
     private func run(

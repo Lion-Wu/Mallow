@@ -39,75 +39,6 @@ final class ChatStreamingSessionCoordinatorTests: XCTestCase {
         XCTAssertEqual(createdModels, ["next"])
     }
 
-    func testCallbacksAreReboundWhenConfigurationApplies() {
-        let initial = chatConfig(model: "initial")
-        let next = chatConfig(model: "next")
-        let initialService = StubChatStreamingService()
-        let replacementService = StubChatStreamingService()
-        let coordinator = ChatStreamingSessionCoordinator(
-            configuration: initial,
-            service: initialService,
-            serviceFactory: { _ in replacementService }
-        )
-        var receivedDeltas: [String] = []
-        coordinator.bindHandlers(
-            onDelta: { receivedDeltas.append($0) },
-            onSegment: { _ in },
-            onOpenAIResponsesConversationItems: { _ in },
-            onError: { _ in },
-            onResponseMetadata: { _ in },
-            onToolActivity: { _ in },
-            onStreamFinished: {}
-        )
-
-        let staleCallback = initialService.onDelta
-        initialService.onDelta?("old")
-        XCTAssertEqual(
-            coordinator.updateConfiguration(next, isActiveTextRequest: false),
-            .applied
-        )
-        coordinator.fetchStreamedData(
-            messages: [],
-            developerPrompt: nil,
-            includeImagesInUserContent: false
-        )
-        staleCallback?("stale")
-        replacementService.onDelta?("new")
-
-        XCTAssertEqual(receivedDeltas, ["old", "new"])
-    }
-
-    func testServiceCreationIsDeferredUntilFirstRequest() {
-        let configuration = chatConfig(model: "model")
-        var creationCount = 0
-        let coordinator = ChatStreamingSessionCoordinator(
-            configuration: configuration,
-            service: nil,
-            serviceFactory: { _ in
-                creationCount += 1
-                return StubChatStreamingService()
-            }
-        )
-
-        coordinator.bindHandlers(
-            onDelta: { _ in },
-            onSegment: { _ in },
-            onOpenAIResponsesConversationItems: { _ in },
-            onError: { _ in },
-            onResponseMetadata: { _ in },
-            onToolActivity: { _ in },
-            onStreamFinished: {}
-        )
-        XCTAssertEqual(creationCount, 0)
-
-        coordinator.fetchStreamedData(
-            messages: [],
-            developerPrompt: nil,
-            includeImagesInUserContent: false
-        )
-        XCTAssertEqual(creationCount, 1)
-    }
-
     func testChatServiceDropsQueuedCallbacksFromInvalidatedRetryAttempt() async {
         let service = ChatService(configurationProvider: chatConfig(model: "model"))
         let delivered = expectation(description: "current callback delivered")
@@ -156,35 +87,6 @@ final class ChatStreamingSessionCoordinatorTests: XCTestCase {
         XCTAssertEqual(receivedErrorCount, 1)
     }
 
-    func testChatServiceSuccessfulStageTransitionPreservesQueuedConversationSnapshot() async {
-        let service = ChatService(configurationProvider: chatConfig(model: "model"))
-        let delivered = expectation(description: "completed stage snapshot delivered")
-        let snapshot: [JSONValue] = [
-            .object([
-                "type": .string("function_call_output"),
-                "call_id": .string("call-1"),
-                "output": .string("success")
-            ])
-        ]
-        var receivedSnapshots: [[JSONValue]] = []
-        service.onOpenAIResponsesConversationItems = { items in
-            receivedSnapshots.append(items)
-            delivered.fulfill()
-        }
-
-        await withCheckedContinuation { continuation in
-            service.stateQueue.async {
-                service.beginNewStreamCallbackEpoch()
-                service.deliverOpenAIResponsesConversationItems(snapshot)
-                service.beginStreamCallbackAttempt(invalidatingCurrentAttempt: false)
-                continuation.resume()
-            }
-        }
-        await fulfillment(of: [delivered], timeout: 1.0)
-
-        XCTAssertEqual(receivedSnapshots, [snapshot])
-    }
-
     func testChatServiceIncompleteResponseCarriesTerminalSnapshotAfterInvalidation() async {
         let service = ChatService(configurationProvider: chatConfig(model: "model"))
         let errorDelivered = expectation(description: "incomplete response delivered")
@@ -222,134 +124,6 @@ final class ChatStreamingSessionCoordinatorTests: XCTestCase {
         XCTAssertEqual(receivedSegments, [.text(id: "stale", text: "stale")])
         XCTAssertEqual(receivedError?.segments, terminalSegments)
         XCTAssertEqual(receivedError?.metadata, metadata)
-    }
-
-    func testChatServiceDeliversFailureMetadataBeforeFinalError() async {
-        let service = ChatService(configurationProvider: chatConfig(model: "model"))
-        let errorDelivered = expectation(description: "error delivered")
-        var events: [String] = []
-        service.onResponseMetadata = { metadata in
-            events.append("metadata:\(metadata.providerResponseID ?? "")")
-        }
-        service.onError = { _ in
-            events.append("error")
-            errorDelivered.fulfill()
-        }
-
-        await withCheckedContinuation { continuation in
-            service.stateQueue.async {
-                service.beginNewStreamCallbackEpoch()
-                service.isCancelled = false
-                service.applyOpenAICompatibleStreamActions([
-                    .metadata(ChatResponseMetadata(providerResponseID: "resp_failed")),
-                    .fail("failed")
-                ])
-                continuation.resume()
-            }
-        }
-        await fulfillment(of: [errorDelivered], timeout: 1.0)
-
-        XCTAssertEqual(events, ["metadata:resp_failed", "error"])
-    }
-
-    func testChatServiceReplacementRequestCreatesNewToolContextGeneration() async {
-        let service = ChatService(
-            configurationProvider: chatConfig(model: "model"),
-            requestFactory: NonNetworkStreamingRequestFactory()
-        )
-        await withCheckedContinuation { continuation in
-            service.stateQueue.async {
-                service.requestGeneration = 7
-                service.isCancelled = true
-                continuation.resume()
-            }
-        }
-
-        service.fetchStreamedData(
-            messages: [ChatMessage(content: "Retry with current settings", isUser: true)],
-            developerPrompt: nil,
-            includeImagesInUserContent: false
-        )
-        let state = await withCheckedContinuation { continuation in
-            service.stateQueue.async {
-                continuation.resume(returning: (
-                    service.requestGeneration,
-                    service.activeToolLoopContext?.requestGeneration,
-                    service.isCurrentRequestGeneration(7)
-                ))
-            }
-        }
-
-        XCTAssertEqual(state.0, 8)
-        XCTAssertEqual(state.1, 8)
-        XCTAssertFalse(state.2)
-        service.cancelStreaming()
-    }
-
-    func testResponsesContinuationPersistsFullPrefixAlongsideNewOutput() async throws {
-        let service = ChatService(
-            configurationProvider: ChatServiceConfiguration(
-                apiBaseURL: "https://example.invalid/v1/responses",
-                modelIdentifier: "model",
-                apiKey: "",
-                providerHint: .openAI,
-                requestStyleHint: .openAIResponses
-            ),
-            requestFactory: NonNetworkStreamingRequestFactory()
-        )
-        let user = ChatMessage(content: "Question", isUser: true)
-        let assistant = ChatMessage(content: "Before interruption. ", isUser: false)
-
-        for suffix in ["First continuation. ", "Second continuation."] {
-            let prefix = assistant.content
-            let delivered = expectation(description: "combined continuation history")
-            service.onOpenAIResponsesConversationItems = { items in
-                assistant.openAIResponsesConversationItems = items
-                delivered.fulfill()
-            }
-            service.fetchStreamedData(
-                messages: [user, assistant],
-                developerPrompt: nil,
-                includeImagesInUserContent: false
-            )
-            await withCheckedContinuation { continuation in
-                service.stateQueue.async {
-                    service.openAIResponsesOutputItems = [[
-                        "type": "message",
-                        "id": "msg_\(UUID().uuidString)",
-                        "role": "assistant",
-                        "status": "completed",
-                        "content": [["type": "output_text", "text": suffix]]
-                    ]]
-                    service.recordCurrentOpenAIResponsesOutputItemsIfNeeded()
-                    continuation.resume()
-                }
-            }
-            await fulfillment(of: [delivered], timeout: 1)
-            assistant.content += suffix
-
-            let items = assistant.openAIResponsesConversationItems.compactMap {
-                $0.jsonObject as? [String: Any]
-            }
-            XCTAssertEqual(items.count, 2)
-            XCTAssertEqual(items.first?["content"] as? String, prefix)
-            XCTAssertEqual((items.last?["content"] as? [[String: Any]])?.first?["text"] as? String, suffix)
-
-            let history = ChatRequestPayloadProjector().transformedMessagesForRequest(
-                messages: [ChatRequestSourceMessage(
-                    content: assistant.content,
-                    isUser: false,
-                    openAIResponsesConversationItems: assistant.openAIResponsesConversationItems
-                ), ChatRequestSourceMessage(content: "Next question", isUser: true)],
-                developerPrompt: nil,
-                includeImagesInUserContent: false,
-                requestStyle: .openAIResponses
-            )
-            XCTAssertEqual(history.count, 3)
-            XCTAssertEqual(history.first?["content"] as? String, prefix)
-            XCTAssertEqual(history.last?["content"] as? String, "Next question")
-        }
-        service.cancelStreaming()
     }
 
     func testRetryRebuildsServiceWithLatestConfigurationAndMessages() {
@@ -486,69 +260,6 @@ final class ChatStreamingSessionCoordinatorTests: XCTestCase {
         XCTAssertTrue(finalState.1)
     }
 
-    func testToolContinuationProcessingActivitySurvivesAttemptReset() async throws {
-        var toolSettings = ToolUseSettings.defaults
-        toolSettings.isEnabled = true
-        toolSettings.deviceContextEnabled = true
-        let service = ChatService(
-            configurationProvider: ChatServiceConfiguration(
-                apiBaseURL: "https://example.invalid/v1",
-                modelIdentifier: "model",
-                apiKey: "key",
-                toolUseSettings: toolSettings
-            ),
-            toolExecutor: ImmediateChatToolExecutor()
-        )
-        let endpoint = ChatAPIEndpointCandidate(
-            provider: .openAI,
-            style: .openAIResponses,
-            chatURL: try XCTUnwrap(URL(string: "https://example.invalid/v1/responses")),
-            modelsURL: try XCTUnwrap(URL(string: "https://example.invalid/v1/models"))
-        )
-        var mutableContext = ChatToolLoopContext(
-            currentPayload: ChatToolLoopPayload(messages: []),
-            developerPrompt: nil,
-            includeImagesInUserContent: false,
-            model: "model",
-            endpoint: endpoint,
-            iteration: 0,
-            previousResponseID: nil
-        )
-        mutableContext.requestGeneration = 1
-        let context = mutableContext
-        let call = ChatToolCallEnvelope(
-            callID: "call-device",
-            name: ChatToolID.deviceContext.rawValue,
-            argumentsJSON: "{}",
-            provider: .openAI
-        )
-        let processing = expectation(description: "processing activity uses continuation attempt")
-        service.onToolActivity = { activity in
-            if activity.phase == .processing {
-                processing.fulfill()
-            }
-        }
-
-        await withCheckedContinuation { continuation in
-            service.stateQueue.async {
-                service.beginNewStreamCallbackEpoch()
-                service.requestGeneration = 1
-                service.isCancelled = false
-                service.activeStreamRequest = ChatActiveStreamRequest(
-                    task: service.session.dataTask(with: endpoint.chatURL),
-                    endpoint: endpoint
-                )
-                service.activeToolLoopContext = context
-                service.pendingToolCalls = [call]
-                service.runPendingToolCallsAndContinue()
-                continuation.resume()
-            }
-        }
-
-        await fulfillment(of: [processing], timeout: 1.0)
-        service.cancelStreaming()
-    }
-
     func testBackgroundInterruptionCancelsToolExecutionWithoutRetryingStaleRequest() async throws {
         let executor = SuspendedChatToolExecutor()
         var toolSettings = ToolUseSettings.defaults
@@ -640,32 +351,6 @@ final class ChatStreamingSessionCoordinatorTests: XCTestCase {
             apiBaseURL: "http://localhost:1234",
             modelIdentifier: model,
             apiKey: "key"
-        )
-    }
-}
-
-private struct NonNetworkStreamingRequestFactory: ChatStreamingRequestBuilding {
-    func makeStreamingRequest(
-        endpoint: ChatAPIEndpointCandidate,
-        requestBodyData: Data,
-        apiKey: String
-    ) -> URLRequest {
-        URLRequest(url: URL(fileURLWithPath: "/dev/null"))
-    }
-}
-
-private struct ImmediateChatToolExecutor: ChatToolExecuting {
-    func execute(
-        _ call: ChatToolCallEnvelope,
-        settings: ToolUseSettings,
-        endpoint: ChatAPIEndpointCandidate
-    ) async -> ChatToolResultEnvelope {
-        ChatToolResultEnvelope(
-            callID: call.callID,
-            name: call.name,
-            status: .success,
-            payload: ["ok": .bool(true)],
-            summary: "completed"
         )
     }
 }

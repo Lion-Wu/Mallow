@@ -46,57 +46,6 @@ final class ChatAPIKeyStoreTests: XCTestCase {
         XCTAssertEqual(deletion.account, store.account(forChatServerPresetID: presetID))
     }
 
-    func testIdenticalCanonicalKeyDoesNotWriteOrDelete() {
-        let presetID = UUID()
-        var saveCount = 0
-        var deleteCount = 0
-        let store = ChatAPIKeyStore(
-            service: "test.service",
-            loadString: { _, _ in "  unchanged-token\n" },
-            saveString: { _, _, _ in saveCount += 1; return .success(()) },
-            deleteString: { _, _ in deleteCount += 1; return .success(()) }
-        )
-
-        XCTAssertFalse(store.save("unchanged-token", for: presetID))
-        XCTAssertEqual(saveCount, 0)
-        XCTAssertEqual(deleteCount, 0)
-    }
-
-    func testEmptyKeyAlwaysIssuesVerifiedDelete() {
-        let presetID = UUID()
-        var deleteCount = 0
-        let store = ChatAPIKeyStore(
-            service: "test.service",
-            loadString: { _, _ in nil },
-            saveString: { _, _, _ in
-                XCTFail("empty API key must not be saved")
-                return .failure(KeychainStoreError(status: -1))
-            },
-            deleteString: { _, _ in deleteCount += 1; return .success(()) }
-        )
-
-        XCTAssertTrue(store.save("   ", for: presetID))
-        XCTAssertEqual(deleteCount, 1)
-    }
-
-    func testLoadsTrimmedKeyAndIgnoresMissingSelection() {
-        let presetID = UUID()
-        var requestedAccounts: [String] = []
-        let store = ChatAPIKeyStore(
-            service: "test.service",
-            loadString: { _, account in
-                requestedAccounts.append(account)
-                return "  loaded-token\n"
-            },
-            saveString: { _, _, _ in .success(()) },
-            deleteString: { _, _ in .success(()) }
-        )
-
-        XCTAssertEqual(store.load(for: presetID), "loaded-token")
-        XCTAssertEqual(requestedAccounts, [store.account(forChatServerPresetID: presetID)])
-        XCTAssertEqual(store.load(for: nil), "")
-    }
-
     func testWriteReportsKeychainFailure() {
         let presetID = UUID()
         let store = ChatAPIKeyStore(

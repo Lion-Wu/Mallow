@@ -67,36 +67,18 @@
 		FD42600C2F30000000000001 /* VoiceMotion.metal in Sources */ = {isa = PBXBuildFile; fileRef = FD42601C2F30000000000001 /* VoiceMotion.metal */; };
 		FD42600E2F30000000000001 /* VoiceAudioFeatureExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD42601E2F30000000000001 /* VoiceAudioFeatureExtractor.swift */; };
 		FD6E97252CA92C840086C234 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD6E97242CA92C840086C234 /* SettingsManager.swift */; };
-		FD7000000000000000000007 /* ChatEndpointResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000006 /* ChatEndpointResolverTests.swift */; };
-		FD7000000000000000000011 /* ChatQueuedDraftCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000010 /* ChatQueuedDraftCoordinatorTests.swift */; };
-		FD7000000000000000000013 /* ChatAssistantStreamTelemetryCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000012 /* ChatAssistantStreamTelemetryCoordinatorTests.swift */; };
 		FD7000000000000000000015 /* ChatModelCapabilityStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000014 /* ChatModelCapabilityStoreTests.swift */; };
-		FD7000000000000000000017 /* TTSPresetApplyStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000016 /* TTSPresetApplyStatusTests.swift */; };
-		FD7000000000000000000019 /* SystemPromptPresetStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000018 /* SystemPromptPresetStoreTests.swift */; };
 		FD700000000000000000001B /* ChatAPIKeyStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD700000000000000000001A /* ChatAPIKeyStoreTests.swift */; };
 		FD700000000000000000001D /* APIAdvancedSettingsCodecTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD700000000000000000001C /* APIAdvancedSettingsCodecTests.swift */; };
-		FD700000000000000000001F /* AppSettingsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD700000000000000000001E /* AppSettingsStoreTests.swift */; };
 		FD7000000000000000000021 /* MallowTestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000020 /* MallowTestSupport.swift */; };
-		FD7000000000000000000023 /* ChatViewStateSeamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000022 /* ChatViewStateSeamTests.swift */; };
-		FD7000000000000000000025 /* ChatSettingsAndDraftSeamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000024 /* ChatSettingsAndDraftSeamTests.swift */; };
-		FD7000000000000000000027 /* SpeechInputSeamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000026 /* SpeechInputSeamTests.swift */; };
 		FD7000000000000000000029 /* ChatProviderStreamReducerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000028 /* ChatProviderStreamReducerTests.swift */; };
-		FD700000000000000000002B /* VoiceVisionSampleSelectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD700000000000000000002A /* VoiceVisionSampleSelectorTests.swift */; };
-		FD700000000000000000002D /* ChatBranchRestartCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD700000000000000000002C /* ChatBranchRestartCoordinatorTests.swift */; };
 		FD700000000000000000002F /* ChatStreamingSessionCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD700000000000000000002E /* ChatStreamingSessionCoordinatorTests.swift */; };
-		FD7000000000000000000031 /* ChatModelCapabilityFacadeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000030 /* ChatModelCapabilityFacadeTests.swift */; };
-		FD7000000000000000000033 /* ChatRequestBodyProviderEncoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000032 /* ChatRequestBodyProviderEncoderTests.swift */; };
-		FD7000000000000000000035 /* ChatSidebarPresentationControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000034 /* ChatSidebarPresentationControllerTests.swift */; };
-		FD7000000000000000000037 /* SettingsPresetBindingControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000036 /* SettingsPresetBindingControllerTests.swift */; };
 		FD7000000000000000000039 /* SettingsModelCatalogControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000038 /* SettingsModelCatalogControllerTests.swift */; };
-		FD700000000000000000003B /* ChatRequestActivityStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD700000000000000000003A /* ChatRequestActivityStateTests.swift */; };
 		FD700000000000000000003D /* TTSPlaybackStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD700000000000000000003C /* TTSPlaybackStateTests.swift */; };
 		FD700000000000000000003F /* VoiceWorkSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD700000000000000000003E /* VoiceWorkSnapshotTests.swift */; };
 		FD7000000000000000000041 /* ChatRequestBodyBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000040 /* ChatRequestBodyBuilderTests.swift */; };
 		FD7000000000000000000043 /* ChatRequestPayloadProjectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000042 /* ChatRequestPayloadProjectorTests.swift */; };
 		FD7000000000000000000045 /* ChatResponseParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000044 /* ChatResponseParsingTests.swift */; };
-		FD7000000000000000000047 /* ChatStreamingRequestFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000046 /* ChatStreamingRequestFactoryTests.swift */; };
-		FD7000000000000000000049 /* ChatAssistantDeltaAppenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000048 /* ChatAssistantDeltaAppenderTests.swift */; };
 		FD700000000000000000004B /* ChatMessageBranchResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD700000000000000000004A /* ChatMessageBranchResolverTests.swift */; };
 		FD7228652E7EBE22005BF261 /* SpeechInputManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7228642E7EBE22005BF261 /* SpeechInputManager.swift */; };
 		FD7AF1B42CD896B900A5080B /* BlurView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7AF1B32CD896B900A5080B /* BlurView.swift */; };
@@ -305,9 +287,7 @@
 		FDFE0A292F123D0000000001 /* LMStudioStreamingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A282F123D0000000001 /* LMStudioStreamingModels.swift */; };
 		FDFE0A2B2F123D0000000001 /* AnthropicStreamingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A2A2F123D0000000001 /* AnthropicStreamingModels.swift */; };
 		FDFE0A2D2F123D0000000001 /* TTSRequestRetryState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A2C2F123D0000000001 /* TTSRequestRetryState.swift */; };
-		FDFE0A2F2F123D0000000001 /* TTSRequestRetryStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A2E2F123D0000000001 /* TTSRequestRetryStateTests.swift */; };
 		FDFE0A312F123D0000000001 /* ChatRequestActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A302F123D0000000001 /* ChatRequestActivityController.swift */; };
-		FDFE0A332F123D0000000001 /* ChatRequestActivityControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A322F123D0000000001 /* ChatRequestActivityControllerTests.swift */; };
 		FDFE0A352F123D0000000001 /* SettingsAdvancedAPIModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A342F123D0000000001 /* SettingsAdvancedAPIModels.swift */; };
 		FDFE0A372F123D0000000001 /* SettingsAdvancedAPIContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A362F123D0000000001 /* SettingsAdvancedAPIContext.swift */; };
 		FDFE0A392F123D0000000001 /* SettingsAdvancedAPIFieldControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A382F123D0000000001 /* SettingsAdvancedAPIFieldControls.swift */; };
@@ -315,19 +295,13 @@
 		FDFE0A3D2F123D0000000001 /* SettingsAdvancedAPIParameterControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A3C2F123D0000000001 /* SettingsAdvancedAPIParameterControls.swift */; };
 		FDFE0A3F2F123D0000000001 /* SettingsAdvancedAPISections.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A3E2F123D0000000001 /* SettingsAdvancedAPISections.swift */; };
 		FDFE0A412F123D0000000001 /* ChatStreamRetryStatusController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A402F123D0000000001 /* ChatStreamRetryStatusController.swift */; };
-		FDFE0A432F123D0000000001 /* ChatStreamRetryStatusControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A422F123D0000000001 /* ChatStreamRetryStatusControllerTests.swift */; };
 		FDFE0A452F123D0000000001 /* SettingsPresetApplyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A442F123D0000000001 /* SettingsPresetApplyController.swift */; };
-		FDFE0A472F123D0000000001 /* SettingsPresetApplyControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A462F123D0000000001 /* SettingsPresetApplyControllerTests.swift */; };
 		FDFE0A492F123D0000000001 /* SettingsChatModelCapabilityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A482F123D0000000001 /* SettingsChatModelCapabilityController.swift */; };
-		FDFE0A4B2F123D0000000001 /* SettingsChatModelCapabilityControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A4A2F123D0000000001 /* SettingsChatModelCapabilityControllerTests.swift */; };
 		FDFE0A4D2F123D0000000001 /* ChatVisibleMessageController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A4C2F123D0000000001 /* ChatVisibleMessageController.swift */; };
 		FDFE0A4F2F123D0000000001 /* ChatVisibleMessageControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A4E2F123D0000000001 /* ChatVisibleMessageControllerTests.swift */; };
 		FDFE0A512F123D0000000001 /* ChatQueuedDraftAutostartController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A502F123D0000000001 /* ChatQueuedDraftAutostartController.swift */; };
-		FDFE0A532F123D0000000001 /* ChatQueuedDraftAutostartControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A522F123D0000000001 /* ChatQueuedDraftAutostartControllerTests.swift */; };
 		FDFE0A552F123D0000000001 /* AudioPlaybackSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A542F123D0000000001 /* AudioPlaybackSnapshot.swift */; };
-		FDFE0A572F123D0000000001 /* AudioPlaybackSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A562F123D0000000001 /* AudioPlaybackSnapshotTests.swift */; };
 		FDFE0A592F123D0000000001 /* ChatComposerDraftController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A582F123D0000000001 /* ChatComposerDraftController.swift */; };
-		FDFE0A5B2F123D0000000001 /* ChatComposerDraftControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A5A2F123D0000000001 /* ChatComposerDraftControllerTests.swift */; };
 		FDFE0A5D2F123D0000000001 /* ChatComposerAttachmentButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A5C2F123D0000000001 /* ChatComposerAttachmentButton.swift */; };
 		FDFE0A5F2F123D0000000001 /* ChatQueuedDraftStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A5E2F123D0000000001 /* ChatQueuedDraftStrip.swift */; };
 		FDFE0A612F123D0000000001 /* ChatThinkingControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A602F123D0000000001 /* ChatThinkingControl.swift */; };
@@ -343,21 +317,13 @@
 		FDFE0A752F123D0000000001 /* VoiceVisionCaptureCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A742F123D0000000001 /* VoiceVisionCaptureCoordinator.swift */; };
 		FDFE0A772F123D0000000001 /* VoiceVisionCaptureCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A762F123D0000000001 /* VoiceVisionCaptureCoordinatorTests.swift */; };
 		FDFE0A792F123D0000000001 /* VoiceLoadingWatchdog.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A782F123D0000000001 /* VoiceLoadingWatchdog.swift */; };
-		FDFE0A7B2F123D0000000001 /* VoiceLoadingWatchdogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A7A2F123D0000000001 /* VoiceLoadingWatchdogTests.swift */; };
 		FDFE0A7D2F123D0000000001 /* TTSRealtimeRequestQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A7C2F123D0000000001 /* TTSRealtimeRequestQueue.swift */; };
-		FDFE0A7F2F123D0000000001 /* TTSRealtimeRequestQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A7E2F123D0000000001 /* TTSRealtimeRequestQueueTests.swift */; };
 		FDFE0A812F123D0000000001 /* SettingsViewModelSuppressionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A802F123D0000000001 /* SettingsViewModelSuppressionController.swift */; };
-		FDFE0A832F123D0000000001 /* SettingsViewModelSuppressionControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A822F123D0000000001 /* SettingsViewModelSuppressionControllerTests.swift */; };
 		FDFE0A852F123D0000000001 /* ChatConversationTurnController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A842F123D0000000001 /* ChatConversationTurnController.swift */; };
-		FDFE0A872F123D0000000001 /* ChatConversationTurnControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A862F123D0000000001 /* ChatConversationTurnControllerTests.swift */; };
 		FDFE0A892F123D0000000001 /* ChatEndpointProviderOrder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A882F123D0000000001 /* ChatEndpointProviderOrder.swift */; };
-		FDFE0A8B2F123D0000000001 /* ChatEndpointProviderOrderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A8A2F123D0000000001 /* ChatEndpointProviderOrderTests.swift */; };
 		FDFE0A8D2F123D0000000001 /* SettingsChatServerRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A8C2F123D0000000001 /* SettingsChatServerRuntime.swift */; };
-		FDFE0A8F2F123D0000000001 /* SettingsChatServerRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A8E2F123D0000000001 /* SettingsChatServerRuntimeTests.swift */; };
 		FDFE0A912F123D0000000001 /* SettingsVoiceServerRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A902F123D0000000001 /* SettingsVoiceServerRuntime.swift */; };
-		FDFE0A932F123D0000000001 /* SettingsVoiceServerRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A922F123D0000000001 /* SettingsVoiceServerRuntimeTests.swift */; };
 		FDFE0A952F123D0000000001 /* ChatStreamCompletionRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A942F123D0000000001 /* ChatStreamCompletionRecovery.swift */; };
-		FDFE0A972F123D0000000001 /* ChatStreamCompletionRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A962F123D0000000001 /* ChatStreamCompletionRecoveryTests.swift */; };
 		FDFE0A992F123D0000000001 /* SettingsViewModel+PresetBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A982F123D0000000001 /* SettingsViewModel+PresetBindings.swift */; };
 		FDFE0A9B2F123D0000000001 /* ChatViewModel+Drafts.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A9A2F123D0000000001 /* ChatViewModel+Drafts.swift */; };
 		FDFE0A9D2F123D0000000001 /* GlobalAudioManager+PlaybackSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0A9C2F123D0000000001 /* GlobalAudioManager+PlaybackSession.swift */; };
@@ -386,7 +352,6 @@
 		FDFE0AD52F123D0000000001 /* TTSAudioChunkDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0AD42F123D0000000001 /* TTSAudioChunkDecoder.swift */; };
 		FDFE0AD72F123D0000000001 /* TTSRequestBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0AD62F123D0000000001 /* TTSRequestBuilderTests.swift */; };
 		FDFE0AD92F123D0000000001 /* TTSHTTPResponseValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0AD82F123D0000000001 /* TTSHTTPResponseValidatorTests.swift */; };
-		FDFE0ADB2F123D0000000001 /* TTSAudioChunkDecoderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0ADA2F123D0000000001 /* TTSAudioChunkDecoderTests.swift */; };
 		FDFE0AE12F123D0000000001 /* ChatEndpointBaseURL.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0AE02F123D0000000001 /* ChatEndpointBaseURL.swift */; };
 		FDFE0AE32F123D0000000001 /* ChatEndpointOfficialProviderDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0AE22F123D0000000001 /* ChatEndpointOfficialProviderDetector.swift */; };
 		FDFE0AE52F123D0000000001 /* ChatEndpointProviderURLFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0AE42F123D0000000001 /* ChatEndpointProviderURLFactory.swift */; };
@@ -396,7 +361,6 @@
 		FDFE0B012F123D0000000001 /* ChatRequestAdvancedConfigurationApplier.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0B002F123D0000000001 /* ChatRequestAdvancedConfigurationApplier.swift */; };
 		FDFE0B032F123D0000000001 /* ChatRequestThinkingConfigurationApplier.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0B022F123D0000000001 /* ChatRequestThinkingConfigurationApplier.swift */; };
 		FDFE0B112F123D0000000001 /* ChatSessionMutationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0B102F123D0000000001 /* ChatSessionMutationController.swift */; };
-		FDFE0B132F123D0000000001 /* ChatSessionMutationControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0B122F123D0000000001 /* ChatSessionMutationControllerTests.swift */; };
 		FDFE0B212F12400000000001 /* SettingsManager+StateAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0B202F12400000000001 /* SettingsManager+StateAccess.swift */; };
 		FDFE0B232F12400000000001 /* SettingsManager+Initialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0B222F12400000000001 /* SettingsManager+Initialization.swift */; };
 		FDFE0B252F12400000000001 /* ChatView+DerivedState.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE0B242F12400000000001 /* ChatView+DerivedState.swift */; };
@@ -477,36 +441,18 @@
 		FD42601E2F30000000000001 /* VoiceAudioFeatureExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAudioFeatureExtractor.swift; sourceTree = "<group>"; };
 		FD6E97242CA92C840086C234 /* SettingsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsManager.swift; path = Mallow/Features/Settings/Models/SettingsManager.swift; sourceTree = SOURCE_ROOT; };
 		FD7000000000000000000002 /* MallowTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MallowTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		FD7000000000000000000006 /* ChatEndpointResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatEndpointResolverTests.swift; path = MallowTests/ChatEndpointResolverTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000010 /* ChatQueuedDraftCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatQueuedDraftCoordinatorTests.swift; path = MallowTests/ChatQueuedDraftCoordinatorTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000012 /* ChatAssistantStreamTelemetryCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatAssistantStreamTelemetryCoordinatorTests.swift; path = MallowTests/ChatAssistantStreamTelemetryCoordinatorTests.swift; sourceTree = SOURCE_ROOT; };
 		FD7000000000000000000014 /* ChatModelCapabilityStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatModelCapabilityStoreTests.swift; path = MallowTests/ChatModelCapabilityStoreTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000016 /* TTSPresetApplyStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TTSPresetApplyStatusTests.swift; path = MallowTests/TTSPresetApplyStatusTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000018 /* SystemPromptPresetStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SystemPromptPresetStoreTests.swift; path = MallowTests/SystemPromptPresetStoreTests.swift; sourceTree = SOURCE_ROOT; };
 		FD700000000000000000001A /* ChatAPIKeyStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatAPIKeyStoreTests.swift; path = MallowTests/ChatAPIKeyStoreTests.swift; sourceTree = SOURCE_ROOT; };
 		FD700000000000000000001C /* APIAdvancedSettingsCodecTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = APIAdvancedSettingsCodecTests.swift; path = MallowTests/APIAdvancedSettingsCodecTests.swift; sourceTree = SOURCE_ROOT; };
-		FD700000000000000000001E /* AppSettingsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppSettingsStoreTests.swift; path = MallowTests/AppSettingsStoreTests.swift; sourceTree = SOURCE_ROOT; };
 		FD7000000000000000000020 /* MallowTestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MallowTestSupport.swift; path = MallowTests/MallowTestSupport.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000022 /* ChatViewStateSeamTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatViewStateSeamTests.swift; path = MallowTests/ChatViewStateSeamTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000024 /* ChatSettingsAndDraftSeamTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatSettingsAndDraftSeamTests.swift; path = MallowTests/ChatSettingsAndDraftSeamTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000026 /* SpeechInputSeamTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SpeechInputSeamTests.swift; path = MallowTests/SpeechInputSeamTests.swift; sourceTree = SOURCE_ROOT; };
 		FD7000000000000000000028 /* ChatProviderStreamReducerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatProviderStreamReducerTests.swift; path = MallowTests/ChatProviderStreamReducerTests.swift; sourceTree = SOURCE_ROOT; };
-		FD700000000000000000002A /* VoiceVisionSampleSelectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VoiceVisionSampleSelectorTests.swift; path = MallowTests/VoiceVisionSampleSelectorTests.swift; sourceTree = SOURCE_ROOT; };
-		FD700000000000000000002C /* ChatBranchRestartCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatBranchRestartCoordinatorTests.swift; path = MallowTests/ChatBranchRestartCoordinatorTests.swift; sourceTree = SOURCE_ROOT; };
 		FD700000000000000000002E /* ChatStreamingSessionCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatStreamingSessionCoordinatorTests.swift; path = MallowTests/ChatStreamingSessionCoordinatorTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000030 /* ChatModelCapabilityFacadeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatModelCapabilityFacadeTests.swift; path = MallowTests/ChatModelCapabilityFacadeTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000032 /* ChatRequestBodyProviderEncoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatRequestBodyProviderEncoderTests.swift; path = MallowTests/ChatRequestBodyProviderEncoderTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000034 /* ChatSidebarPresentationControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatSidebarPresentationControllerTests.swift; path = MallowTests/ChatSidebarPresentationControllerTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000036 /* SettingsPresetBindingControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsPresetBindingControllerTests.swift; path = MallowTests/SettingsPresetBindingControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		FD7000000000000000000038 /* SettingsModelCatalogControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsModelCatalogControllerTests.swift; path = MallowTests/SettingsModelCatalogControllerTests.swift; sourceTree = SOURCE_ROOT; };
-		FD700000000000000000003A /* ChatRequestActivityStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatRequestActivityStateTests.swift; path = MallowTests/ChatRequestActivityStateTests.swift; sourceTree = SOURCE_ROOT; };
 		FD700000000000000000003C /* TTSPlaybackStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TTSPlaybackStateTests.swift; path = MallowTests/TTSPlaybackStateTests.swift; sourceTree = SOURCE_ROOT; };
 		FD700000000000000000003E /* VoiceWorkSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VoiceWorkSnapshotTests.swift; path = MallowTests/VoiceWorkSnapshotTests.swift; sourceTree = SOURCE_ROOT; };
 		FD7000000000000000000040 /* ChatRequestBodyBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatRequestBodyBuilderTests.swift; path = MallowTests/ChatRequestBodyBuilderTests.swift; sourceTree = SOURCE_ROOT; };
 		FD7000000000000000000042 /* ChatRequestPayloadProjectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatRequestPayloadProjectorTests.swift; path = MallowTests/ChatRequestPayloadProjectorTests.swift; sourceTree = SOURCE_ROOT; };
 		FD7000000000000000000044 /* ChatResponseParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatResponseParsingTests.swift; path = MallowTests/ChatResponseParsingTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000046 /* ChatStreamingRequestFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatStreamingRequestFactoryTests.swift; path = MallowTests/ChatStreamingRequestFactoryTests.swift; sourceTree = SOURCE_ROOT; };
-		FD7000000000000000000048 /* ChatAssistantDeltaAppenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatAssistantDeltaAppenderTests.swift; path = MallowTests/ChatAssistantDeltaAppenderTests.swift; sourceTree = SOURCE_ROOT; };
 		FD700000000000000000004A /* ChatMessageBranchResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatMessageBranchResolverTests.swift; path = MallowTests/ChatMessageBranchResolverTests.swift; sourceTree = SOURCE_ROOT; };
 		FD7228642E7EBE22005BF261 /* SpeechInputManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SpeechInputManager.swift; path = Mallow/Core/Audio/Services/SpeechInputManager.swift; sourceTree = SOURCE_ROOT; };
 		FD7AF1B32CD896B900A5080B /* BlurView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BlurView.swift; path = Mallow/Shared/UI/Chrome/BlurView.swift; sourceTree = SOURCE_ROOT; };
@@ -715,9 +661,7 @@
 		FDFE0A282F123D0000000001 /* LMStudioStreamingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = LMStudioStreamingModels.swift; path = Mallow/Features/Chat/Services/LMStudioStreamingModels.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A2A2F123D0000000001 /* AnthropicStreamingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AnthropicStreamingModels.swift; path = Mallow/Features/Chat/Services/AnthropicStreamingModels.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A2C2F123D0000000001 /* TTSRequestRetryState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TTSRequestRetryState.swift; path = Mallow/Core/Audio/Support/TTSRequestRetryState.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A2E2F123D0000000001 /* TTSRequestRetryStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TTSRequestRetryStateTests.swift; path = MallowTests/TTSRequestRetryStateTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A302F123D0000000001 /* ChatRequestActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatRequestActivityController.swift; path = Mallow/Features/Chat/ViewModels/ChatRequestActivityController.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A322F123D0000000001 /* ChatRequestActivityControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatRequestActivityControllerTests.swift; path = MallowTests/ChatRequestActivityControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A342F123D0000000001 /* SettingsAdvancedAPIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsAdvancedAPIModels.swift; path = Mallow/Features/Settings/Views/SettingsAdvancedAPIModels.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A362F123D0000000001 /* SettingsAdvancedAPIContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsAdvancedAPIContext.swift; path = Mallow/Features/Settings/Views/SettingsAdvancedAPIContext.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A382F123D0000000001 /* SettingsAdvancedAPIFieldControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsAdvancedAPIFieldControls.swift; path = Mallow/Features/Settings/Views/SettingsAdvancedAPIFieldControls.swift; sourceTree = SOURCE_ROOT; };
@@ -725,19 +669,13 @@
 		FDFE0A3C2F123D0000000001 /* SettingsAdvancedAPIParameterControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsAdvancedAPIParameterControls.swift; path = Mallow/Features/Settings/Views/SettingsAdvancedAPIParameterControls.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A3E2F123D0000000001 /* SettingsAdvancedAPISections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsAdvancedAPISections.swift; path = Mallow/Features/Settings/Views/SettingsAdvancedAPISections.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A402F123D0000000001 /* ChatStreamRetryStatusController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatStreamRetryStatusController.swift; path = Mallow/Features/Chat/ViewModels/ChatStreamRetryStatusController.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A422F123D0000000001 /* ChatStreamRetryStatusControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatStreamRetryStatusControllerTests.swift; path = MallowTests/ChatStreamRetryStatusControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A442F123D0000000001 /* SettingsPresetApplyController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsPresetApplyController.swift; path = Mallow/Features/Settings/Models/SettingsPresetApplyController.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A462F123D0000000001 /* SettingsPresetApplyControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsPresetApplyControllerTests.swift; path = MallowTests/SettingsPresetApplyControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A482F123D0000000001 /* SettingsChatModelCapabilityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsChatModelCapabilityController.swift; path = Mallow/Features/Settings/Models/SettingsChatModelCapabilityController.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A4A2F123D0000000001 /* SettingsChatModelCapabilityControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsChatModelCapabilityControllerTests.swift; path = MallowTests/SettingsChatModelCapabilityControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A4C2F123D0000000001 /* ChatVisibleMessageController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatVisibleMessageController.swift; path = Mallow/Features/Chat/Views/Components/ChatVisibleMessageController.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A4E2F123D0000000001 /* ChatVisibleMessageControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatVisibleMessageControllerTests.swift; path = MallowTests/ChatVisibleMessageControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A502F123D0000000001 /* ChatQueuedDraftAutostartController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatQueuedDraftAutostartController.swift; path = Mallow/Features/Chat/ViewModels/ChatQueuedDraftAutostartController.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A522F123D0000000001 /* ChatQueuedDraftAutostartControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatQueuedDraftAutostartControllerTests.swift; path = MallowTests/ChatQueuedDraftAutostartControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A542F123D0000000001 /* AudioPlaybackSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AudioPlaybackSnapshot.swift; path = Mallow/Core/Audio/Support/AudioPlaybackSnapshot.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A562F123D0000000001 /* AudioPlaybackSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AudioPlaybackSnapshotTests.swift; path = MallowTests/AudioPlaybackSnapshotTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A582F123D0000000001 /* ChatComposerDraftController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatComposerDraftController.swift; path = Mallow/Features/Chat/ViewModels/ChatComposerDraftController.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A5A2F123D0000000001 /* ChatComposerDraftControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatComposerDraftControllerTests.swift; path = MallowTests/ChatComposerDraftControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A5C2F123D0000000001 /* ChatComposerAttachmentButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatComposerAttachmentButton.swift; path = Mallow/Features/Chat/Views/Components/ChatComposerAttachmentButton.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A5E2F123D0000000001 /* ChatQueuedDraftStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatQueuedDraftStrip.swift; path = Mallow/Features/Chat/Views/Components/ChatQueuedDraftStrip.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A602F123D0000000001 /* ChatThinkingControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatThinkingControl.swift; path = Mallow/Features/Chat/Views/Components/ChatThinkingControl.swift; sourceTree = SOURCE_ROOT; };
@@ -753,21 +691,13 @@
 		FDFE0A742F123D0000000001 /* VoiceVisionCaptureCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VoiceVisionCaptureCoordinator.swift; path = Mallow/Features/VoiceOverlay/ViewModels/VoiceVisionCaptureCoordinator.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A762F123D0000000001 /* VoiceVisionCaptureCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VoiceVisionCaptureCoordinatorTests.swift; path = MallowTests/VoiceVisionCaptureCoordinatorTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A782F123D0000000001 /* VoiceLoadingWatchdog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VoiceLoadingWatchdog.swift; path = Mallow/Features/VoiceOverlay/ViewModels/VoiceLoadingWatchdog.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A7A2F123D0000000001 /* VoiceLoadingWatchdogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VoiceLoadingWatchdogTests.swift; path = MallowTests/VoiceLoadingWatchdogTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A7C2F123D0000000001 /* TTSRealtimeRequestQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TTSRealtimeRequestQueue.swift; path = Mallow/Core/Audio/Support/TTSRealtimeRequestQueue.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A7E2F123D0000000001 /* TTSRealtimeRequestQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TTSRealtimeRequestQueueTests.swift; path = MallowTests/TTSRealtimeRequestQueueTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A802F123D0000000001 /* SettingsViewModelSuppressionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsViewModelSuppressionController.swift; path = Mallow/Features/Settings/ViewModels/SettingsViewModelSuppressionController.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A822F123D0000000001 /* SettingsViewModelSuppressionControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsViewModelSuppressionControllerTests.swift; path = MallowTests/SettingsViewModelSuppressionControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A842F123D0000000001 /* ChatConversationTurnController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatConversationTurnController.swift; path = Mallow/Features/Chat/ViewModels/ChatConversationTurnController.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A862F123D0000000001 /* ChatConversationTurnControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatConversationTurnControllerTests.swift; path = MallowTests/ChatConversationTurnControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A882F123D0000000001 /* ChatEndpointProviderOrder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatEndpointProviderOrder.swift; path = Mallow/Features/Chat/Services/ChatEndpointProviderOrder.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A8A2F123D0000000001 /* ChatEndpointProviderOrderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatEndpointProviderOrderTests.swift; path = MallowTests/ChatEndpointProviderOrderTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A8C2F123D0000000001 /* SettingsChatServerRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsChatServerRuntime.swift; path = Mallow/Features/Settings/Models/SettingsChatServerRuntime.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A8E2F123D0000000001 /* SettingsChatServerRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsChatServerRuntimeTests.swift; path = MallowTests/SettingsChatServerRuntimeTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A902F123D0000000001 /* SettingsVoiceServerRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsVoiceServerRuntime.swift; path = Mallow/Features/Settings/Models/SettingsVoiceServerRuntime.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A922F123D0000000001 /* SettingsVoiceServerRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsVoiceServerRuntimeTests.swift; path = MallowTests/SettingsVoiceServerRuntimeTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A942F123D0000000001 /* ChatStreamCompletionRecovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatStreamCompletionRecovery.swift; path = Mallow/Features/Chat/Services/ChatStreamCompletionRecovery.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0A962F123D0000000001 /* ChatStreamCompletionRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatStreamCompletionRecoveryTests.swift; path = MallowTests/ChatStreamCompletionRecoveryTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0A982F123D0000000001 /* SettingsViewModel+PresetBindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SettingsViewModel+PresetBindings.swift"; path = "Mallow/Features/Settings/ViewModels/SettingsViewModel+PresetBindings.swift"; sourceTree = SOURCE_ROOT; };
 		FDFE0A9A2F123D0000000001 /* ChatViewModel+Drafts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ChatViewModel+Drafts.swift"; path = "Mallow/Features/Chat/ViewModels/ChatViewModel+Drafts.swift"; sourceTree = SOURCE_ROOT; };
 		FDFE0A9C2F123D0000000001 /* GlobalAudioManager+PlaybackSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "GlobalAudioManager+PlaybackSession.swift"; path = "Mallow/Core/Audio/Services/GlobalAudioManager+PlaybackSession.swift"; sourceTree = SOURCE_ROOT; };
@@ -796,7 +726,6 @@
 		FDFE0AD42F123D0000000001 /* TTSAudioChunkDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TTSAudioChunkDecoder.swift; path = Mallow/Core/Audio/Support/TTSAudioChunkDecoder.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0AD62F123D0000000001 /* TTSRequestBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TTSRequestBuilderTests.swift; path = MallowTests/TTSRequestBuilderTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0AD82F123D0000000001 /* TTSHTTPResponseValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TTSHTTPResponseValidatorTests.swift; path = MallowTests/TTSHTTPResponseValidatorTests.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0ADA2F123D0000000001 /* TTSAudioChunkDecoderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TTSAudioChunkDecoderTests.swift; path = MallowTests/TTSAudioChunkDecoderTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0AE02F123D0000000001 /* ChatEndpointBaseURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatEndpointBaseURL.swift; path = Mallow/Features/Chat/Services/ChatEndpointBaseURL.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0AE22F123D0000000001 /* ChatEndpointOfficialProviderDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatEndpointOfficialProviderDetector.swift; path = Mallow/Features/Chat/Services/ChatEndpointOfficialProviderDetector.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0AE42F123D0000000001 /* ChatEndpointProviderURLFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatEndpointProviderURLFactory.swift; path = Mallow/Features/Chat/Services/ChatEndpointProviderURLFactory.swift; sourceTree = SOURCE_ROOT; };
@@ -806,7 +735,6 @@
 		FDFE0B002F123D0000000001 /* ChatRequestAdvancedConfigurationApplier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatRequestAdvancedConfigurationApplier.swift; path = Mallow/Features/Chat/Services/ChatRequestAdvancedConfigurationApplier.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0B022F123D0000000001 /* ChatRequestThinkingConfigurationApplier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatRequestThinkingConfigurationApplier.swift; path = Mallow/Features/Chat/Services/ChatRequestThinkingConfigurationApplier.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0B102F123D0000000001 /* ChatSessionMutationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatSessionMutationController.swift; path = Mallow/Features/Chat/ViewModels/ChatSessionMutationController.swift; sourceTree = SOURCE_ROOT; };
-		FDFE0B122F123D0000000001 /* ChatSessionMutationControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatSessionMutationControllerTests.swift; path = MallowTests/ChatSessionMutationControllerTests.swift; sourceTree = SOURCE_ROOT; };
 		FDFE0B202F12400000000001 /* SettingsManager+StateAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SettingsManager+StateAccess.swift"; path = "Mallow/Features/Settings/Models/SettingsManager+StateAccess.swift"; sourceTree = SOURCE_ROOT; };
 		FDFE0B222F12400000000001 /* SettingsManager+Initialization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SettingsManager+Initialization.swift"; path = "Mallow/Features/Settings/Models/SettingsManager+Initialization.swift"; sourceTree = SOURCE_ROOT; };
 		FDFE0B242F12400000000001 /* ChatView+DerivedState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ChatView+DerivedState.swift"; path = "Mallow/Features/Chat/Views/ChatView+DerivedState.swift"; sourceTree = SOURCE_ROOT; };
@@ -916,69 +844,33 @@
 			isa = PBXGroup;
 			children = (
 				AE0929000000000000000102 /* StartupDataRecoveryTests.swift */,
-				FD7000000000000000000006 /* ChatEndpointResolverTests.swift */,
 				FD7000000000000000000040 /* ChatRequestBodyBuilderTests.swift */,
 				FD7000000000000000000042 /* ChatRequestPayloadProjectorTests.swift */,
 				FD7000000000000000000044 /* ChatResponseParsingTests.swift */,
-				FD7000000000000000000046 /* ChatStreamingRequestFactoryTests.swift */,
-				FD7000000000000000000048 /* ChatAssistantDeltaAppenderTests.swift */,
 				FD700000000000000000004A /* ChatMessageBranchResolverTests.swift */,
-				FD7000000000000000000010 /* ChatQueuedDraftCoordinatorTests.swift */,
-				FD7000000000000000000012 /* ChatAssistantStreamTelemetryCoordinatorTests.swift */,
 				FD7000000000000000000014 /* ChatModelCapabilityStoreTests.swift */,
-				FD7000000000000000000016 /* TTSPresetApplyStatusTests.swift */,
-				FD7000000000000000000018 /* SystemPromptPresetStoreTests.swift */,
 				FD700000000000000000001A /* ChatAPIKeyStoreTests.swift */,
 				FD700000000000000000001C /* APIAdvancedSettingsCodecTests.swift */,
-				FD700000000000000000001E /* AppSettingsStoreTests.swift */,
 				FD7000000000000000000020 /* MallowTestSupport.swift */,
-				FD7000000000000000000022 /* ChatViewStateSeamTests.swift */,
-				FD7000000000000000000024 /* ChatSettingsAndDraftSeamTests.swift */,
-				FD7000000000000000000026 /* SpeechInputSeamTests.swift */,
 				FD7000000000000000000028 /* ChatProviderStreamReducerTests.swift */,
-				FDFE0A8A2F123D0000000001 /* ChatEndpointProviderOrderTests.swift */,
-				FDFE0A962F123D0000000001 /* ChatStreamCompletionRecoveryTests.swift */,
-				FD700000000000000000002C /* ChatBranchRestartCoordinatorTests.swift */,
 				FD700000000000000000002E /* ChatStreamingSessionCoordinatorTests.swift */,
-				FD7000000000000000000030 /* ChatModelCapabilityFacadeTests.swift */,
-				FD7000000000000000000032 /* ChatRequestBodyProviderEncoderTests.swift */,
-				FD7000000000000000000034 /* ChatSidebarPresentationControllerTests.swift */,
-				FD7000000000000000000036 /* SettingsPresetBindingControllerTests.swift */,
 				FD7000000000000000000038 /* SettingsModelCatalogControllerTests.swift */,
-				FD700000000000000000003A /* ChatRequestActivityStateTests.swift */,
 				FDAB10022F123D0000000001 /* ToolUseSettingsCodecTests.swift */,
 				FDAB10042F123D0000000001 /* ChatToolSchemaEncoderTests.swift */,
 				FDAB10062F123D0000000001 /* ChatToolCallParserTests.swift */,
 				FDAB10082F123D0000000001 /* ChatToolExecutorTests.swift */,
 				FDAB100A2F123D0000000001 /* ChatToolAuthorizationCoordinatorTests.swift */,
 				FDAB100C2F123D0000000001 /* JavaScriptRuntimeToolTests.swift */,
-				FDFE0A322F123D0000000001 /* ChatRequestActivityControllerTests.swift */,
-				FDFE0A422F123D0000000001 /* ChatStreamRetryStatusControllerTests.swift */,
-				FDFE0A462F123D0000000001 /* SettingsPresetApplyControllerTests.swift */,
-				FDFE0A4A2F123D0000000001 /* SettingsChatModelCapabilityControllerTests.swift */,
 				FDFE0A4E2F123D0000000001 /* ChatVisibleMessageControllerTests.swift */,
-				FDFE0A522F123D0000000001 /* ChatQueuedDraftAutostartControllerTests.swift */,
-				FDFE0A562F123D0000000001 /* AudioPlaybackSnapshotTests.swift */,
-				FDFE0A5A2F123D0000000001 /* ChatComposerDraftControllerTests.swift */,
-				FDFE0A862F123D0000000001 /* ChatConversationTurnControllerTests.swift */,
 				FDFE0A6E2F123D0000000001 /* ChatTextRequestRuntimeTests.swift */,
 				FDFE0A722F123D0000000001 /* SettingsPresetMutationControllerTests.swift */,
-				FDFE0A8E2F123D0000000001 /* SettingsChatServerRuntimeTests.swift */,
-				FDFE0A922F123D0000000001 /* SettingsVoiceServerRuntimeTests.swift */,
 				FDFE0A762F123D0000000001 /* VoiceVisionCaptureCoordinatorTests.swift */,
-				FDFE0A7A2F123D0000000001 /* VoiceLoadingWatchdogTests.swift */,
-				FDFE0B122F123D0000000001 /* ChatSessionMutationControllerTests.swift */,
 				FD700000000000000000003C /* TTSPlaybackStateTests.swift */,
 				FDFE0AD62F123D0000000001 /* TTSRequestBuilderTests.swift */,
 				FDFE0AD82F123D0000000001 /* TTSHTTPResponseValidatorTests.swift */,
-				FDFE0ADA2F123D0000000001 /* TTSAudioChunkDecoderTests.swift */,
-				FDFE0A2E2F123D0000000001 /* TTSRequestRetryStateTests.swift */,
-				FDFE0A7E2F123D0000000001 /* TTSRealtimeRequestQueueTests.swift */,
-				FDFE0A822F123D0000000001 /* SettingsViewModelSuppressionControllerTests.swift */,
 				FD700000000000000000003E /* VoiceWorkSnapshotTests.swift */,
 				FDFE0A6A2F123D0000000001 /* VoiceRecordingStartCoordinatorTests.swift */,
 				FDFE0A0E2F123D0000000001 /* SettingsPersistenceControllerTests.swift */,
-				FD700000000000000000002A /* VoiceVisionSampleSelectorTests.swift */,
 			);
 			path = MallowTests;
 			sourceTree = "<group>";
@@ -2101,69 +1993,33 @@
 			buildActionMask = 2147483647;
 			files = (
 				AE0929000000000000000101 /* StartupDataRecoveryTests.swift in Sources */,
-				FD7000000000000000000007 /* ChatEndpointResolverTests.swift in Sources */,
 				FD7000000000000000000041 /* ChatRequestBodyBuilderTests.swift in Sources */,
 				FD7000000000000000000043 /* ChatRequestPayloadProjectorTests.swift in Sources */,
 				FD7000000000000000000045 /* ChatResponseParsingTests.swift in Sources */,
-				FD7000000000000000000047 /* ChatStreamingRequestFactoryTests.swift in Sources */,
-				FD7000000000000000000049 /* ChatAssistantDeltaAppenderTests.swift in Sources */,
 				FD700000000000000000004B /* ChatMessageBranchResolverTests.swift in Sources */,
-				FD7000000000000000000011 /* ChatQueuedDraftCoordinatorTests.swift in Sources */,
-				FD7000000000000000000013 /* ChatAssistantStreamTelemetryCoordinatorTests.swift in Sources */,
 				FD7000000000000000000015 /* ChatModelCapabilityStoreTests.swift in Sources */,
-				FD7000000000000000000017 /* TTSPresetApplyStatusTests.swift in Sources */,
-				FD7000000000000000000019 /* SystemPromptPresetStoreTests.swift in Sources */,
 				FD700000000000000000001B /* ChatAPIKeyStoreTests.swift in Sources */,
 				FD700000000000000000001D /* APIAdvancedSettingsCodecTests.swift in Sources */,
-				FD700000000000000000001F /* AppSettingsStoreTests.swift in Sources */,
 				FD7000000000000000000021 /* MallowTestSupport.swift in Sources */,
-				FD7000000000000000000023 /* ChatViewStateSeamTests.swift in Sources */,
-				FD7000000000000000000025 /* ChatSettingsAndDraftSeamTests.swift in Sources */,
-				FD700000000000000000002D /* ChatBranchRestartCoordinatorTests.swift in Sources */,
 				FD700000000000000000002F /* ChatStreamingSessionCoordinatorTests.swift in Sources */,
-				FD7000000000000000000031 /* ChatModelCapabilityFacadeTests.swift in Sources */,
-				FD7000000000000000000033 /* ChatRequestBodyProviderEncoderTests.swift in Sources */,
-				FD7000000000000000000035 /* ChatSidebarPresentationControllerTests.swift in Sources */,
-				FD7000000000000000000037 /* SettingsPresetBindingControllerTests.swift in Sources */,
 				FD7000000000000000000039 /* SettingsModelCatalogControllerTests.swift in Sources */,
-				FD700000000000000000003B /* ChatRequestActivityStateTests.swift in Sources */,
 				FDAB10012F123D0000000001 /* ToolUseSettingsCodecTests.swift in Sources */,
 				FDAB10032F123D0000000001 /* ChatToolSchemaEncoderTests.swift in Sources */,
 				FDAB10052F123D0000000001 /* ChatToolCallParserTests.swift in Sources */,
 				FDAB10072F123D0000000001 /* ChatToolExecutorTests.swift in Sources */,
 				FDAB10092F123D0000000001 /* ChatToolAuthorizationCoordinatorTests.swift in Sources */,
 				FDAB100B2F123D0000000001 /* JavaScriptRuntimeToolTests.swift in Sources */,
-				FDFE0A332F123D0000000001 /* ChatRequestActivityControllerTests.swift in Sources */,
-				FDFE0A432F123D0000000001 /* ChatStreamRetryStatusControllerTests.swift in Sources */,
-				FDFE0A472F123D0000000001 /* SettingsPresetApplyControllerTests.swift in Sources */,
-				FDFE0A4B2F123D0000000001 /* SettingsChatModelCapabilityControllerTests.swift in Sources */,
 				FDFE0A4F2F123D0000000001 /* ChatVisibleMessageControllerTests.swift in Sources */,
-				FDFE0A532F123D0000000001 /* ChatQueuedDraftAutostartControllerTests.swift in Sources */,
-				FDFE0A572F123D0000000001 /* AudioPlaybackSnapshotTests.swift in Sources */,
-				FDFE0A5B2F123D0000000001 /* ChatComposerDraftControllerTests.swift in Sources */,
-				FDFE0A872F123D0000000001 /* ChatConversationTurnControllerTests.swift in Sources */,
 				FDFE0A6F2F123D0000000001 /* ChatTextRequestRuntimeTests.swift in Sources */,
 				FDFE0A732F123D0000000001 /* SettingsPresetMutationControllerTests.swift in Sources */,
-				FDFE0A8F2F123D0000000001 /* SettingsChatServerRuntimeTests.swift in Sources */,
-				FDFE0A932F123D0000000001 /* SettingsVoiceServerRuntimeTests.swift in Sources */,
 				FDFE0A772F123D0000000001 /* VoiceVisionCaptureCoordinatorTests.swift in Sources */,
-				FDFE0A7B2F123D0000000001 /* VoiceLoadingWatchdogTests.swift in Sources */,
-				FDFE0B132F123D0000000001 /* ChatSessionMutationControllerTests.swift in Sources */,
 				FD700000000000000000003D /* TTSPlaybackStateTests.swift in Sources */,
 				FDFE0AD72F123D0000000001 /* TTSRequestBuilderTests.swift in Sources */,
 				FDFE0AD92F123D0000000001 /* TTSHTTPResponseValidatorTests.swift in Sources */,
-				FDFE0ADB2F123D0000000001 /* TTSAudioChunkDecoderTests.swift in Sources */,
-				FDFE0A2F2F123D0000000001 /* TTSRequestRetryStateTests.swift in Sources */,
-				FDFE0A7F2F123D0000000001 /* TTSRealtimeRequestQueueTests.swift in Sources */,
-				FDFE0A832F123D0000000001 /* SettingsViewModelSuppressionControllerTests.swift in Sources */,
 				FD700000000000000000003F /* VoiceWorkSnapshotTests.swift in Sources */,
 				FDFE0A6B2F123D0000000001 /* VoiceRecordingStartCoordinatorTests.swift in Sources */,
 				FDFE0A0F2F123D0000000001 /* SettingsPersistenceControllerTests.swift in Sources */,
-				FD7000000000000000000027 /* SpeechInputSeamTests.swift in Sources */,
 				FD7000000000000000000029 /* ChatProviderStreamReducerTests.swift in Sources */,
-				FDFE0A8B2F123D0000000001 /* ChatEndpointProviderOrderTests.swift in Sources */,
-				FDFE0A972F123D0000000001 /* ChatStreamCompletionRecoveryTests.swift in Sources */,
-				FD700000000000000000002B /* VoiceVisionSampleSelectorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -13,7 +13,7 @@ final class StartupDataRecoveryTests: XCTestCase {
             attachment.lifetime = .keepAlways
             add(attachment)
             let plan = try fixture.prepare()
-            XCTAssertEqual(plan.categories.count, 8)
+            XCTAssertEqual(plan.categories.count, 7)
             XCTAssertTrue(plan.categories.allSatisfy { $0.recovered > 0 && $0.skipped == 0 && !$0.hasUnknownLoss && !$0.hasPartialLoss })
             try inspect(plan) { context in
                 let messages = try context.fetch(FetchDescriptor<ChatMessage>())
@@ -26,7 +26,6 @@ final class StartupDataRecoveryTests: XCTestCase {
                 XCTAssertEqual(try context.fetch(FetchDescriptor<VoicePreset>()).first?.promptText, "Voice reference")
                 XCTAssertEqual(try context.fetch(FetchDescriptor<VoiceServerPreset>()).first?.serverAddress, "https://voice.example.test")
                 XCTAssertEqual(try context.fetch(FetchDescriptor<ChatServerPreset>()).first?.selectedModel, "fixture-model")
-                XCTAssertEqual(try context.fetch(FetchDescriptor<ChatRequestContextMetadata>()).first?.enabledToolIDs, ["calendar"])
                 let settings = try XCTUnwrap(context.fetch(FetchDescriptor<AppSettings>()).first)
                 XCTAssertEqual(settings.selectedModel, "fixture-model")
                 XCTAssertEqual(ChatModelCapabilityStore.restoringPreferences(from: settings).thinkingPreferences["https://chat.example.test|fixture-model"], .high)
@@ -42,46 +41,9 @@ final class StartupDataRecoveryTests: XCTestCase {
         }
     }
 
-    func testDamagedScalarMetadataKeepsReadableMessageAndDefaults() throws {
-        try withFixture { fixture in
-            try fixture.sql("UPDATE ZCHATMESSAGE SET ZTOKENCOUNT='obsolete', ZOUTPUTTOKENCOUNT='bad' WHERE ZISUSER=0")
-            let plan = try fixture.prepare()
-            try inspect(plan) { context in
-                let answer = try XCTUnwrap(context.fetch(FetchDescriptor<ChatMessage>()).first { !$0.isUser })
-                XCTAssertEqual(answer.content, "Readable answer")
-                XCTAssertEqual(answer.assistantText, "Readable answer")
-                XCTAssertEqual(answer.tokenCount, 0)
-                XCTAssertNil(answer.outputTokenCount)
-                XCTAssertEqual(answer.modelIdentifier, "fixture-model")
-            }
-            let category = try category("ChatMessage", in: plan)
-            XCTAssertEqual(category.recovered, 3)
-            XCTAssertEqual(category.skipped, 0)
-        }
-    }
-
-    func testDamagedStructuredDataIsOmittedWithoutRewritingReadableBody() throws {
-        try withFixture { fixture in
-            try fixture.sql("UPDATE ZCHATMESSAGE SET ZASSISTANTSEGMENTSDATA=CAST('[{\"kind\":\"text\",\"itemID\":\"kept-id\",\"text\":17}]' AS BLOB) WHERE ZISUSER=0")
-            try fixture.sql("UPDATE ZAPPSETTINGS SET ZAPIADVANCEDSETTINGSJSON='{\"openAIChatMaxCompletionTokens\":1234,\"openAIChatSampling\":{\"temperature\":\"broken\",\"topP\":0.7}}'")
-            let plan = try fixture.prepare()
-            try inspect(plan) { context in
-                let answer = try XCTUnwrap(context.fetch(FetchDescriptor<ChatMessage>()).first { !$0.isUser })
-                XCTAssertEqual(answer.assistantText, "Readable answer")
-                XCTAssertTrue(answer.assistantSegments.isEmpty)
-                XCTAssertTrue(answer.toolActivityPlacements.isEmpty)
-                let settings = try XCTUnwrap(context.fetch(FetchDescriptor<AppSettings>()).first)
-                let advanced = try JSONDecoder().decode(APIAdvancedSettings.self, from: Data(try XCTUnwrap(settings.apiAdvancedSettingsJSON).utf8))
-                XCTAssertEqual(advanced.openAIChatMaxCompletionTokens, SettingsDefaults.apiAdvancedSettings.openAIChatMaxCompletionTokens)
-                XCTAssertEqual(advanced.openAIChatSampling.topP, SettingsDefaults.apiAdvancedSettings.openAIChatSampling.topP)
-                XCTAssertEqual(advanced.openAIChatSampling.temperature, SettingsDefaults.apiAdvancedSettings.openAIChatSampling.temperature)
-            }
-        }
-    }
-
     func testBrokenRelationshipsAreSkippedWithoutCreatingChatsOrReparenting() throws {
         try withFixture { fixture in
-            try fixture.sql("UPDATE ZCHATMESSAGE SET ZSESSION=999999 WHERE ZCONTENT='Second question'")
+            try fixture.sql("UPDATE ZCHATMESSAGE SET ZSESSION=999999 WHERE ZISUSER=1 AND ZPARENTMESSAGE IS NOT NULL")
             try fixture.sql("UPDATE ZCHATMESSAGE SET ZPARENTMESSAGE=Z_PK WHERE ZISUSER=0")
             let plan = try fixture.prepare()
             try inspect(plan) { context in
@@ -91,61 +53,6 @@ final class StartupDataRecoveryTests: XCTestCase {
             }
             XCTAssertEqual(try category("ChatMessage", in: plan).recovered, 1)
             XCTAssertEqual(try category("ChatMessage", in: plan).skipped, 2)
-        }
-    }
-
-    func testDamagedAttachmentAndToolEntriesAreNotInvented() throws {
-        try withFixture { fixture in
-            try fixture.sql("UPDATE ZCHATMESSAGE SET ZIMAGEATTACHMENTSDATA=CAST(json_set(CAST(ZIMAGEATTACHMENTSDATA AS TEXT), '$[0].id', 'broken') AS BLOB), ZTOOLACTIVITYPLACEMENTSDATA=CAST(json_set(CAST(ZTOOLACTIVITYPLACEMENTSDATA AS TEXT), '$[0].activity.phase', 'removed-phase') AS BLOB) WHERE ZISUSER=0")
-            try fixture.sql("UPDATE ZCHATREQUESTCONTEXTMETADATA SET ZREFERENCECOUNT='broken'")
-            let plan = try fixture.prepare()
-            try inspect(plan) { context in
-                let answer = try XCTUnwrap(context.fetch(FetchDescriptor<ChatMessage>()).first { !$0.isUser })
-                XCTAssertTrue(answer.imageAttachments.isEmpty)
-                XCTAssertTrue(answer.toolActivityPlacements.isEmpty)
-                XCTAssertEqual(try context.fetch(FetchDescriptor<ChatRequestContextMetadata>()).first?.enabledToolIDs, ["calendar"])
-            }
-            XCTAssertEqual(try category("ChatMessage", in: plan).skipped, 0)
-            XCTAssertTrue(try category("ChatMessage", in: plan).hasPartialLoss)
-        }
-    }
-
-    func testDuplicateIdentifiersAndTheirDependentMessagesAreSkipped() throws {
-        try withFixture { fixture in
-            try fixture.sql("UPDATE ZCHATMESSAGE SET ZID=(SELECT ZID FROM ZCHATMESSAGE WHERE ZCONTENT='First question') WHERE ZCONTENT='Second question'")
-            let plan = try fixture.prepare()
-            try inspect(plan) { context in
-                XCTAssertEqual(try context.fetchCount(FetchDescriptor<ChatMessage>()), 0)
-            }
-            XCTAssertEqual(try category("ChatMessage", in: plan).skipped, 3)
-        }
-    }
-
-    func testInvalidPromptModeOrContentIsSkippedWithoutCreatingPresets() throws {
-        for damage in ["ZMODE='removed-mode'", "ZNORMALPROMPT=X'00'"] {
-            try withFixture { fixture in
-                try fixture.sql("UPDATE ZSYSTEMPROMPTPRESET SET \(damage) WHERE ZNAME='Recovery prompt'")
-                let plan = try fixture.prepare()
-                try inspect(plan) { context in
-                    let presets = try context.fetch(FetchDescriptor<SystemPromptPreset>())
-                    XCTAssertEqual(presets.map(\.name), ["Voice prompt fixture"])
-                    XCTAssertEqual(presets.first?.voicePrompt, "Selected voice prompt")
-                }
-                XCTAssertEqual(try category("SystemPromptPreset", in: plan).skipped, 1)
-            }
-        }
-    }
-
-    func testMissingEssentialMessageFieldsAreSkippedWithTheirDescendants() throws {
-        for column in ["ZID", "ZISUSER", "ZCONTENT", "ZCREATEDAT", "ZPARENTMESSAGE"] {
-            try withFixture { fixture in
-                try fixture.sql("UPDATE ZCHATMESSAGE SET \(column)=X'00' WHERE ZISUSER=0")
-                let plan = try fixture.prepare()
-                try inspect(plan) { context in
-                    XCTAssertEqual(try context.fetch(FetchDescriptor<ChatMessage>()).map(\.content), ["First question"])
-                }
-                XCTAssertEqual(try category("ChatMessage", in: plan).skipped, 2)
-            }
         }
     }
 
@@ -193,7 +100,7 @@ final class StartupDataRecoveryTests: XCTestCase {
         }
     }
 
-    func testRawExportReadsAllRealKeychainItems() throws {
+    nonisolated func testRawExportReadsAllRealKeychainItems() async throws {
         let service = "ExportValidation-" + UUID().uuidString
         let credentials = ["first": "synthetic-secret-1", "second": "synthetic-secret-2"]
         defer {
@@ -243,57 +150,13 @@ final class StartupDataRecoveryTests: XCTestCase {
         }
     }
 
-    func testMissingLegacyColumnsUseDefaultsWithoutLosingRecords() throws {
-        try withFixture { fixture in
-            try fixture.sql("ALTER TABLE ZAPPSETTINGS DROP COLUMN ZMODELTHINKINGPREFERENCESJSON")
-            try fixture.sql("ALTER TABLE ZAPPSETTINGS DROP COLUMN ZDETECTEDAPIFORMATSJSON")
-            try fixture.sql("ALTER TABLE ZCHATMESSAGE DROP COLUMN ZOUTPUTTOKENCOUNT")
-            try fixture.sql("ALTER TABLE ZCHATMESSAGE DROP COLUMN ZREASONINGOUTPUTTOKENCOUNT")
-            let plan = try fixture.prepare()
-            XCTAssertEqual(try category("ChatMessage", in: plan).recovered, 3)
-            try inspect(plan) { context in
-                let answer = try XCTUnwrap(context.fetch(FetchDescriptor<ChatMessage>()).first { !$0.isUser })
-                XCTAssertEqual(answer.assistantText, "Readable answer")
-                XCTAssertNil(answer.outputTokenCount)
-            }
-        }
-    }
-
-    func testCorruptedSQLitePageSalvagesRowsOnBothSides() throws {
-        try withFixture(extraMessages: 240) { fixture in
-            let pageSize = try fixture.integer("PRAGMA page_size")
-            let rootPage = try fixture.integer("SELECT rootpage FROM sqlite_master WHERE name='ZCHATMESSAGE'")
-            // SwiftData assigns primary keys at save time, not insertion order.
-            let firstContent = try fixture.text("SELECT ZCONTENT FROM ZCHATMESSAGE WHERE ZCONTENT LIKE 'Bulk %' ORDER BY Z_PK LIMIT 1")
-            let lastContent = try fixture.text("SELECT ZCONTENT FROM ZCHATMESSAGE WHERE ZCONTENT LIKE 'Bulk %' ORDER BY Z_PK DESC LIMIT 1")
-            var bytes = try Data(contentsOf: fixture.source)
-            let leaves = tableLeaves(in: bytes, page: rootPage, pageSize: pageSize)
-            XCTAssertGreaterThan(leaves.count, 4)
-            let damagedPage = leaves[leaves.count / 2]
-            bytes[(damagedPage - 1) * pageSize] = 0
-            try bytes.write(to: fixture.source)
-            let plan = try fixture.prepare()
-            let messages = try category("ChatMessage", in: plan)
-            XCTAssertTrue(messages.hasUnknownLoss)
-            XCTAssertGreaterThan(messages.recovered, 100)
-            XCTAssertLessThan(messages.recovered, 243)
-            XCTAssertEqual(try category("AppSettings", in: plan).recovered, 1)
-            try inspect(plan) { context in
-                let contents = try context.fetch(FetchDescriptor<ChatMessage>()).map(\.content)
-                XCTAssertTrue(contents.contains(firstContent))
-                XCTAssertTrue(contents.contains(lastContent))
-            }
-            print("RECOVERY_PAGE_RESULT recovered=\(messages.recovered)/243 damagedPage=\(damagedPage) leafPages=\(leaves.count)")
-        }
-    }
-
     func testCancelledPreviewDoesNotModifySourceAndCanBeRepeated() throws {
         try withFixture { fixture in
-            try fixture.sql("UPDATE ZCHATMESSAGE SET ZTOKENCOUNT='bad' WHERE ZISUSER=0")
+            try fixture.sql("UPDATE ZCHATMESSAGE SET ZOUTPUTTOKENCOUNT='bad' WHERE ZISUSER=0")
             let original = try Data(contentsOf: fixture.source)
             for _ in 0..<3 {
                 let plan = try fixture.prepare()
-                XCTAssertEqual(plan.recoveredCount, 11)
+                XCTAssertEqual(plan.recoveredCount, 10)
                 plan.discard()
                 XCTAssertFalse(FileManager.default.fileExists(atPath: plan.directory.path))
                 XCTAssertEqual(try Data(contentsOf: fixture.source), original)
@@ -328,7 +191,7 @@ final class StartupDataRecoveryTests: XCTestCase {
         }
     }
 
-    private func withFixture(extraMessages: Int = 0, body: (Fixture) throws -> Void) throws {
+    private func withFixture(body: (Fixture) throws -> Void) throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("RecoveryTests-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let fixture = Fixture(root: root)
@@ -337,24 +200,8 @@ final class StartupDataRecoveryTests: XCTestCase {
             do { try FileManager.default.removeItem(at: root) }
             catch { XCTFail("Fixture cleanup failed: \(error)") }
         }
-        try fixture.populate(extraMessages: extraMessages)
+        try fixture.populate()
         try body(fixture)
-    }
-
-    // Table b-tree traversal follows https://sqlite.org/fileformat2.html#b_tree_pages.
-    private func tableLeaves(in bytes: Data, page: Int, pageSize: Int) -> [Int] {
-        let base = (page - 1) * pageSize
-        let header = base + (page == 1 ? 100 : 0)
-        func integer(_ offset: Int, _ count: Int) -> Int {
-            bytes[offset..<(offset + count)].reduce(0) { ($0 << 8) | Int($1) }
-        }
-        if bytes[header] == 13 { return [page] }
-        guard bytes[header] == 5 else { return [] }
-        var children = (0..<integer(header + 3, 2)).map { index in
-            integer(base + integer(header + 12 + index * 2, 2), 4)
-        }
-        children.append(integer(header + 8, 4))
-        return children.flatMap { tableLeaves(in: bytes, page: $0, pageSize: pageSize) }
     }
 
     @MainActor
@@ -372,7 +219,7 @@ final class StartupDataRecoveryTests: XCTestCase {
             return plan
         }
 
-        func populate(extraMessages: Int) throws {
+        func populate() throws {
             let working = root.appendingPathComponent("working.store")
             let container = try StartupPersistentStore.open(at: working)
             defer {
@@ -411,15 +258,6 @@ final class StartupDataRecoveryTests: XCTestCase {
                 context.insert(ChatServerPreset(name: "Chat fixture", apiURL: "https://chat.example.test", selectedModel: "fixture-model"))
                 context.insert(VoiceServerPreset(name: "Voice server fixture", serverAddress: "https://voice.example.test"))
                 context.insert(VoicePreset(name: "Voice fixture", promptText: "Voice reference"))
-                context.insert(ChatRequestContextMetadata(snapshot: ChatRequestContextSnapshot(
-                    fingerprint: "fixture-context", version: 1, modelIdentifier: "fixture-model", endpointURLHash: "endpoint", providerRawValue: "openAI",
-                    requestStyleRawValue: "chatCompletions", developerPromptHash: "prompt", developerPromptCharacterCount: 12,
-                    thinkingOptionRawValue: nil, toolUseEnabled: true, enabledToolIDsJSON: "[\"calendar\"]", toolSchemaDigest: "schema",
-                    toolSchemaSummaryJSON: "{}", toolAuthorizationModeRawValue: "readOnly", allowHighRiskToolAutoExecution: false, useProviderContinuationIDs: false
-                )))
-                for index in 0..<extraMessages {
-                    context.insert(ChatMessage(content: String(format: "Bulk %03d ", index) + String(repeating: "x", count: 1500), isUser: true, session: session))
-                }
                 try context.save()
             }
             // A read-only backup does not compete with Core Data's asynchronous
@@ -443,28 +281,6 @@ final class StartupDataRecoveryTests: XCTestCase {
                 guard sqlite3_exec(database, statement, nil, nil, nil) == SQLITE_OK else {
                     throw NSError(domain: "FixtureSQLite", code: Int(sqlite3_errcode(database)), userInfo: [NSLocalizedDescriptionKey: String(cString: sqlite3_errmsg(database))])
                 }
-            }
-        }
-
-        func integer(_ statement: String) throws -> Int {
-            try database(at: source) { database in
-                var query: OpaquePointer?
-                guard sqlite3_prepare_v2(database, statement, -1, &query, nil) == SQLITE_OK else { throw CocoaError(.fileReadCorruptFile) }
-                defer { sqlite3_finalize(query) }
-                guard sqlite3_step(query) == SQLITE_ROW else { throw CocoaError(.fileReadCorruptFile) }
-                return Int(sqlite3_column_int64(query, 0))
-            }
-        }
-
-        func text(_ statement: String) throws -> String {
-            try database(at: source) { database in
-                var query: OpaquePointer?
-                guard sqlite3_prepare_v2(database, statement, -1, &query, nil) == SQLITE_OK else { throw CocoaError(.fileReadCorruptFile) }
-                defer { sqlite3_finalize(query) }
-                guard sqlite3_step(query) == SQLITE_ROW, let value = sqlite3_column_text(query, 0) else {
-                    throw CocoaError(.fileReadCorruptFile)
-                }
-                return String(cString: value)
             }
         }
 

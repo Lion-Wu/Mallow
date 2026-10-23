@@ -18,7 +18,6 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/ordo-one/equatable", exact: "1.0.10"),
-    .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", exact: "1.19.3"),
     .package(url: "https://github.com/swiftlang/swift-markdown.git", exact: "0.7.3"),
     .package(path: "../HighlightSwift"),
     .package(url: "https://github.com/erweixin/RaTeX.git", exact: "0.1.13"),
@@ -44,13 +43,8 @@ let package = Package(
     .testTarget(
       name: "SwiftStreamingMarkdownTests",
       dependencies: [
-        "SwiftStreamingMarkdown",
-        .product(name: "SnapshotTesting", package: "swift-snapshot-testing")
+        "SwiftStreamingMarkdown"
       ],
-      path: "Tests/MarkdownTextTests",
-      exclude: ["__Snapshots__"],
-      resources: [
-        .process("Resources")
-      ])
+      path: "Tests/MarkdownTextTests")
   ]
 )

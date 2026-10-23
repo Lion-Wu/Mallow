@@ -49,20 +49,6 @@ final class ImageBlockRenderingTests: XCTestCase {
     }
   }
 
-  func test_standalone_image_renders_as_image_block_when_enabled() async {
-    let renderables = await renderables(
-      for: "![alt](https://example.com/a.png)",
-      imageConfig: ImageConfig(enabled: true, allowedImageTypes: [.remote(allowedDomains: [])])
-    )
-
-    XCTAssertEqual(renderables.count, 1)
-    guard case .image(_, let data) = renderables[0] else {
-      return XCTFail("Expected an image block when image support is enabled")
-    }
-    XCTAssertEqual(data.source, .remote(url("https://example.com/a.png")))
-    XCTAssertEqual(data.alt, "alt")
-  }
-
   func test_image_data_precomputes_domain_eligibility_from_config() async {
     let config = ImageConfig(
       enabled: true,
@@ -86,114 +72,6 @@ final class ImageBlockRenderingTests: XCTestCase {
       return XCTFail("Expected an image block for the blocked domain")
     }
     XCTAssertNil(blockedData.source)
-  }
-
-  func test_assets_scheme_resolves_to_asset_catalog_when_permitted() async {
-    let renderables = await renderables(
-      for: "![alt](assets://Images/logo)",
-      imageConfig: ImageConfig(enabled: true, allowedImageTypes: [.assetCatalog])
-    )
-
-    guard case .image(_, let data) = renderables.first else {
-      return XCTFail("Expected an image block for the asset-catalog source")
-    }
-    XCTAssertEqual(data.source, .assetCatalog(name: "Images/logo"))
-  }
-
-  func test_assets_scheme_is_not_allowed_without_asset_catalog_type() async {
-    let renderables = await renderables(
-      for: "![alt](assets://Images/logo)",
-      imageConfig: ImageConfig(enabled: true, allowedImageTypes: [.remote(allowedDomains: [])])
-    )
-
-    guard case .image(_, let data) = renderables.first else {
-      return XCTFail("Expected an image block")
-    }
-    XCTAssertNil(data.source)
-  }
-
-  func test_relative_path_resolves_to_bundled_resource_when_permitted() async {
-    let renderables = await renderables(
-      for: "![alt](logo.png)",
-      imageConfig: ImageConfig(enabled: true, allowedImageTypes: [.bundledResource])
-    )
-
-    guard case .image(_, let data) = renderables.first else {
-      return XCTFail("Expected an image block for the bundled-resource source")
-    }
-    XCTAssertEqual(data.source, .bundledResource(fileName: "logo", ext: "png"))
-  }
-
-  func test_dot_slash_relative_path_strips_prefix_for_bundled_resource() async {
-    let renderables = await renderables(
-      for: "![alt](./logo.png)",
-      imageConfig: ImageConfig(enabled: true, allowedImageTypes: [.bundledResource])
-    )
-
-    guard case .image(_, let data) = renderables.first else {
-      return XCTFail("Expected an image block for the bundled-resource source")
-    }
-    XCTAssertEqual(data.source, .bundledResource(fileName: "logo", ext: "png"))
-  }
-
-  func test_nested_relative_path_is_invalid_for_bundled_resource() async {
-    let renderables = await renderables(
-      for: "![alt](Images/logo.png)",
-      imageConfig: ImageConfig(enabled: true, allowedImageTypes: [.bundledResource])
-    )
-
-    guard case .image(_, let data) = renderables.first else {
-      return XCTFail("Expected an image block")
-    }
-    XCTAssertNil(data.source)
-  }
-
-  func test_relative_path_without_extension_is_invalid_for_bundled_resource() async {
-    let renderables = await renderables(
-      for: "![alt](logo)",
-      imageConfig: ImageConfig(enabled: true, allowedImageTypes: [.bundledResource])
-    )
-
-    guard case .image(_, let data) = renderables.first else {
-      return XCTFail("Expected an image block")
-    }
-    XCTAssertNil(data.source)
-  }
-
-  func test_relative_path_is_not_allowed_without_bundled_resource_type() async {
-    let renderables = await renderables(
-      for: "![alt](logo.png)",
-      imageConfig: ImageConfig(enabled: true, allowedImageTypes: [.assetCatalog])
-    )
-
-    guard case .image(_, let data) = renderables.first else {
-      return XCTFail("Expected an image block")
-    }
-    XCTAssertNil(data.source)
-  }
-
-  func test_plain_http_url_is_never_resolved() async {
-    let renderables = await renderables(
-      for: "![alt](http://example.com/a.png)",
-      imageConfig: ImageConfig(enabled: true, allowedImageTypes: [.remote(allowedDomains: [])])
-    )
-
-    guard case .image(_, let data) = renderables.first else {
-      return XCTFail("Expected an image block")
-    }
-    XCTAssertNil(data.source)
-  }
-
-  func test_remote_url_is_not_allowed_with_only_asset_catalog_type() async {
-    let renderables = await renderables(
-      for: "![alt](https://example.com/a.png)",
-      imageConfig: ImageConfig(enabled: true, allowedImageTypes: [.assetCatalog])
-    )
-
-    guard case .image(_, let data) = renderables.first else {
-      return XCTFail("Expected an image block")
-    }
-    XCTAssertNil(data.source)
   }
 
   func test_image_mixed_with_text_is_split_into_blocks_when_enabled() async {

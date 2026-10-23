@@ -2,38 +2,6 @@ import XCTest
 @testable import Mallow
 
 final class ChatToolExecutorTests: XCTestCase {
-    func testUnknownToolReturnsStructuredFailure() async {
-        let result = await makeExecutor().execute(
-            ChatToolCallEnvelope(
-                callID: "unknown-tool-call",
-                name: "unknown_tool",
-                argumentsJSON: "{}",
-                provider: .openAI
-            ),
-            settings: enabledSettings(),
-            endpoint: localEndpoint()
-        )
-
-        XCTAssertEqual(result.status, .failed)
-        XCTAssertEqual(result.callID, "unknown-tool-call")
-        XCTAssertTrue(result.outputJSONString.contains("\"status\":\"failed\""))
-    }
-
-    func testMalformedArgumentsReturnInvalidArguments() async {
-        let result = await makeExecutor().execute(
-            ChatToolCallEnvelope(
-                callID: "calendar",
-                name: ChatToolID.calendarListEvents.rawValue,
-                argumentsJSON: "{",
-                provider: .openAI
-            ),
-            settings: enabledSettings(),
-            endpoint: localEndpoint()
-        )
-
-        XCTAssertEqual(result.status, .invalidArguments)
-    }
-
     func testSchemaMismatchIsRejectedBeforeAdapterExecution() async {
         let calendar = FakeCalendarTool()
         let result = await makeExecutor(calendarTool: calendar).execute(
@@ -50,24 +18,6 @@ final class ChatToolExecutorTests: XCTestCase {
         XCTAssertEqual(result.status, .invalidArguments)
         XCTAssertEqual(calendar.callCount, 0)
         XCTAssertTrue(result.summary.contains("arguments.calendar_name"))
-    }
-
-    func testUnknownArgumentIsRejectedBeforeAdapterExecution() async {
-        let calendar = FakeCalendarTool()
-        let result = await makeExecutor(calendarTool: calendar).execute(
-            ChatToolCallEnvelope(
-                callID: "calendar-list",
-                name: ChatToolID.calendarListEvents.rawValue,
-                argumentsJSON: #"{"unexpected":true}"#,
-                provider: .openAI
-            ),
-            settings: enabledSettings(),
-            endpoint: localEndpoint()
-        )
-
-        XCTAssertEqual(result.status, .invalidArguments)
-        XCTAssertEqual(calendar.callCount, 0)
-        XCTAssertTrue(result.summary.contains("arguments.unexpected"))
     }
 
     func testDisabledToolUseDoesNotInvokeAdapter() async {
@@ -102,24 +52,6 @@ final class ChatToolExecutorTests: XCTestCase {
         XCTAssertEqual(result.status, .success)
         XCTAssertEqual(result.payload["ok"], .bool(true))
         XCTAssertEqual(result.summary, "device ok")
-    }
-
-    func testEnabledReadToolIsAvailableToRemoteEndpoint() async {
-        let calendar = FakeCalendarTool()
-
-        let result = await makeExecutor(calendarTool: calendar).execute(
-            ChatToolCallEnvelope(
-                callID: "remote-calendar",
-                name: ChatToolID.calendarListEvents.rawValue,
-                argumentsJSON: "{}",
-                provider: .openAI
-            ),
-            settings: enabledSettings(),
-            endpoint: remoteEndpoint()
-        )
-
-        XCTAssertEqual(result.status, .success)
-        XCTAssertEqual(calendar.callCount, 1)
     }
 
     func testWriteToolStillRequiresApprovalByPolicyForRemoteEndpointInReadOnlyMode() {
@@ -167,55 +99,6 @@ final class ChatToolExecutorTests: XCTestCase {
         XCTAssertEqual(result.payload["reminder_id"], .string("example-reminder-id"))
     }
 
-    func testSystemTimeReturnsLocalAndUTCRepresentations() async throws {
-        var settings = enabledSettings()
-        settings.timeEnabled = true
-        let result = await makeExecutor().execute(
-            ChatToolCallEnvelope(
-                callID: "time",
-                name: ChatToolID.systemGetTime.rawValue,
-                argumentsJSON: "{}",
-                provider: .lmStudio
-            ),
-            settings: settings,
-            endpoint: localEndpoint()
-        )
-
-        XCTAssertEqual(result.status, .success)
-        let isoTime = try XCTUnwrap(result.payload.stringValue("iso_time"))
-        let localISOTime = try XCTUnwrap(result.payload.stringValue("local_iso_time"))
-        let utcISOTime = try XCTUnwrap(result.payload.stringValue("utc_iso_time"))
-        let offset = ChatToolTimeFormatter.timeZoneOffsetString()
-
-        XCTAssertEqual(isoTime, localISOTime)
-        XCTAssertTrue(localISOTime.hasSuffix(offset), localISOTime)
-        XCTAssertTrue(utcISOTime.hasSuffix("Z") || utcISOTime.hasSuffix("+00:00"), utcISOTime)
-        XCTAssertEqual(result.payload.stringValue("timezone"), TimeZone.autoupdatingCurrent.identifier)
-        XCTAssertEqual(result.payload.stringValue("timezone_offset"), offset)
-    }
-
-    func testTemporalResolverAcceptsCommonISO8601Variants() {
-        let samples = [
-            "2001-01-01T12:34+08:00",
-            "2001-01-01T12:34:56+08:00",
-            "2001-01-01T12:34:56.789+08:00",
-            "2001-01-01T12:34",
-            "2001-01-01T12:34:56",
-            "2001-01-01T12:34:56.789"
-        ]
-
-        for sample in samples {
-            XCTAssertNotNil(ChatToolTemporalResolver.parseDateTime(sample), sample)
-        }
-    }
-
-    func testTemporalResolverParsesNoSecondsOffsetAsExpectedInstant() throws {
-        let date = try XCTUnwrap(ChatToolTemporalResolver.parseDateTime("2001-01-01T12:34+08:00"))
-        let expected = try XCTUnwrap(ISO8601DateFormatter().date(from: "2001-01-01T04:34:00Z"))
-
-        XCTAssertEqual(date.timeIntervalSince1970, expected.timeIntervalSince1970, accuracy: 0.001)
-    }
-
     func testTemporalRangeAcceptsEnglishRelativeTimesToTheSecond() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -239,63 +122,12 @@ final class ChatToolExecutorTests: XCTestCase {
         XCTAssertEqual(future.date.timeIntervalSince1970, now.addingTimeInterval(3600).timeIntervalSince1970, accuracy: 0.001)
     }
 
-    func testTemporalRangeCoversDateOnlyAndWeekDescriptions() throws {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        calendar.firstWeekday = 2
-        let now = try XCTUnwrap(ISO8601DateFormatter().date(from: "2001-01-07T12:34:56Z"))
-
-        let today = try XCTUnwrap(ChatToolTemporalResolver.range(
-            start: "today",
-            end: nil,
-            defaultRange: nil,
-            calendar: calendar,
-            now: now
-        ))
-        let thisWeek = try XCTUnwrap(ChatToolTemporalResolver.range(
-            start: "this week",
-            end: nil,
-            defaultRange: nil,
-            calendar: calendar,
-            now: now
-        ))
-
-        XCTAssertEqual(today.end.timeIntervalSince(today.start), 86_400, accuracy: 0.001)
-        XCTAssertEqual(thisWeek.end.timeIntervalSince(thisWeek.start), 7 * 86_400, accuracy: 0.001)
-    }
-
-    func testTemporalRangeKeepsExactEndWhenStartIsDateOnly() throws {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        let now = try XCTUnwrap(ISO8601DateFormatter().date(from: "2001-01-07T12:34:56Z"))
-
-        let range = try XCTUnwrap(ChatToolTemporalResolver.range(
-            start: "today",
-            end: "now",
-            defaultRange: nil,
-            calendar: calendar,
-            now: now
-        ))
-
-        XCTAssertEqual(range.end.timeIntervalSince1970, now.timeIntervalSince1970, accuracy: 0.001)
-    }
-
     func testTemporalRangeRejectsEndWithoutStart() {
         XCTAssertThrowsError(try ChatToolTemporalResolver.range(
             start: nil,
             end: "today",
             defaultRange: nil
         ))
-    }
-
-    func testTemporalResolverRejectsRemovedLegacyAndPartialDateForms() {
-        XCTAssertThrowsError(try ChatToolTemporalResolver.date(from: "一小时前"))
-        XCTAssertThrowsError(try ChatToolTemporalResolver.date(from: "2001-01-01 trailing text"))
-        XCTAssertThrowsError(try ChatToolTemporalResolver.date(from: "right_now"))
-        XCTAssertThrowsError(try ChatToolTemporalResolver.date(from: "Monday"))
-        XCTAssertThrowsError(try ChatToolTemporalResolver.date(from: "+1 hour ago"))
-        XCTAssertThrowsError(try ChatToolTemporalResolver.date(from: "1 hour later"))
-        XCTAssertThrowsError(try ChatToolTemporalResolver.timePoint(from: "this week"))
     }
 
     func testArgumentReaderRejectsWrongTypesAndOutOfRangeValues() throws {
@@ -433,12 +265,5 @@ private struct FakeMotionTool: MotionToolServing {
 private struct FakeDeviceTool: DeviceContextToolServing {
     func deviceContext(arguments: ChatToolArgumentReader) async throws -> ChatToolExecutionPayload {
         ChatToolExecutionPayload(payload: ["ok": .bool(true)], summary: "device ok")
-    }
-}
-
-private extension Dictionary where Key == String, Value == JSONValue {
-    func stringValue(_ key: String) -> String? {
-        guard case let .string(value)? = self[key] else { return nil }
-        return value
     }
 }

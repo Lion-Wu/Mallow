@@ -27,30 +27,6 @@ extension XCTestCase {
         try JSONDecoder().decode(LMStudioChatStreamEvent.self, from: jsonData(string))
     }
 
-    func providerBody(
-        provider: ChatProvider,
-        settings: APIAdvancedSettings,
-        messagePayload: [[String: Any]],
-        thinkingOption: ModelThinkingOption? = nil
-    ) throws -> [String: Any] {
-        let endpoint = ChatAPIEndpointCandidate(
-            provider: provider,
-            style: .openAIChatCompletions,
-            chatURL: try XCTUnwrap(URL(string: "https://example.com/v1/chat/completions")),
-            modelsURL: try XCTUnwrap(URL(string: "https://example.com/v1/models"))
-        )
-        let data = try ChatRequestBodyBuilder().buildRequestBodyData(
-            model: "\(provider.rawValue)-model",
-            messagePayload: messagePayload,
-            developerPrompt: nil,
-            endpoint: endpoint,
-            apiAdvancedSettings: settings,
-            thinkingCapability: nil,
-            thinkingOption: thinkingOption
-        )
-        return try decodedBody(from: data)
-    }
-
     func modelInfo(id: String, supportsImageInput: Bool? = nil) -> ModelInfo {
         ModelInfo(
             id: id,
@@ -91,44 +67,6 @@ extension XCTestCase {
     func sleepingTask() -> Task<Void, Never> {
         Task {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
-        }
-    }
-
-    func noRetryPolicy() -> NetworkRetryPolicy {
-        NetworkRetryPolicy(
-            maxAttempts: 1,
-            baseDelay: 0,
-            maxDelay: 0,
-            backoffFactor: 1,
-            jitterRatio: 0
-        )
-    }
-}
-
-enum StubModelCatalogError: Error {
-    case unavailable
-}
-
-final class StubModelCatalogService: ModelCatalogFetching, @unchecked Sendable {
-    private let responses: [URL: Result<[ModelInfo], Error>]
-    private(set) var requestedModelURLs: [URL] = []
-
-    init(responses: [URL: Result<[ModelInfo], Error>]) {
-        self.responses = responses
-    }
-
-    func fetchModels(
-        from candidate: ChatAPIEndpointCandidate,
-        apiKey: String,
-        retryPolicy: NetworkRetryPolicy,
-        onRetry: (@Sendable (_ nextAttempt: Int, _ delay: TimeInterval, _ error: Error) async -> Void)?
-    ) async throws -> [ModelInfo] {
-        requestedModelURLs.append(candidate.modelsURL)
-        switch responses[candidate.modelsURL] ?? .failure(StubModelCatalogError.unavailable) {
-        case let .success(models):
-            return models
-        case let .failure(error):
-            throw error
         }
     }
 }
