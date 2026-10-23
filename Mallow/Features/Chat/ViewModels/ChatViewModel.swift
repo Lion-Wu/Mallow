@@ -873,13 +873,14 @@ final class ChatViewModel: ObservableObject {
         for message in messages where message.finishReason == "cancelled" || message.finishReason == "stopped" {
             guard message.activeChildMessageID == nil, message.childMessages.isEmpty else { continue }
             let alreadyHasErrorChild = message.childMessages.contains {
-                $0.content.hasPrefix("!error:")
+                $0.isError
             }
             guard !alreadyHasErrorChild else { continue }
             let errorText = interruptionErrorText(for: message.finishReason)
             let error = ChatMessage(
-                content: "!error:\(errorText)",
+                content: errorText,
                 isUser: false,
+                isError: true,
                 isActive: false,
                 createdAt: now,
                 modelIdentifier: message.modelIdentifier,
@@ -1021,7 +1022,7 @@ final class ChatViewModel: ObservableObject {
     /// A request ending in an assistant message continues that same message.
     /// Requests ending in a user message keep the existing new-assistant path.
     private func prepareAssistantStreamDestination(for messages: [ChatMessage]) {
-        guard let assistant = messages.last(where: { !$0.content.hasPrefix("!error:") }),
+        guard let assistant = messages.last(where: { !$0.isError }),
               !assistant.isUser else {
             return
         }
@@ -1288,7 +1289,7 @@ final class ChatViewModel: ObservableObject {
         syncChatConfigurationFromSettingsIfNeeded()
         ensureMessageTreeInitializedIfNeeded()
         guard !errorMessage.isUser,
-              errorMessage.content.hasPrefix("!error:"),
+              errorMessage.isError,
               let errorLineage = sessionMutationController.messagesThrough(errorMessage, in: chatSession),
               let precedingUser = errorLineage.dropLast().last(where: \.isUser),
               let destination = errorMessage.parentMessage,
@@ -1441,7 +1442,7 @@ final class ChatViewModel: ObservableObject {
     @discardableResult
     func retryInterruptedAssistantStreamAfterFailure() -> Bool {
         guard let failure = activeBranchMessages().last,
-              failure.content.hasPrefix("!error:") else {
+              failure.isError else {
             return false
         }
         return retry(afterErrorMessage: failure) == .started
@@ -1463,7 +1464,7 @@ final class ChatViewModel: ObservableObject {
     private func restartCurrentTextRequestUsingLatestConfiguration() throws {
         guard isModelReady else { throw ChatNetworkError.modelInformationUnavailable }
         let activeMessages = activeBranchMessages()
-        guard let lastIndex = activeMessages.lastIndex(where: { !$0.content.hasPrefix("!error:") }) else {
+        guard let lastIndex = activeMessages.lastIndex(where: { !$0.isError }) else {
             throw ChatNetworkError.invalidRequestHistory
         }
 

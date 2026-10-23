@@ -84,6 +84,7 @@ final class ChatMessage {
         openAIResponsesConversationItems: [JSONValue] = [],
         imageAttachments: [ChatImageAttachment] = [],
         isUser: Bool,
+        isError: Bool = false,
         isActive: Bool = true,
         createdAt: Date? = Date(),
         activeChildMessageID: UUID? = nil,
@@ -157,6 +158,7 @@ final class ChatMessage {
         self.childMessages = childMessages
         let initialDocument = ChatMessageDocument(
             text: content,
+            isError: isError,
             segments: assistantSegments,
             protocolItems: openAIResponsesConversationItems,
             toolPlacements: toolActivityPlacements
@@ -201,6 +203,10 @@ extension ChatMessage {
     var content: String {
         get { document.content }
         set { var value = document; value.text = newValue; document = value }
+    }
+
+    var isError: Bool {
+        document.isError
     }
 
     var characterCount: Int {
@@ -461,7 +467,7 @@ extension ChatMessage {
 extension ChatMessage {
     var requestSource: ChatRequestSourceMessage {
         ChatRequestSourceMessage(
-            content: content, isUser: isUser, imageAttachments: imageAttachments,
+            content: content, isUser: isUser, isError: isError, imageAttachments: imageAttachments,
             providerResponseID: providerResponseID, requestContextFingerprint: requestContextFingerprint,
             assistantSegments: assistantSegments,
             openAIResponsesConversationItems: openAIResponsesConversationItems,
@@ -473,6 +479,7 @@ extension ChatMessage {
 /// One durable content representation. Display text and protocol replay are projections.
 struct ChatMessageDocument: Codable, Equatable, Sendable {
     var text: String
+    var isError: Bool
     var segments: [ChatAssistantSegment]
     var protocolItems: [JSONValue]
     var toolPlacements: [ChatToolActivityPlacement]
@@ -482,9 +489,10 @@ struct ChatMessageDocument: Codable, Equatable, Sendable {
         segments.isEmpty || !text.isEmpty ? text : segments.filter { $0.kind == .text }.map(\.text).joined()
     }
 
-    init(text: String = "", segments: [ChatAssistantSegment] = [],
+    init(text: String = "", isError: Bool = false, segments: [ChatAssistantSegment] = [],
          protocolItems: [JSONValue] = [], toolPlacements: [ChatToolActivityPlacement] = []) {
         self.text = !segments.isEmpty && text == segments.filter({ $0.kind == .text }).map(\.text).joined() ? "" : text
+        self.isError = isError
         self.segments = segments
         self.protocolItems = protocolItems
         self.toolPlacements = toolPlacements
@@ -511,7 +519,7 @@ struct ChatMessageDocument: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case version, text, segments, protocolItems, toolPlacements, generationRounds
+        case version, text, isError, segments, protocolItems, toolPlacements, generationRounds
     }
 
     init(from decoder: Decoder) throws {
@@ -520,6 +528,7 @@ struct ChatMessageDocument: Codable, Equatable, Sendable {
             throw DecodingError.dataCorruptedError(forKey: .version, in: container, debugDescription: "Unsupported message document version")
         }
         text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
+        isError = try container.decodeIfPresent(Bool.self, forKey: .isError) ?? false
         generationRounds = try container.decodeIfPresent([ChatGenerationRound].self, forKey: .generationRounds) ?? []
         let items = try container.decode([JSONValue].self, forKey: .protocolItems)
         protocolItems = items
@@ -569,6 +578,7 @@ struct ChatMessageDocument: Codable, Equatable, Sendable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(1, forKey: .version)
+        try container.encode(isError, forKey: .isError)
         if segments.isEmpty || !text.isEmpty { try container.encode(text, forKey: .text) }
         if !generationRounds.isEmpty { try container.encode(generationRounds, forKey: .generationRounds) }
         try container.encode(protocolItems, forKey: .protocolItems)

@@ -184,7 +184,7 @@ nonisolated enum DataBackupMerge {
     }
 
     private static func sameContent(_ lhs: ChatMessageBackup, _ rhs: ChatMessageBackup) -> Bool {
-        lhs.content == rhs.content && lhs.isUser == rhs.isUser && lhs.imageAttachmentsData == rhs.imageAttachmentsData
+        lhs.content == rhs.content && lhs.isUser == rhs.isUser && lhs.isError == rhs.isError && lhs.imageAttachmentsData == rhs.imageAttachmentsData
     }
 
     private static func branchID(for message: ChatMessageBackup, parentID: UUID?) throws -> UUID {
@@ -194,12 +194,13 @@ nonisolated enum DataBackupMerge {
             let parent: UUID?
             let content: String
             let isUser: Bool
+            let isError: Bool?
             let images: Data?
         }
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         let data = try encoder.encode(Identity(source: message.importSourceMessageID ?? message.id, session: message.sessionID, parent: parentID,
-                                               content: message.content, isUser: message.isUser, images: message.imageAttachmentsData))
+                                               content: message.content, isUser: message.isUser, isError: message.isError ? true : nil, images: message.imageAttachmentsData))
         var bytes = Array(SHA256.hash(data: data).prefix(16))
         bytes[6] = (bytes[6] & 0x0f) | 0x50
         bytes[8] = (bytes[8] & 0x3f) | 0x80

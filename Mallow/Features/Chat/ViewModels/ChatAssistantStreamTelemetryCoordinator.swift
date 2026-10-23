@@ -102,7 +102,7 @@ struct ChatAssistantStreamTelemetryCoordinator {
     ) {
         resetStreamingPersistenceState()
         pendingServerMetadata = .empty
-        let lastMessage = messages.last(where: { !$0.content.hasPrefix("!error:") })
+        let lastMessage = messages.last(where: { !$0.isError })
         generationRounds = lastMessage?.isUser == false ? (lastMessage?.generationRounds ?? []) : []
 
         activeTelemetry = ChatAssistantStreamTelemetry(
@@ -207,9 +207,9 @@ struct ChatAssistantStreamTelemetryCoordinator {
         fallbackConfiguration: ChatServiceConfiguration,
         session: ChatSession
     ) -> ChatMessage {
-        let content = "!error:\(errorText.isEmpty ? fallbackErrorDescription : errorText)"
+        let content = errorText.isEmpty ? fallbackErrorDescription : errorText
         let message = ChatMessage(
-            content: content, isUser: false, isActive: false, createdAt: createdAt,
+            content: content, isUser: false, isError: true, isActive: false, createdAt: createdAt,
             modelIdentifier: telemetry?.modelIdentifier ?? fallbackConfiguration.modelIdentifier,
             apiBaseURL: telemetry?.apiBaseURL ?? fallbackConfiguration.apiBaseURL,
             thinkingOptionRawValue: (telemetry?.thinkingOption ?? fallbackConfiguration.thinkingOption)?.rawValue,

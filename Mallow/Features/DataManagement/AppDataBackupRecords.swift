@@ -47,6 +47,7 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
     var openAIResponsesConversationItemsData: Data?
     var imageAttachmentsData: Data?
     var isUser: Bool
+    var isError: Bool
     var isActive: Bool
     var createdAt: Date?
     var modelIdentifier: String?
@@ -89,6 +90,7 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
         openAIResponsesConversationItemsData = model.openAIResponsesConversationItemsData
         imageAttachmentsData = model.imageAttachmentsData
         isUser = model.isUser
+        isError = model.isError
         isActive = model.isActive
         createdAt = model.createdAt
         modelIdentifier = model.modelIdentifier
@@ -123,7 +125,7 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
     }
 
     func makeModel() -> ChatMessage {
-        let model = ChatMessage(content: content, isUser: isUser)
+        let model = ChatMessage(content: content, isUser: isUser, isError: isError)
         model.id = id
         model.activeChildMessageID = activeChildMessageID
         model.importSourceMessageID = importSourceMessageID

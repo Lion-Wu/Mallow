@@ -10,6 +10,7 @@ import Foundation
 struct ChatRequestSourceMessage: Equatable, Sendable {
     let content: String
     let isUser: Bool
+    let isError: Bool
     let imageAttachments: [ChatImageAttachment]
     let providerResponseID: String?
     let requestContextFingerprint: String?
@@ -21,6 +22,7 @@ struct ChatRequestSourceMessage: Equatable, Sendable {
     init(
         content: String,
         isUser: Bool,
+        isError: Bool = false,
         imageAttachments: [ChatImageAttachment] = [],
         providerResponseID: String? = nil,
         requestContextFingerprint: String? = nil,
@@ -31,6 +33,7 @@ struct ChatRequestSourceMessage: Equatable, Sendable {
     ) {
         self.content = content
         self.isUser = isUser
+        self.isError = isError
         self.imageAttachments = imageAttachments
         self.providerResponseID = providerResponseID
         self.requestContextFingerprint = requestContextFingerprint
@@ -66,7 +69,7 @@ struct ChatRequestPayloadProjector: ChatRequestPayloadProjecting, Sendable {
             ])
         }
 
-        for message in messages where !message.content.hasPrefix("!error:") {
+        for message in messages where !message.isError {
             if requestStyle == .openAIResponses,
                !message.isUser,
                !message.openAIResponsesConversationItems.isEmpty {

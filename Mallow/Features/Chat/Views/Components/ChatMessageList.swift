@@ -306,7 +306,7 @@ struct ChatMessageList: View, Equatable {
     }
 
     private func shouldInlineErrorMessage(_ message: ChatMessage, visibleMessageIDs: Set<UUID>) -> Bool {
-        guard message.content.hasPrefix("!error:"),
+        guard message.isError,
               let parent = message.parentMessage,
               !parent.isUser,
               visibleMessageIDs.contains(parent.id),
@@ -318,12 +318,12 @@ struct ChatMessageList: View, Equatable {
 
     private func inlineErrorMessage(for message: ChatMessage) -> ChatMessage? {
         guard !message.isUser,
-              !message.content.hasPrefix("!error:"),
+              !message.isError,
               let activeChildMessageID = message.activeChildMessageID else {
             return nil
         }
         return message.childMessages.first {
-            $0.id == activeChildMessageID && $0.content.hasPrefix("!error:")
+            $0.id == activeChildMessageID && $0.isError
         }
     }
 
@@ -390,7 +390,7 @@ enum ChatInlineStatusHostResolver {
     ) -> UUID? {
         guard hasTransientStatus else { return nil }
         return messages.last(where: {
-            !$0.isUser && $0.isActive && !$0.content.hasPrefix("!error:")
+            !$0.isUser && $0.isActive && !$0.isError
         })?.id
     }
 }

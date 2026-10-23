@@ -204,7 +204,7 @@ final class ChatService: NSObject, @unchecked Sendable {
         includeImagesInUserContent: Bool,
         endpoint: ChatAPIEndpointCandidate
     ) throws {
-        guard let lastMessageIndex = messages.lastIndex(where: { !$0.content.hasPrefix("!error:") }) else {
+        guard let lastMessageIndex = messages.lastIndex(where: { !$0.isError }) else {
             throw ChatNetworkError.invalidRequestHistory
         }
 
@@ -214,6 +214,7 @@ final class ChatService: NSObject, @unchecked Sendable {
             return ChatRequestSourceMessage(
                 content: message.content,
                 isUser: message.isUser,
+                isError: message.isError,
                 imageAttachments: message.imageAttachments,
                 providerResponseID: isContinuationTarget ? nil : message.providerResponseID,
                 requestContextFingerprint: message.requestContextFingerprint,
@@ -348,7 +349,7 @@ final class ChatService: NSObject, @unchecked Sendable {
         let currentRequestFingerprint = currentRequestFingerprint?.trimmingCharacters(in: .whitespacesAndNewlines)
         let previousFingerprint = previousMessage.requestContextFingerprint?.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !previousMessage.isUser,
-              !previousMessage.content.hasPrefix("!error:"),
+              !previousMessage.isError,
               let createdAt = previousMessage.createdAt,
               now.timeIntervalSince(createdAt) <= Self.previousResponseIDMaxAge,
               let currentRequestFingerprint,

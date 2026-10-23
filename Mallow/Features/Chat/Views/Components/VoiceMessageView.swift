@@ -95,10 +95,10 @@ struct VoiceMessageView: View {
 
     @ViewBuilder
     var body: some View {
-        if message.content.hasPrefix("!error:") {
+        if message.isError {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    ErrorBubbleView(text: String(message.content.dropFirst("!error:".count)).trimmingCharacters(in: .whitespacesAndNewlines)) {
+                    ErrorBubbleView(text: errorText(for: message)) {
                         onRetry(message)
                     }
                     .frame(maxWidth: contentMaxWidthForAssistant(availableWidth: maxBubbleWidth), alignment: .center)
@@ -233,7 +233,7 @@ struct VoiceMessageView: View {
     }
 
     private var shouldShowAssistantActionControls: Bool {
-        guard showActionButtons, !message.isUser, !message.content.hasPrefix("!error:") else {
+        guard showActionButtons, !message.isUser, !message.isError else {
             return false
         }
         let parts = message.content.extractThinkParts()
@@ -260,7 +260,7 @@ struct VoiceMessageView: View {
     }
 
     private func errorText(for message: ChatMessage) -> String {
-        String(message.content.dropFirst("!error:".count)).trimmingCharacters(in: .whitespacesAndNewlines)
+        message.content.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     @ViewBuilder
