@@ -66,7 +66,7 @@ struct RealtimeVoiceControlCircle: View {
         case .speaking:
             String(localized: "VOICE_STATUS_SPEAKING", defaultValue: "Speaking")
         case .loading:
-            String(localized: "THINKING_STATUS", defaultValue: "Thinking")
+            String(localized: "THINKING_STATUS", defaultValue: "Thinking", comment: "Thinking in-progress status")
         case .error:
             String(localized: "COMMON_ERROR_TITLE", defaultValue: "Error")
         }

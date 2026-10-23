@@ -940,7 +940,7 @@ private struct DataChatPreviewView: View {
                                     }
                                 }
                                 if let reasoning = message.reasoning {
-                                    DisclosureGroup("THINKING_STATUS") { RichMarkdownView(markdown: reasoning) }
+                                    DisclosureGroup("THINKING_LABEL") { RichMarkdownView(markdown: reasoning) }
                                         .foregroundStyle(.secondary)
                                 }
                                 RichMarkdownView(markdown: message.content)
