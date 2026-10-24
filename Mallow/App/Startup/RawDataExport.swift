@@ -38,6 +38,32 @@ nonisolated struct RawDataExport {
         }
 
         func discard() { RawDataExport.remove(directory) }
+
+        func discardInBackground() {
+            DispatchQueue.global(qos: .utility).async { discard() }
+        }
+
+        func append(sources: [String: URL]) throws {
+            let manager = FileManager.default
+            let contents = directory.appendingPathComponent(contentsName, isDirectory: true)
+            for (name, source) in sources.sorted(by: { $0.key < $1.key }) {
+                try Task.checkCancellation()
+                if manager.fileExists(atPath: source.path) {
+                    let destination = contents.appendingPathComponent(name)
+                    try manager.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+                    if source.pathExtension == "images" {
+                        try manager.createDirectory(at: destination, withIntermediateDirectories: true)
+                        // Atomic image writes can have temporary siblings. Copy only
+                        // published images, whose lifetime is protected by the caller.
+                        for file in try manager.contentsOfDirectory(at: source, includingPropertiesForKeys: nil) where file.pathExtension == "image" {
+                            try RawDataExport.copyStoredFiles(from: file, to: destination.appendingPathComponent(file.lastPathComponent))
+                        }
+                    } else {
+                        try RawDataExport.copyStoredFiles(from: source, to: destination)
+                    }
+                }
+            }
+        }
     }
 
     static func prepareFiles(_ sources: [URL]) throws -> RawDataExport {
@@ -94,6 +120,12 @@ nonisolated struct RawDataExport {
     }
 
     static func stageApplicationSnapshot() throws -> StagedSnapshot {
+        let sources = try applicationSources()
+        let keychain = try keychainSnapshot(service: Bundle.main.bundleIdentifier ?? "Mallow")
+        return try stage(sources: sources, keychain: keychain)
+    }
+
+    static func applicationSources() throws -> [String: URL] {
         let manager = FileManager.default
         let identifier = Bundle.main.bundleIdentifier ?? "Mallow"
         #if os(macOS)
@@ -107,8 +139,7 @@ nonisolated struct RawDataExport {
         let journal = StartupPersistentStore.defaultURL.deletingLastPathComponent().appendingPathComponent(DataImportTransaction.fileName)
         if manager.fileExists(atPath: journal.path) { sources["Stores/" + DataImportTransaction.fileName] = journal }
         sources["Documents"] = try manager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-        let keychain = try keychainSnapshot(service: identifier)
-        return try stage(sources: sources, keychain: keychain)
+        return sources
     }
 
     static func keychainSnapshot(service: String) throws -> Data {
@@ -151,7 +182,12 @@ nonisolated struct RawDataExport {
 
     func discard() { Self.remove(url.deletingLastPathComponent()) }
 
+    func discardInBackground() {
+        DispatchQueue.global(qos: .utility).async { discard() }
+    }
+
     private static func copyStoredFiles(from source: URL, to destination: URL, skipSymbolicLinks: Bool = true) throws {
+        try Task.checkCancellation()
         let manager = FileManager.default
         let values = try source.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
         // Sandbox Library links point to system-managed locations outside the

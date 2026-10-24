@@ -7,6 +7,7 @@
 
 #if os(iOS) || os(macOS) || os(visionOS)
 import Foundation
+import ImageIO
 import SwiftUI
 import PhotosUI
 import UniformTypeIdentifiers
@@ -25,11 +26,10 @@ struct ChatImageImportPayload: Sendable {
 enum ChatImageAttachmentImporter {
     private static let imageProcessingQueue = DispatchQueue(
         label: "com.lionwu.mallow.image-processing",
-        qos: .utility,
-        attributes: .concurrent
+        qos: .userInitiated
     )
 
-    static func loadImageAttachments(from items: [PhotosPickerItem], limit: Int) async -> [ChatImageAttachment] {
+    static func loadImageAttachments(from items: [PhotosPickerItem], limit: Int) async throws -> [ChatImageAttachment] {
         guard limit > 0 else { return [] }
         var imported: [ChatImageAttachment] = []
         imported.reserveCapacity(min(items.count, limit))
@@ -40,14 +40,14 @@ enum ChatImageAttachmentImporter {
             guard let data = try? await item.loadTransferable(type: Data.self), !data.isEmpty else { continue }
 
             let mimeType = preferredImageMIMEType(for: item, data: data)
-            guard let attachment = await makeImageAttachmentAsync(data: data, mimeTypeHint: mimeType) else { continue }
+            guard let attachment = try await makeImageAttachmentAsync(data: data, mimeTypeHint: mimeType) else { continue }
             imported.append(attachment)
         }
 
         return imported
     }
 
-    static func loadImageAttachments(fromFileURLs urls: [URL], limit: Int) async -> [ChatImageAttachment] {
+    static func loadImageAttachments(fromFileURLs urls: [URL], limit: Int) async throws -> [ChatImageAttachment] {
         guard limit > 0 else { return [] }
         let worker = Task.detached(priority: .utility) {
             var imported: [ChatImageAttachment] = []
@@ -56,21 +56,21 @@ enum ChatImageAttachmentImporter {
             for url in urls {
                 guard !Task.isCancelled else { return imported }
                 guard imported.count < limit else { return imported }
-                guard let attachment = await loadImageAttachmentAsync(fromFileURL: url) else { continue }
+                guard let attachment = try await loadImageAttachmentAsync(fromFileURL: url) else { continue }
                 imported.append(attachment)
             }
 
             return imported
         }
 
-        return await withTaskCancellationHandler {
-            await worker.value
+        return try await withTaskCancellationHandler {
+            try await worker.value
         } onCancel: {
             worker.cancel()
         }
     }
 
-    static func loadImageAttachments(from payloads: [ChatImageImportPayload], limit: Int) async -> [ChatImageAttachment] {
+    static func loadImageAttachments(from payloads: [ChatImageImportPayload], limit: Int) async throws -> [ChatImageAttachment] {
         guard limit > 0 else { return [] }
         let worker = Task.detached(priority: .utility) {
             var imported: [ChatImageAttachment] = []
@@ -79,7 +79,7 @@ enum ChatImageAttachmentImporter {
             for payload in payloads {
                 guard !Task.isCancelled else { return imported }
                 guard imported.count < limit else { return imported }
-                guard let attachment = await makeImageAttachmentAsync(data: payload.data, mimeTypeHint: payload.mimeType) else {
+                guard let attachment = try await makeImageAttachmentAsync(data: payload.data, mimeTypeHint: payload.mimeType) else {
                     continue
                 }
                 imported.append(attachment)
@@ -88,15 +88,15 @@ enum ChatImageAttachmentImporter {
             return imported
         }
 
-        return await withTaskCancellationHandler {
-            await worker.value
+        return try await withTaskCancellationHandler {
+            try await worker.value
         } onCancel: {
             worker.cancel()
         }
     }
 
     @MainActor
-    static func loadImageAttachments(fromItemProviders providers: [NSItemProvider], limit: Int) async -> [ChatImageAttachment] {
+    static func loadImageAttachments(fromItemProviders providers: [NSItemProvider], limit: Int) async throws -> [ChatImageAttachment] {
         guard limit > 0 else { return [] }
         var imported: [ChatImageAttachment] = []
         imported.reserveCapacity(min(providers.count, limit))
@@ -104,7 +104,7 @@ enum ChatImageAttachmentImporter {
         for provider in providers {
             guard !Task.isCancelled else { return imported }
             guard imported.count < limit else { return imported }
-            guard let attachment = await loadImageAttachment(from: provider) else { continue }
+            guard let attachment = try await loadImageAttachment(from: provider) else { continue }
             imported.append(attachment)
         }
 
@@ -136,14 +136,14 @@ enum ChatImageAttachmentImporter {
     }
 
     @MainActor
-    static func loadImageAttachment(from provider: NSItemProvider) async -> ChatImageAttachment? {
+    static func loadImageAttachment(from provider: NSItemProvider) async throws -> ChatImageAttachment? {
         let imageType = provider.registeredTypeIdentifiers
             .compactMap(UTType.init)
             .first(where: { $0.conforms(to: .image) })
 
         if let imageType,
            let data = try? await provider.loadDataRepresentationAsync(forTypeIdentifier: imageType.identifier) {
-            return await makeImageAttachmentAsync(data: data, mimeTypeHint: imageType.preferredMIMEType)
+            return try await makeImageAttachmentAsync(data: data, mimeTypeHint: imageType.preferredMIMEType)
         }
 
         guard provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier),
@@ -151,7 +151,7 @@ enum ChatImageAttachmentImporter {
             return nil
         }
 
-        return await loadImageAttachmentAsync(fromFileURL: url)
+        return try await loadImageAttachmentAsync(fromFileURL: url)
     }
 
     static func loadImageAttachment(fromFileURL url: URL) -> ChatImageAttachment? {
@@ -174,33 +174,32 @@ enum ChatImageAttachmentImporter {
         return makeImageAttachment(data: data, mimeTypeHint: contentType?.preferredMIMEType)
     }
 
-    static func loadImageAttachmentAsync(fromFileURL url: URL) async -> ChatImageAttachment? {
-        await withCheckedContinuation { continuation in
+    static func loadImageAttachmentAsync(fromFileURL url: URL) async throws -> ChatImageAttachment? {
+        try await withCheckedThrowingContinuation { continuation in
             imageProcessingQueue.async {
-                continuation.resume(returning: loadImageAttachment(fromFileURL: url))
+                let attachment = loadImageAttachment(fromFileURL: url)
+                do {
+                    continuation.resume(returning: try attachment?.persisted(at: StartupPersistentStore.defaultURL, staging: true))
+                } catch { continuation.resume(throwing: error) }
             }
         }
     }
 
-    static func makeImageAttachmentAsync(data: Data, mimeTypeHint: String?) async -> ChatImageAttachment? {
-        await withCheckedContinuation { continuation in
+    static func makeImageAttachmentAsync(data: Data, mimeTypeHint: String?) async throws -> ChatImageAttachment? {
+        try await withCheckedThrowingContinuation { continuation in
             imageProcessingQueue.async {
-                continuation.resume(returning: makeImageAttachment(data: data, mimeTypeHint: mimeTypeHint))
+                let attachment = makeImageAttachment(data: data, mimeTypeHint: mimeTypeHint)
+                do {
+                    continuation.resume(returning: try attachment?.persisted(at: StartupPersistentStore.defaultURL, staging: true))
+                } catch { continuation.resume(throwing: error) }
             }
         }
     }
 
     static func makeImageAttachment(data: Data, mimeTypeHint: String?) -> ChatImageAttachment? {
         guard !data.isEmpty else { return nil }
-        let resolvedMIMEType = sniffedImageMIMEType(from: data)
-            ?? canonicalImageMIMEType(mimeTypeHint ?? "")
-
-        if shouldTranscodeToCompatibleFormat(resolvedMIMEType),
-           let transcodedPayload = transcodeToCompatibleImagePayload(from: data) {
-            return ChatImageAttachment(mimeType: transcodedPayload.mimeType, data: transcodedPayload.data)
-        }
-
-        return ChatImageAttachment(mimeType: resolvedMIMEType, data: data)
+        guard let payload = transcodeToCompatibleImagePayload(from: data) else { return nil }
+        return ChatImageAttachment(mimeType: payload.mimeType, data: payload.data)
     }
 
     static func canonicalImageMIMEType(_ mimeType: String) -> String {
@@ -229,10 +228,6 @@ enum ChatImageAttachmentImporter {
         }
 
         return false
-    }
-
-    static func shouldTranscodeToCompatibleFormat(_ mimeType: String) -> Bool {
-        canonicalImageMIMEType(mimeType) != "image/jpeg"
     }
 
     static func preferredImageMIMEType(for item: PhotosPickerItem, data: Data) -> String {
@@ -270,101 +265,51 @@ enum ChatImageAttachmentImporter {
     }
 
     private static func transcodeToCompatibleImagePayload(from data: Data) -> (data: Data, mimeType: String)? {
-        #if os(macOS)
-        guard let image = NSImage(data: data),
-              let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            return nil
-        }
-
-        let outputImage = cgImageUsesTransparency(cgImage) ? opaqueJPEGReadyImage(from: cgImage) ?? cgImage : cgImage
-        let bitmap = NSBitmapImageRep(cgImage: outputImage)
-        let properties: [NSBitmapImageRep.PropertyKey: Any] = [.compressionFactor: 0.9]
-        guard let jpegData = bitmap.representation(using: .jpeg, properties: properties) else {
-            return nil
-        }
-        return (jpegData, "image/jpeg")
-        #else
-        guard let image = UIImage(data: data),
-              let cgImage = image.cgImage else {
-            return nil
-        }
-
-        let outputImage = cgImageUsesTransparency(cgImage) ? opaqueJPEGReadyImage(from: cgImage) ?? cgImage : cgImage
-        let renderedImage = UIImage(cgImage: outputImage, scale: image.scale, orientation: image.imageOrientation)
-        guard let jpegData = renderedImage.jpegData(compressionQuality: 0.9) else {
-            return nil
-        }
-        return (jpegData, "image/jpeg")
-        #endif
-    }
-
-    private static func cgImageUsesTransparency(_ image: CGImage) -> Bool {
-        let alphaInfo = image.alphaInfo
-        switch alphaInfo {
-        case .first, .last, .premultipliedFirst, .premultipliedLast, .alphaOnly:
-            break
-        default:
-            return false
-        }
-
-        guard let alphaOffset = alphaComponentOffset(in: image, alphaInfo: alphaInfo) else {
-            return true
-        }
-        guard let provider = image.dataProvider,
-              let data = provider.data,
-              let bytes = CFDataGetBytePtr(data) else {
-            return true
-        }
-
-        let bytesPerPixel = image.bitsPerPixel / 8
-        guard bytesPerPixel > alphaOffset, image.height > 0, image.width > 0 else {
-            return true
-        }
-
-        for row in 0..<image.height {
-            let rowStart = row * image.bytesPerRow
-            for column in 0..<image.width {
-                let alphaIndex = rowStart + (column * bytesPerPixel) + alphaOffset
-                if bytes[alphaIndex] < UInt8.max {
-                    return true
-                }
+        autoreleasepool {
+            guard let source = CGImageSourceCreateWithData(data as CFData,
+                    [kCGImageSourceShouldCache: false] as CFDictionary),
+                  let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+                  let width = properties[kCGImagePropertyPixelWidth] as? Double,
+                  let height = properties[kCGImagePropertyPixelHeight] as? Double,
+                  width > 0, height > 0 else { return nil }
+            let longSide = max(width, height)
+            let shortSide = min(width, height)
+            // Retain readable width in long screenshots instead of forcing their
+            // entire length into the ordinary photo's 2560-pixel envelope.
+            let aspect = longSide / shortSide
+            let preferredLongSide = aspect > 3 ? max(2560, min(shortSide, 768) * aspect) : 2560
+            let pixelBudgetScale = min(1, sqrt(12_000_000 / (width * height)))
+            let maximumSide = max(1, Int(min(longSide, preferredLongSide, longSide * pixelBudgetScale)))
+            let options: [CFString: Any] = [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceShouldCacheImmediately: true,
+                kCGImageSourceThumbnailMaxPixelSize: maximumSide
+            ]
+            guard let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary),
+                  let context = CGContext(data: nil, width: thumbnail.width, height: thumbnail.height,
+                    bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                    bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
+            context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+            let bounds = CGRect(x: 0, y: 0, width: thumbnail.width, height: thumbnail.height)
+            context.fill(bounds)
+            context.draw(thumbnail, in: bounds)
+            guard let image = context.makeImage() else { return nil }
+            var encoded = Data()
+            // A soft size target: bounded quality adjustment, never rejection or
+            // unbounded shrinking to force detailed images under a byte limit.
+            for quality in [0.82, 0.76, 0.70] {
+                let output = NSMutableData()
+                guard let destination = CGImageDestinationCreateWithData(output, UTType.jpeg.identifier as CFString, 1, nil) else { return nil }
+                CGImageDestinationAddImage(destination, image,
+                    [kCGImageDestinationLossyCompressionQuality: quality] as CFDictionary)
+                guard CGImageDestinationFinalize(destination) else { return nil }
+                encoded = output as Data
+                if encoded.count <= 1_048_576 { break }
             }
-        }
-
-        return false
-    }
-
-    private static func alphaComponentOffset(in image: CGImage, alphaInfo: CGImageAlphaInfo) -> Int? {
-        switch alphaInfo {
-        case .alphaOnly:
-            return 0
-        case .first, .premultipliedFirst:
-            return image.bitmapInfo.contains(.byteOrder32Little) ? 3 : 0
-        case .last, .premultipliedLast:
-            return image.bitmapInfo.contains(.byteOrder32Little) ? 0 : 3
-        default:
-            return nil
+            return (encoded, "image/jpeg")
         }
     }
 
-    private static func opaqueJPEGReadyImage(from image: CGImage) -> CGImage? {
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        guard let context = CGContext(
-            data: nil,
-            width: image.width,
-            height: image.height,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
-        ) else {
-            return nil
-        }
-
-        context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
-        context.fill(CGRect(x: 0, y: 0, width: image.width, height: image.height))
-        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
-        return context.makeImage()
-    }
 }
 #endif

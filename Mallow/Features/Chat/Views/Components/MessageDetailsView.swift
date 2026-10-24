@@ -126,7 +126,7 @@ struct MessageDetailsView: View {
     private var identitySection: some View {
         sectionBox("DATA_IDENTITY", systemImage: "person.text.rectangle") {
             detailRow("MESSAGE_ID", fieldKey: "id", source: .local) { valueCode(message.id.uuidString) }
-            detailRow("COMMON_CREATED_AT", fieldKey: "createdAt", source: message.createdAt == nil ? nil : .local) { valueDate(message.createdAt) }
+            detailRow(LocalizedStringResource("COMMON_CREATED_AT", defaultValue: "Created At"), fieldKey: "createdAt", source: message.createdAt == nil ? nil : .local) { valueDate(message.createdAt) }
             detailRow("MESSAGE_SENDER", fieldKey: "isUser", source: .local) { valueText(message.isUser ? String(localized: "CHAT_ROLE_USER", defaultValue: "User") : String(localized: "CHAT_ROLE_ASSISTANT", defaultValue: "Assistant")) }
             detailRow("COMMON_STATUS_ACTIVE", fieldKey: "isActive", source: .local) { valueText(formatBool(message.isActive)) }
         }
@@ -326,67 +326,96 @@ struct MessageDetailsView: View {
         }
     }
 
-    @ViewBuilder
     private func sectionBox<Content: View>(
         _ title: LocalizedStringKey,
         systemImage: String,
-        @ViewBuilder content: () -> Content
+        @ViewBuilder content: @escaping () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label(title, systemImage: systemImage)
-                .font(.headline)
-                .labelStyle(.titleAndIcon)
-
-            VStack(alignment: .leading, spacing: 12) {
-                content()
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(12)
-        .background(MessageDetailsChrome.sectionFill, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(MessageDetailsChrome.sectionBorder, lineWidth: 1)
-        )
+        SectionBox(title: title, systemImage: systemImage, content: content)
     }
 
-    @ViewBuilder
     private func detailRow<Value: View>(
-        _ title: LocalizedStringKey,
+        _ title: LocalizedStringResource,
         fieldKey: String,
         source: MetricSourceBadge? = nil,
-        @ViewBuilder value: () -> Value
+        @ViewBuilder value: @escaping () -> Value
     ) -> some View {
-        #if os(macOS)
-        HStack(alignment: .top, spacing: 14) {
-            fieldLabel(title, fieldKey: fieldKey, source: source)
-                .frame(width: 240, alignment: .leading)
-            value()
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        #else
-        VStack(alignment: .leading, spacing: 8) {
-            fieldLabel(title, fieldKey: fieldKey, source: source)
-            value()
-        }
-#endif
+        DetailRow(title: title, fieldKey: fieldKey, source: source, value: value)
     }
 
-    private func fieldLabel(_ title: LocalizedStringKey, fieldKey: String, source: MetricSourceBadge? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                if let source {
-                    Image(systemName: source.icon)
-                        .font(.caption2)
-                        .foregroundStyle(source.color)
+    private func fieldLabel(_ title: LocalizedStringResource, fieldKey: String, source: MetricSourceBadge? = nil) -> some View {
+        FieldLabel(title: title, fieldKey: fieldKey, source: source)
+    }
+
+    private struct SectionBox<Content: View>: View {
+        let title: LocalizedStringKey
+        let systemImage: String
+        @ViewBuilder let content: () -> Content
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 14) {
+                Label(title, systemImage: systemImage)
+                    .font(.headline)
+                    .labelStyle(.titleAndIcon)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    content()
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            Text(fieldKey)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .monospaced()
+            .padding(12)
+            .background(MessageDetailsChrome.sectionFill, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(MessageDetailsChrome.sectionBorder, lineWidth: 1)
+            )
+        }
+    }
+
+    private struct DetailRow<Value: View>: View {
+        let title: LocalizedStringResource
+        let fieldKey: String
+        let source: MetricSourceBadge?
+        @ViewBuilder let value: () -> Value
+
+        var body: some View {
+            #if os(macOS)
+            HStack(alignment: .top, spacing: 14) {
+                FieldLabel(title: title, fieldKey: fieldKey, source: source)
+                    .frame(width: 240, alignment: .leading)
+                value()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            #else
+            VStack(alignment: .leading, spacing: 8) {
+                FieldLabel(title: title, fieldKey: fieldKey, source: source)
+                value()
+            }
+            #endif
+        }
+    }
+
+    private struct FieldLabel: View {
+        let title: LocalizedStringResource
+        let fieldKey: String
+        let source: MetricSourceBadge?
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                    if let source {
+                        Image(systemName: source.icon)
+                            .font(.caption2)
+                            .foregroundStyle(source.color)
+                    }
+                }
+                Text(fieldKey)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .monospaced()
+            }
         }
     }
 
@@ -439,7 +468,7 @@ struct MessageDetailsView: View {
                             detailRow("MESSAGE_PHASE", fieldKey: "toolTrace[].phase", source: .local) {
                                 valueText(formatToolPhase(item.activity.phase))
                             }
-                            detailRow("COMMON_SUMMARY", fieldKey: "toolTrace[].summary", source: .local) {
+                            detailRow(LocalizedStringResource("COMMON_SUMMARY", defaultValue: "Summary"), fieldKey: "toolTrace[].summary", source: .local) {
                                 valueWrappedText(item.activity.summary)
                             }
                             if let presentation = item.activity.presentation, !presentation.items.isEmpty {
@@ -818,19 +847,19 @@ private struct MessageDetailsRequestContextRow: Identifiable {
     }
 
     let id: String
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     let fieldKey: String
     let value: Value
 
-    static func text(_ title: LocalizedStringKey, fieldKey: String, value: String?) -> Self {
+    static func text(_ title: LocalizedStringResource, fieldKey: String, value: String?) -> Self {
         Self(id: fieldKey, title: title, fieldKey: fieldKey, value: .text(value))
     }
 
-    static func code(_ title: LocalizedStringKey, fieldKey: String, value: String?) -> Self {
+    static func code(_ title: LocalizedStringResource, fieldKey: String, value: String?) -> Self {
         Self(id: fieldKey, title: title, fieldKey: fieldKey, value: .code(value))
     }
 
-    static func date(_ title: LocalizedStringKey, fieldKey: String, value: Date?) -> Self {
+    static func date(_ title: LocalizedStringResource, fieldKey: String, value: Date?) -> Self {
         Self(id: fieldKey, title: title, fieldKey: fieldKey, value: .date(value))
     }
 }

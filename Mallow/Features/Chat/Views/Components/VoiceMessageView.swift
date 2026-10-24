@@ -19,6 +19,7 @@ struct VoiceMessageView: View {
     let message: ChatMessage
     @EnvironmentObject var audioManager: GlobalAudioManager
     @State private var messagePreviewFileURL: URL?
+    @State private var imagePreviewTask: Task<Void, Never>?
     @State private var isShowingMessageDetails = false
     @State private var isShowingCopyFeedback = false
     @State private var copyFeedbackToken = 0
@@ -225,6 +226,8 @@ struct VoiceMessageView: View {
                 ChatImageQuickLookSupport.cleanupTemporaryPreviewURL(oldValue)
             }
             .onDisappear {
+                imagePreviewTask?.cancel()
+                imagePreviewTask = nil
                 ChatImageQuickLookSupport.cleanupTemporaryPreviewURL(messagePreviewFileURL)
                 messagePreviewFileURL = nil
             }
@@ -330,12 +333,18 @@ struct VoiceMessageView: View {
 
     #if os(iOS) || os(macOS) || os(visionOS)
     private func presentMessageAttachmentPreview(_ attachment: ChatImageAttachment) {
-        let previous = messagePreviewFileURL
-        messagePreviewFileURL = ChatImageQuickLookSupport.prepareTemporaryPreviewURL(for: attachment)
-        if previous != messagePreviewFileURL {
-            ChatImageQuickLookSupport.cleanupTemporaryPreviewURL(previous)
+        imagePreviewTask?.cancel()
+        imagePreviewTask = Task {
+            let url = await ChatImageQuickLookSupport.prepareTemporaryPreviewURL(for: attachment)
+            guard !Task.isCancelled else {
+                ChatImageQuickLookSupport.cleanupTemporaryPreviewURL(url)
+                return
+            }
+            ChatImageQuickLookSupport.cleanupTemporaryPreviewURL(messagePreviewFileURL)
+            messagePreviewFileURL = url
         }
     }
+
     #else
     private func presentMessageAttachmentPreview(_ attachment: ChatImageAttachment) {
         _ = attachment

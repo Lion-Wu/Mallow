@@ -22,7 +22,7 @@ struct SettingsAdvancedAPIMetadataSection: View {
         Section {
             SettingsAdvancedAPIMetadataRow("MODEL_PROVIDER", context.currentProvider.displayName)
             SettingsAdvancedAPIMetadataRow("MESSAGE_REQUEST_STYLE", context.currentRequestStyleDisplayName)
-            SettingsAdvancedAPIMetadataRow("SETTINGS_API_FORMAT", context.selectedAPIFormatDisplayName)
+            SettingsAdvancedAPIMetadataRow(LocalizedStringResource("SETTINGS_API_FORMAT", defaultValue: "API Format"), context.selectedAPIFormatDisplayName)
             SettingsAdvancedAPIMetadataRow("MODEL_FETCHED_LIST", "\(viewModel.availableModels.count)")
             if let endpoint = viewModel.lastModelFetchEndpoint {
                 SettingsAdvancedAPIMetadataRow("SETTINGS_MODELS_ENDPOINT", endpoint.modelsURL.absoluteString)

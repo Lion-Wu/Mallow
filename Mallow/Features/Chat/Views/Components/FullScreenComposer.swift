@@ -22,7 +22,7 @@ struct FullScreenComposer: View {
                 .navigationTitle("EDITOR_FULLSCREEN")
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("COMMON_ACTION_DONE") {
+                        Button(LocalizedStringResource("COMMON_ACTION_DONE", defaultValue: "Done")) {
                             dismiss()
                             onDone()
                         }

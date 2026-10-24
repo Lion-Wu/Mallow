@@ -50,7 +50,7 @@ protocol ChatRequestPayloadProjecting: Sendable {
         developerPrompt: String?,
         includeImagesInUserContent: Bool,
         requestStyle: ChatRequestStyle?
-    ) -> [[String: Any]]
+    ) throws -> [[String: Any]]
 }
 
 struct ChatRequestPayloadProjector: ChatRequestPayloadProjecting, Sendable {
@@ -59,7 +59,7 @@ struct ChatRequestPayloadProjector: ChatRequestPayloadProjecting, Sendable {
         developerPrompt: String?,
         includeImagesInUserContent: Bool,
         requestStyle: ChatRequestStyle? = nil
-    ) -> [[String: Any]] {
+    ) throws -> [[String: Any]] {
         var payload: [[String: Any]] = []
         if let prompt = developerPrompt?.trimmingCharacters(in: .whitespacesAndNewlines),
            !prompt.isEmpty {
@@ -70,6 +70,7 @@ struct ChatRequestPayloadProjector: ChatRequestPayloadProjecting, Sendable {
         }
 
         for message in messages where !message.isError {
+            try Task.checkCancellation()
             if requestStyle == .openAIResponses,
                !message.isUser,
                !message.openAIResponsesConversationItems.isEmpty {
@@ -92,11 +93,13 @@ struct ChatRequestPayloadProjector: ChatRequestPayloadProjecting, Sendable {
                     ])
                 }
 
-                for attachment in imageAttachments where !attachment.data.isEmpty {
+                for attachment in imageAttachments where attachment.byteCount > 0 {
+                    try Task.checkCancellation()
+                    let dataURL = "data:\(attachment.mimeType);base64,\(try attachment.loadData().base64EncodedString())"
                     parts.append([
                         "type": "image_url",
                         "image_url": [
-                            "url": attachment.dataURLString
+                            "url": dataURL
                         ]
                     ])
                 }

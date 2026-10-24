@@ -61,7 +61,7 @@ nonisolated struct DataRecoveryIssue: Identifiable, Sendable {
         case "content", "messageDocumentData": String(localized: "MESSAGE_TITLE", defaultValue: "Message")
         case "generationRounds": String(localized: "MESSAGE_GENERATION_STATISTICS", defaultValue: "Generation Statistics")
         case "createdAt": String(localized: "COMMON_CREATED_AT", defaultValue: "Created At")
-        case "imageAttachmentsData": String(localized: "STORAGE_IMAGES_AND_ATTACHMENTS", defaultValue: "Images and Attachments")
+        case "imageAttachmentReferencesData": String(localized: "STORAGE_IMAGES_AND_ATTACHMENTS", defaultValue: "Images and Attachments")
         case "assistantSegmentsData": String(localized: "MESSAGE_SEGMENTS", defaultValue: "Message Segments")
         case "toolActivityPlacementsData": String(localized: "TOOL_POSITIONS", defaultValue: "Tool Positions")
         case "openAIResponsesConversationItemsData", "providerResponseID", "requestPreviousResponseID": String(localized: "DATA_REQUEST_RESPONSE_RECORDS", defaultValue: "Request and Response Records")
@@ -179,11 +179,12 @@ nonisolated enum DataManagementStore {
         }
         let total = try reader.payloadSizeExpression(entity: "ChatMessage")
         var messages: [DataStorageMessage] = []
-        try reader.query("SELECT *,\(total) AS BYTES,COALESCE(length(ZIMAGEATTACHMENTSDATA),0) AS IMAGES FROM ZCHATMESSAGE") { row in
-            let message = try StartupDataRecovery.recoverMessage(row)
+        try reader.query("SELECT *,\(total) AS BYTES,COALESCE(length(ZIMAGEATTACHMENTREFERENCESDATA),0) AS IMAGES FROM ZCHATMESSAGE") { row in
+            let message = try StartupDataRecovery.recoverMessage(row, storeURL: url)
+            let imageBytes = message.imageAttachments.reduce(Int64(0)) { $0 + Int64($1.byteCount) }
             messages.append(DataStorageMessage(id: message.id, sessionID: try row.optionalInteger("ZSESSION").flatMap { sessions[$0]?.0 },
-                title: String(message.content.prefix(160)), date: message.createdAt, bytes: try row.integer("BYTES"),
-                imageBytes: try row.integer("IMAGES"),
+                title: String(message.content.prefix(160)), date: message.createdAt, bytes: try row.integer("BYTES") + imageBytes,
+                imageBytes: imageBytes,
                 model: message.modelIdentifier))
         }
         let bySession = Dictionary(grouping: messages.compactMap { $0.sessionID == nil ? nil : $0 }, by: { $0.sessionID! })
@@ -233,7 +234,7 @@ nonisolated enum DataManagementStore {
         let reader = try RecoveryStoreReader(url: url, allowSidecarCreation: true)
         var content: String?
         try reader.query("SELECT * FROM ZCHATMESSAGE WHERE Z_PK=\(issue.rowID)") { row in
-            content = try? StartupDataRecovery.recoverMessage(row).content
+            content = try? StartupDataRecovery.recoverMessage(row, storeURL: url).content
         }
         return content
     }
@@ -293,13 +294,13 @@ nonisolated enum DataManagementMutation: Sendable {
             guard selected.count == ids.count else { throw DataBackupError.dataChanged }
             for session in selected { context.delete(session) }
         case .deleteAllAttachments(let ids):
-            for id in ids { try message(id).imageAttachmentsData = nil }
+            for id in ids { try message(id).imageAttachments = [] }
         case .deleteAttachments(let id, let ids):
             let model = try message(id)
-            let attachments = try JSONDecoder().decode([ChatImageAttachment].self, from: model.imageAttachmentsData ?? Data("[]".utf8))
+            let attachments = model.imageAttachments
             guard Set(attachments.map(\.id)).isSuperset(of: ids) else { throw DataBackupError.dataChanged }
             let remaining = attachments.filter { !ids.contains($0.id) }
-            model.imageAttachmentsData = remaining.isEmpty ? nil : try JSONEncoder().encode(remaining)
+            model.imageAttachments = remaining
         case .deletePreference, .deleteModelData:
             // Model data mutations are handled before loading chats.
             break
@@ -366,23 +367,38 @@ nonisolated enum DataManagementMutation: Sendable {
     }
 }
 
+/// Owns the files used by lazy previews until both their result and readers finish.
+nonisolated final class DataPreviewSnapshot: Sendable {
+    private let staged: RawDataExport.StagedSnapshot
+    var storeURL: URL { staged.directory.appendingPathComponent(staged.contentsName).appendingPathComponent("default.store") }
+
+    init(_ staged: RawDataExport.StagedSnapshot) { self.staged = staged }
+    deinit { staged.discardInBackground() }
+
+    func loadImageData(_ attachment: ChatImageAttachment) throws -> Data {
+        try withExtendedLifetime(self) { try attachment.loadData() }
+    }
+}
+
 nonisolated struct DataMessageDetails: Sendable {
+    let snapshot: DataPreviewSnapshot
     let content: String
     let attachments: [ChatImageAttachment]
     let attachmentIssue: String?
 }
 
 extension DataManagementStore {
-    static func messageDetails(at url: URL, id: UUID) throws -> DataMessageDetails {
+    static func messageDetails(in snapshot: DataPreviewSnapshot, id: UUID) throws -> DataMessageDetails {
+        let url = snapshot.storeURL
         let reader = try RecoveryStoreReader(url: url, allowSidecarCreation: true)
         let hex = id.uuidString.replacingOccurrences(of: "-", with: "")
         var result: DataMessageDetails?
         try reader.query("SELECT * FROM ZCHATMESSAGE WHERE hex(ZID)='\(hex)'") { row in
-            let content = try StartupDataRecovery.recoverMessage(row).content
-            let raw: Data? = row.recover("imageAttachmentsData", defaultValue: Optional<Data>.none)
-            let readable = try row.readableItems(raw, of: ChatImageAttachment.self, field: "imageAttachmentsData")
-            result = DataMessageDetails(content: content, attachments: try readable.map { try JSONDecoder().decode([ChatImageAttachment].self, from: $0) } ?? [],
-                attachmentIssue: row.fieldProblems["imageAttachmentsData"])
+            let content = try StartupDataRecovery.recoverMessage(row, storeURL: url).content
+            let raw: Data? = row.recover("imageAttachmentReferencesData", defaultValue: Optional<Data>.none)
+            let readable = try row.readableItems(raw, of: ChatImageAttachment.self, field: "imageAttachmentReferencesData")
+            result = DataMessageDetails(snapshot: snapshot, content: content, attachments: try readable.map { try JSONDecoder().decode([ChatImageAttachment].self, from: $0).map { $0.resolved(at: url) } } ?? [],
+                attachmentIssue: row.fieldProblems["imageAttachmentReferencesData"])
         }
         guard let result else { throw DataBackupError.dataChanged }
         return result
@@ -472,6 +488,7 @@ extension DataManagementStore {
 }
 
 nonisolated struct DataChatPreview: Sendable {
+    let snapshot: DataPreviewSnapshot
     struct Message: Identifiable, Sendable {
         let id: UUID
         let content: String
@@ -493,7 +510,8 @@ nonisolated struct DataChatPreview: Sendable {
 }
 
 extension DataManagementStore {
-    static func chatPreview(at url: URL, id: UUID) throws -> DataChatPreview {
+    static func chatPreview(in snapshot: DataPreviewSnapshot, id: UUID) throws -> DataChatPreview {
+        let url = snapshot.storeURL
         let reader = try RecoveryStoreReader(url: url, allowSidecarCreation: true)
         let hex = id.uuidString.replacingOccurrences(of: "-", with: "")
         let session = ChatSession()
@@ -509,7 +527,7 @@ extension DataManagementStore {
         var problems: [UUID: [String]] = [:]
         try reader.query("SELECT * FROM ZCHATMESSAGE WHERE ZSESSION=\(sessionPK)") { row in
             let pk = try row.integer("Z_PK")
-            let message = try StartupDataRecovery.recoverMessage(row)
+            let message = try StartupDataRecovery.recoverMessage(row, storeURL: url)
             messages[pk] = message
             problems[message.id] = row.lostFields.sorted().map { DataRecoveryIssue.fieldTitle($0) + ": " + (row.fieldProblems[$0] ?? "") }
             parents[pk] = try row.optionalInteger("ZPARENTMESSAGE")
@@ -540,7 +558,7 @@ extension DataManagementStore {
                 reasoning: message.isUser ? nil : message.assistantReasoningText, isUser: message.isUser,
                 date: message.createdAt, attachments: message.imageAttachments, problems: problems[message.id] ?? [])
         }
-        return DataChatPreview(messages: Dictionary(uniqueKeysWithValues: details.map { ($0.id, $0) }), branches: branches, activeLeafID: active.last?.id)
+        return DataChatPreview(snapshot: snapshot, messages: Dictionary(uniqueKeysWithValues: details.map { ($0.id, $0) }), branches: branches, activeLeafID: active.last?.id)
     }
 }
 
@@ -553,15 +571,23 @@ extension DataManagementStore {
     static func attachmentThumbnails(at url: URL) throws -> [UUID: [DataAttachmentThumbnail]] {
         let reader = try RecoveryStoreReader(url: url, allowSidecarCreation: true)
         var result: [UUID: [DataAttachmentThumbnail]] = [:]
-        try reader.query("SELECT ZID,ZIMAGEATTACHMENTSDATA FROM ZCHATMESSAGE WHERE length(ZIMAGEATTACHMENTSDATA)>0") { row in
+        try reader.query("SELECT ZID,ZIMAGEATTACHMENTREFERENCESDATA FROM ZCHATMESSAGE WHERE length(ZIMAGEATTACHMENTREFERENCESDATA)>0") { row in
             try Task.checkCancellation()
             let id: UUID = try row.value("id")
-            let data: Data = try row.value("imageAttachmentsData")
-            let readable = try row.readableItems(data, of: ChatImageAttachment.self, field: "imageAttachmentsData")
-            let attachments = try readable.map { try JSONDecoder().decode([ChatImageAttachment].self, from: $0) } ?? []
+            let data: Data = try row.value("imageAttachmentReferencesData")
+            let readable = try row.readableItems(data, of: ChatImageAttachment.self, field: "imageAttachmentReferencesData")
+            let attachments = try readable.map { try JSONDecoder().decode([ChatImageAttachment].self, from: $0).map { $0.resolved(at: url) } } ?? []
             result[id] = try attachments.map { attachment in
                 try Task.checkCancellation()
-                let source = CGImageSourceCreateWithData(attachment.data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary)
+                let data: Data
+                do { data = try attachment.loadData() }
+                catch {
+                    let failure = error as NSError
+                    guard failure.domain == NSCocoaErrorDomain,
+                          [NSFileReadNoSuchFileError, NSFileNoSuchFileError, NSFileReadCorruptFileError].contains(failure.code) else { throw error }
+                    return DataAttachmentThumbnail(id: attachment.id, image: nil)
+                }
+                let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary)
                 let image = source.flatMap { CGImageSourceCreateThumbnailAtIndex($0, 0, [
                     kCGImageSourceCreateThumbnailFromImageAlways: true,
                     kCGImageSourceCreateThumbnailWithTransform: true,

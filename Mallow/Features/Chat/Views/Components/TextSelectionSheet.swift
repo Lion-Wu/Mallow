@@ -24,7 +24,7 @@ struct TextSelectionSheet: View {
 #endif
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("COMMON_ACTION_DONE") { dismiss() }
+                    Button(LocalizedStringResource("COMMON_ACTION_DONE", defaultValue: "Done")) { dismiss() }
                 }
             }
         }

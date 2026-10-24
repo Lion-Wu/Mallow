@@ -15,21 +15,10 @@ import UIKit
 #endif
 
 enum PastedImagePayloadNormalizer {
-    private static let pasteCompatiblePassthroughMIMETypes: Set<String> = [
-        "image/jpeg"
-    ]
-
+    // Clipboard adapters only identify the payload. Encoding belongs to the
+    // asynchronous attachment importer shared by all ordinary image inputs.
     static func normalize(data: Data, mimeTypeHint: String?) -> (data: Data, mimeType: String?) {
-        let resolvedMIMEType = canonicalMIMEType(mimeTypeHint) ?? inferredMIMEType(from: data)
-        if pasteCompatiblePassthroughMIMETypes.contains(resolvedMIMEType) {
-            return (data, resolvedMIMEType)
-        }
-
-        guard let transcoded = transcodedPayload(from: data) else {
-            return (data, resolvedMIMEType)
-        }
-
-        return transcoded
+        (data, canonicalMIMEType(mimeTypeHint) ?? sniffedMIMEType(from: data))
     }
 
     static func sniffedMIMEType(from data: Data) -> String? {
@@ -71,109 +60,4 @@ enum PastedImagePayloadNormalizer {
         }
     }
 
-    private static func inferredMIMEType(from data: Data) -> String {
-        sniffedMIMEType(from: data) ?? "image/png"
-    }
-
-    #if os(macOS)
-    private static func transcodedPayload(from data: Data) -> (data: Data, mimeType: String?)? {
-        guard let image = NSImage(data: data),
-              let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            return nil
-        }
-
-        let outputImage = cgImageUsesTransparency(cgImage) ? opaqueJPEGReadyImage(from: cgImage) ?? cgImage : cgImage
-        let bitmap = NSBitmapImageRep(cgImage: outputImage)
-
-        let jpegProperties: [NSBitmapImageRep.PropertyKey: Any] = [.compressionFactor: 0.9]
-        guard let jpegData = bitmap.representation(using: .jpeg, properties: jpegProperties) else {
-            return nil
-        }
-        return (jpegData, "image/jpeg")
-    }
-    #else
-    private static func transcodedPayload(from data: Data) -> (data: Data, mimeType: String?)? {
-        guard let image = UIImage(data: data),
-              let cgImage = image.cgImage else {
-            return nil
-        }
-
-        let outputImage = cgImageUsesTransparency(cgImage) ? opaqueJPEGReadyImage(from: cgImage) ?? cgImage : cgImage
-        let renderedImage = UIImage(cgImage: outputImage)
-
-        guard let jpegData = renderedImage.jpegData(compressionQuality: 0.9) else {
-            return nil
-        }
-        return (jpegData, "image/jpeg")
-    }
-    #endif
-
-    private static func cgImageUsesTransparency(_ image: CGImage) -> Bool {
-        let alphaInfo = image.alphaInfo
-        switch alphaInfo {
-        case .first, .last, .premultipliedFirst, .premultipliedLast, .alphaOnly:
-            break
-        default:
-            return false
-        }
-
-        guard let alphaOffset = alphaComponentOffset(in: image, alphaInfo: alphaInfo) else {
-            return true
-        }
-        guard let provider = image.dataProvider,
-              let data = provider.data,
-              let bytes = CFDataGetBytePtr(data) else {
-            return true
-        }
-
-        let bytesPerPixel = image.bitsPerPixel / 8
-        guard bytesPerPixel > alphaOffset, image.height > 0, image.width > 0 else {
-            return true
-        }
-
-        for row in 0..<image.height {
-            let rowStart = row * image.bytesPerRow
-            for column in 0..<image.width {
-                let alphaIndex = rowStart + (column * bytesPerPixel) + alphaOffset
-                if bytes[alphaIndex] < UInt8.max {
-                    return true
-                }
-            }
-        }
-
-        return false
-    }
-
-    private static func alphaComponentOffset(in image: CGImage, alphaInfo: CGImageAlphaInfo) -> Int? {
-        switch alphaInfo {
-        case .alphaOnly:
-            return 0
-        case .first, .premultipliedFirst:
-            return image.bitmapInfo.contains(.byteOrder32Little) ? 3 : 0
-        case .last, .premultipliedLast:
-            return image.bitmapInfo.contains(.byteOrder32Little) ? 0 : 3
-        default:
-            return nil
-        }
-    }
-
-    private static func opaqueJPEGReadyImage(from image: CGImage) -> CGImage? {
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        guard let context = CGContext(
-            data: nil,
-            width: image.width,
-            height: image.height,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
-        ) else {
-            return nil
-        }
-
-        context.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
-        context.fill(CGRect(x: 0, y: 0, width: image.width, height: image.height))
-        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
-        return context.makeImage()
-    }
 }

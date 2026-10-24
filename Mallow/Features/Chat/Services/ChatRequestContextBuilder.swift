@@ -73,7 +73,7 @@ struct ChatContinuationSeed: Equatable, Sendable {
             "images": .array(message.imageAttachments.map { image in
                 .object([
                     "mimeType": .string(image.mimeType),
-                    "digest": .string(SHA256.hash(data: image.data).map { String(format: "%02x", $0) }.joined())
+                    "digest": .string(image.digest)
                 ])
             })
         ])

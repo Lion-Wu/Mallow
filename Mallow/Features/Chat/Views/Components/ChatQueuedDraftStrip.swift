@@ -93,7 +93,7 @@ struct ChatQueuedDraftStrip: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
-            .accessibilityLabel("COMMON_ACTION_DELETE")
+            .accessibilityLabel(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"))
 
             Menu {
                 Button {

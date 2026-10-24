@@ -24,7 +24,7 @@ struct AppMenuCommands: Commands {
             }
         }
         CommandGroup(replacing: .newItem) {
-            Button("CHAT_TITLE_NEW") {
+            Button(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat")) {
                 guard chatSessionsViewModel.canStartNewSession else { return }
                 chatSessionsViewModel.startNewSession()
             }

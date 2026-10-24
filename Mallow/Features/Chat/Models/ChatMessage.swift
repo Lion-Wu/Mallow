@@ -41,7 +41,8 @@ final class ChatMessage {
     @Transient var transientAssistantSegments: [ChatAssistantSegment]?
     @Transient var assistantSegmentsNeedPersistence = false
     @Transient var assistantSegmentsSynchronizedForPersistence = false
-    var imageAttachmentsData: Data?
+    var imageAttachmentReferencesData: Data?
+    @Transient private var pendingImages: [ChatImageAttachment]?
     var isUser: Bool
     var isActive: Bool
     var createdAt: Date?
@@ -123,7 +124,8 @@ final class ChatMessage {
         self.transientAssistantSegments = assistantSegments
         self.assistantSegmentsNeedPersistence = false
         self.assistantSegmentsSynchronizedForPersistence = false
-        self.imageAttachmentsData = ChatImageAttachment.encodeList(imageAttachments)
+        self.imageAttachmentReferencesData = ChatImageAttachment.encodeList(imageAttachments)
+        self.pendingImages = imageAttachments.isEmpty ? nil : imageAttachments
         self.isUser = isUser
         self.isActive = isActive
         self.createdAt = createdAt
@@ -257,6 +259,7 @@ extension ChatMessage {
     }
 
     func persistDocument() throws {
+        try persistImages()
         var value = document
         if let transientAssistantSegments { value.segments = transientAssistantSegments }
         let encoder = JSONEncoder()
@@ -267,17 +270,31 @@ extension ChatMessage {
     }
 
     var imageAttachments: [ChatImageAttachment] {
-        get { ChatImageAttachment.decodeList(from: imageAttachmentsData) }
-        set { imageAttachmentsData = ChatImageAttachment.encodeList(newValue) }
+        get {
+            if let pendingImages { return pendingImages }
+            return ChatImageAttachment.decodeList(from: imageAttachmentReferencesData,
+                storeURL: modelContext?.container.configurations.first?.url)
+        }
+        set {
+            pendingImages = newValue.isEmpty ? nil : newValue
+            imageAttachmentReferencesData = ChatImageAttachment.encodeList(newValue)
+        }
     }
 
-    var hasImageAttachments: Bool {
-        !(imageAttachmentsData?.isEmpty ?? true) && !imageAttachments.isEmpty
+    func persistImages() throws {
+        guard let pendingImages, !pendingImages.isEmpty else { return }
+        guard let configuration = modelContext?.container.configurations.first else {
+            throw ChatSessionRepositoryReadError.contextUnavailable
+        }
+        if configuration.isStoredInMemoryOnly { return }
+        let stored = try pendingImages.map { try $0.persisted(at: configuration.url) }
+        imageAttachmentReferencesData = ChatImageAttachment.encodeList(stored)
+        self.pendingImages = nil
     }
 
-    var imageAttachmentsFingerprint: Int {
-        imageAttachmentsData?.hashValue ?? 0
-    }
+    var hasImageAttachments: Bool { imageAttachmentReferencesData != nil }
+
+    var imageAttachmentsFingerprint: Int { imageAttachmentReferencesData?.hashValue ?? 0 }
 
     var toolActivityPlacements: [ChatToolActivityPlacement] {
         get { document.toolPlacements }

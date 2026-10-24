@@ -77,7 +77,7 @@ struct VisionRootView: View {
                             guard chatSessionsViewModel.canStartNewSession else { return }
                             chatSessionsViewModel.startNewSession()
                         } label: {
-                            Label("CHAT_TITLE_NEW", systemImage: "plus")
+                            Label(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat"), systemImage: "plus")
                         }
                         .disabled(!chatSessionsViewModel.canStartNewSession)
                     }

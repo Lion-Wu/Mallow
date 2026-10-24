@@ -137,7 +137,7 @@ struct ErrorBubbleView: View {
                 Button {
                     onRetry()
                 } label: {
-                    Label("COMMON_ACTION_RETRY", systemImage: "arrow.clockwise")
+                    Label(LocalizedStringResource("COMMON_ACTION_RETRY", defaultValue: "Retry"), systemImage: "arrow.clockwise")
                         .font(.subheadline.weight(.semibold))
                         .padding(.vertical, 6)
                         .padding(.horizontal, 10)

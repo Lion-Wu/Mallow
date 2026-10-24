@@ -23,7 +23,7 @@ protocol ChatServiceConfiguring {
 }
 
 /// Lightweight snapshot of chat configuration to avoid actor-hopping from main-actor singletons.
-struct ChatServiceConfiguration: ChatServiceConfiguring, Equatable {
+struct ChatServiceConfiguration: ChatServiceConfiguring, Equatable, Sendable {
     let apiBaseURL: String
     let modelIdentifier: String
     let apiKey: String

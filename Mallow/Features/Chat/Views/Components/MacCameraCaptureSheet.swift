@@ -56,7 +56,7 @@ struct MacCameraCaptureSheet: View {
 
                 Spacer()
 
-                Button("CAMERA_ACTION_TAKE_PHOTO") {
+                Button(LocalizedStringResource("CAMERA_ACTION_TAKE_PHOTO", defaultValue: "Take Photo")) {
                     controller.capturePhoto()
                 }
                 .keyboardShortcut(.defaultAction)

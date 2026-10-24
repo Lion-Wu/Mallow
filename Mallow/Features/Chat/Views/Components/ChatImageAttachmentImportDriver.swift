@@ -25,6 +25,7 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
     @Published var isDropTargeted = false
     @Published var dropSuppressionState: ImageDropSuppressionState?
 
+    private var previewTask: Task<Void, Never>?
     private var coordinator = ChatImageAttachmentImportCoordinator()
 
     var acceptedDropTypeIdentifiers: [String] {
@@ -38,14 +39,21 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
     }
 
     func presentPendingAttachmentPreview(_ attachment: ChatImageAttachment) {
-        let previous = pendingPreviewFileURL
-        pendingPreviewFileURL = ChatImageQuickLookSupport.prepareTemporaryPreviewURL(for: attachment)
-        if previous != pendingPreviewFileURL {
-            ChatImageQuickLookSupport.cleanupTemporaryPreviewURL(previous)
+        previewTask?.cancel()
+        previewTask = Task { [weak self] in
+            let url = await ChatImageQuickLookSupport.prepareTemporaryPreviewURL(for: attachment)
+            guard !Task.isCancelled, let self else {
+                ChatImageQuickLookSupport.cleanupTemporaryPreviewURL(url)
+                return
+            }
+            ChatImageQuickLookSupport.cleanupTemporaryPreviewURL(self.pendingPreviewFileURL)
+            self.pendingPreviewFileURL = url
         }
     }
 
     func cleanupPendingPreview() {
+        previewTask?.cancel()
+        previewTask = nil
         ChatImageQuickLookSupport.cleanupTemporaryPreviewURL(pendingPreviewFileURL)
         pendingPreviewFileURL = nil
     }
@@ -102,7 +110,7 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
             errorCenter: errorCenter,
             focusInput: focusInput
         ) { limit in
-            await ChatImageAttachmentImporter.loadImageAttachments(from: [payload], limit: limit)
+            try await ChatImageAttachmentImporter.loadImageAttachments(from: [payload], limit: limit)
         }
         #endif
     }
@@ -133,7 +141,7 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
                 errorCenter: errorCenter,
                 focusInput: focusInput
             ) { limit in
-                await ChatImageAttachmentImporter.loadImageAttachments(from: snapshot, limit: limit)
+                try await ChatImageAttachmentImporter.loadImageAttachments(from: snapshot, limit: limit)
             }
         }
     }
@@ -164,7 +172,7 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
                     errorCenter: errorCenter,
                     focusInput: focusInput
                 ) { limit in
-                    await ChatImageAttachmentImporter.loadImageAttachments(fromFileURLs: limitedURLs, limit: limit)
+                    try await ChatImageAttachmentImporter.loadImageAttachments(fromFileURLs: limitedURLs, limit: limit)
                 }
             }
         case .failure(let error):
@@ -201,7 +209,7 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
                 errorCenter: errorCenter,
                 focusInput: focusInput
             ) { limit in
-                await ChatImageAttachmentImporter.loadImageAttachments(fromItemProviders: limitedProviders, limit: limit)
+                try await ChatImageAttachmentImporter.loadImageAttachments(fromItemProviders: limitedProviders, limit: limit)
             }
         }
     }
@@ -231,7 +239,7 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
                 errorCenter: errorCenter,
                 focusInput: focusInput
             ) { limit in
-                await ChatImageAttachmentImporter.loadImageAttachments(from: importPayloads, limit: limit)
+                try await ChatImageAttachmentImporter.loadImageAttachments(from: importPayloads, limit: limit)
             }
         }
     }
@@ -317,7 +325,7 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
         viewModel: ChatViewModel,
         errorCenter: AppErrorCenter,
         focusInput: @escaping () -> Void,
-        _ loader: @escaping (Int) async -> [ChatImageAttachment]
+        _ loader: @escaping (Int) async throws -> [ChatImageAttachment]
     ) {
         let importLimit = remainingSlots(for: viewModel)
         guard importLimit > 0 else {
@@ -334,7 +342,16 @@ final class ChatImageAttachmentImportDriver: ObservableObject {
         )
 
         let task = Task(priority: .utility) { @MainActor [weak self, viewModel, errorCenter] in
-            let imported = await loader(importLimit)
+            let imported: [ChatImageAttachment]
+            do { imported = try await loader(importLimit) }
+            catch {
+                guard let self else { return }
+                self.coordinator.finishCancelledImport(id: importID)
+                guard !Task.isCancelled else { return }
+                errorCenter.publish(title: String(localized: "CHAT_IMAGE_IMPORT_FAILED", defaultValue: "Image Import Failed"),
+                    message: error.localizedDescription, category: .textModel)
+                return
+            }
             guard let self else { return }
             guard !Task.isCancelled else {
                 self.coordinator.finishCancelledImport(id: importID)

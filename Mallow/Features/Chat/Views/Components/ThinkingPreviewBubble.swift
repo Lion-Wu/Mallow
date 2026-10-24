@@ -27,8 +27,8 @@ struct ThinkingPreviewBubble: View {
         isComplete ? .green : .orange
     }
 
-    private var statusTextKey: LocalizedStringKey {
-        isComplete ? "THINKING_COMPLETE" : "THINKING_STATUS"
+    private var statusText: LocalizedStringResource {
+        isComplete ? "THINKING_COMPLETE" : LocalizedStringResource("THINKING_STATUS", defaultValue: "Thinking")
     }
 
     private var shouldShowTextPreview: Bool {
@@ -50,7 +50,7 @@ struct ThinkingPreviewBubble: View {
                         .font(.subheadline)
                         .foregroundStyle(statusColor)
 
-                    Text(statusTextKey)
+                    Text(statusText)
                         .foregroundColor(.secondary)
                         .font(.caption)
 
@@ -82,7 +82,7 @@ struct ThinkingPreviewBubble: View {
         .contentShape(Rectangle())
         .clipped()
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(statusTextKey)
+        .accessibilityLabel(statusText)
         .accessibilityHint("MESSAGE_ACTION_OPEN_REASONING")
         .padding(.vertical, 4)
         .padding(.horizontal, 4)
@@ -94,7 +94,7 @@ struct ThinkingPreviewBubble: View {
         .thinkDetailPresentation(
             isPresented: $isShowingFullText,
             think: think,
-            title: statusTextKey,
+            title: statusText,
             iconName: statusIconName,
             iconColor: statusColor,
             toolActivityPlacements: toolActivityPlacements,
@@ -215,7 +215,7 @@ private struct ThinkingDetailView: View {
     @Environment(\.dismiss) private var dismiss
     #endif
 
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     let iconName: String
     let iconColor: Color
     let text: String
@@ -272,7 +272,7 @@ private struct ThinkingDetailView: View {
 private struct ThinkDetailPresentationModifier: ViewModifier {
     @Binding var isPresented: Bool
     let think: String
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     let iconName: String
     let iconColor: Color
     let toolActivityPlacements: [ChatToolActivityPlacement]
@@ -321,7 +321,7 @@ private extension View {
     func thinkDetailPresentation(
         isPresented: Binding<Bool>,
         think: String,
-        title: LocalizedStringKey,
+        title: LocalizedStringResource,
         iconName: String,
         iconColor: Color,
         toolActivityPlacements: [ChatToolActivityPlacement],

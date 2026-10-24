@@ -52,7 +52,7 @@ struct SettingsChatModelSection: View {
             }
 
             if viewModel.shouldShowUnknownModelThinkingOptions {
-                LabeledContent("MODEL_SUPPORTED_THINKING_OPTIONS") {
+                LabeledContent {
                     Menu {
                         ForEach(viewModel.availableManualThinkingOptions) { option in
                             Toggle(isOn: Binding(
@@ -71,6 +71,8 @@ struct SettingsChatModelSection: View {
                              ? String(localized: "COMMON_NONE", defaultValue: "None")
                              : viewModel.selectedManualThinkingOptions.map(\.displayName).joined(separator: ", "))
                     }
+                } label: {
+                    Text(LocalizedStringResource("MODEL_SUPPORTED_THINKING_OPTIONS", defaultValue: "Supported Thinking Options"))
                 }
                 Text("MODEL_THINKING_OPTIONS_UNKNOWN")
                     .font(.footnote)
@@ -83,7 +85,7 @@ struct SettingsChatModelSection: View {
     }
 
     private var modelPickerRow: some View {
-        LabeledContent("MODEL_TITLE") {
+        LabeledContent {
             ZStack(alignment: .trailing) {
                 HStack {
                     Spacer(minLength: 0)
@@ -104,6 +106,8 @@ struct SettingsChatModelSection: View {
                 modelListStatusView
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
+        } label: {
+            Text(LocalizedStringResource("MODEL_TITLE", defaultValue: "Model"))
         }
     }
 

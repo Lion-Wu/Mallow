@@ -31,7 +31,7 @@ struct SettingsVoicePresetSection: View {
 
     @ViewBuilder
     private var appleSpeechSettings: some View {
-        Picker("VOICE_PROVIDER_APPLE_SPEECH", selection: $viewModel.appleSpeechVoiceIdentifier) {
+        Picker(LocalizedStringResource("VOICE_PROVIDER_APPLE_SPEECH", defaultValue: "Apple Speech"), selection: $viewModel.appleSpeechVoiceIdentifier) {
             Text("SETTINGS_SYSTEM_DEFAULT").tag(String?.none)
             if let selectedIdentifier = viewModel.appleSpeechVoiceIdentifier,
                !viewModel.availableSystemVoices.contains(where: { $0.id == selectedIdentifier }) {
@@ -63,7 +63,7 @@ struct SettingsVoicePresetSection: View {
                 Text("VOICE_PERSONAL_NO_VOICE")
                     .foregroundStyle(.secondary)
             } else {
-                Picker("VOICE_PROVIDER_APPLE_PERSONAL", selection: $viewModel.personalVoiceIdentifier) {
+                Picker(LocalizedStringResource("VOICE_PROVIDER_APPLE_PERSONAL", defaultValue: "Apple Personal Voice"), selection: $viewModel.personalVoiceIdentifier) {
                     ForEach(viewModel.availablePersonalVoices) { voice in
                         Text(voice.displayName).tag(Optional.some(voice.id))
                     }
@@ -120,7 +120,7 @@ struct SettingsVoicePresetSection: View {
                 Button(role: .destructive) {
                     requestDeletion(.voicePreset)
                 } label: {
-                    Label("COMMON_ACTION_DELETE", systemImage: "trash")
+                    Label(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), systemImage: "trash")
                         .foregroundStyle(.red)
                 }
                 .buttonStyle(.plain)
@@ -143,7 +143,7 @@ struct SettingsVoicePresetSection: View {
             Button(role: .destructive) {
                 requestDeletion(.voicePreset)
             } label: {
-                Label("COMMON_ACTION_DELETE", systemImage: "trash")
+                Label(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), systemImage: "trash")
                     .foregroundStyle(.red)
             }
             .buttonStyle(.plain)

@@ -57,7 +57,9 @@ struct DataRecoveryPreviewView: View {
         #endif
         .alert("DATA_RESTORE_CONFIRMATION", isPresented: $isConfirmingRecovery) {
             Button("COMMON_ACTION_CANCEL", role: .cancel) {}
-            Button("RECOVERY_ACTION_RESTORE", role: .destructive) { coordinator.confirmRecovery() }
+            Button("RECOVERY_ACTION_RESTORE", role: .destructive) {
+                Task { await coordinator.confirmRecovery() }
+            }
         } message: {
             Text("RECOVERY_RESET_WARNING")
         }

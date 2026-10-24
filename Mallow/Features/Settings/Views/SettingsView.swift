@@ -19,7 +19,7 @@ enum SettingsDeletionTarget: String, Identifiable {
 
     var id: String { rawValue }
 
-    var title: LocalizedStringKey {
+    var title: LocalizedStringResource {
         switch self {
         case .voicePreset, .chatServerPreset, .voiceServerPreset:
             return "PRESET_DELETE_CONFIRMATION"
@@ -125,7 +125,7 @@ struct SettingsView: View {
                     developerSection()
                     applicationInfoSection
                 }
-                .navigationBarTitle("SETTINGS_TITLE", displayMode: .inline)
+                .navigationBarTitle(Text(LocalizedStringResource("SETTINGS_TITLE", defaultValue: "Settings")), displayMode: .inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("COMMON_ACTION_CLOSE") { dismiss() }
@@ -160,17 +160,17 @@ struct SettingsView: View {
                 }
             }
             .alert(
-                pendingDeletionTarget?.title ?? LocalizedStringKey("COMMON_ACTION_DELETE"),
+                pendingDeletionTarget?.title ?? LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"),
                 isPresented: deletionAlertBinding
             ) {
-                Button("COMMON_ACTION_DELETE", role: .destructive, action: performPendingDeletion)
+                Button(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), role: .destructive, action: performPendingDeletion)
                 Button("COMMON_ACTION_CANCEL", role: .cancel) {
                     pendingDeletionTarget = nil
                 }
             } message: {
-                Text("COMMON_IRREVERSIBLE_WARNING")
+                Text(LocalizedStringResource("COMMON_IRREVERSIBLE_WARNING", defaultValue: "This action cannot be undone."))
             }
-            .alert("COMMON_ERROR_TITLE", isPresented: settingsWriteFailureAlertBinding) {
+            .alert(LocalizedStringResource("COMMON_ERROR_TITLE", defaultValue: "Error"), isPresented: settingsWriteFailureAlertBinding) {
                 Button("COMMON_ACTION_CLOSE") {
                     settingsManager.clearSettingsWriteFailure()
                 }
@@ -370,7 +370,7 @@ struct SettingsView: View {
                         Button(role: .destructive) {
                             requestDeletion(.voiceServerPreset)
                         } label: {
-                            Label("COMMON_ACTION_DELETE", systemImage: "trash")
+                            Label(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), systemImage: "trash")
                                 .foregroundStyle(.red)
                         }
                         .buttonStyle(.plain)
@@ -400,7 +400,7 @@ struct SettingsView: View {
                     Button(role: .destructive) {
                         requestDeletion(.voiceServerPreset)
                     } label: {
-                        Label("COMMON_ACTION_DELETE", systemImage: "trash")
+                        Label(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), systemImage: "trash")
                             .foregroundStyle(.red)
                     }
                     .buttonStyle(.plain)

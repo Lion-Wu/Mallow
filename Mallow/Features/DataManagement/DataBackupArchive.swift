@@ -28,6 +28,14 @@ nonisolated enum DataBackupArchive {
             let relative = String(entry.name.dropFirst(prefix.count))
             try archive.extract(entry, to: directory.appendingPathComponent(relative))
         }
+        let imagePrefix = prefix + storeName + ".images/"
+        for entry in archive.entries where entry.name.hasPrefix(imagePrefix) && !entry.name.hasSuffix("/") {
+            let name = String(entry.name.dropFirst(imagePrefix.count))
+            let digest = String(name.dropLast(6))
+            guard name.hasSuffix(".image"), digest.count == 64,
+                  digest.utf8.allSatisfy({ (48...57).contains($0) || (97...102).contains($0) }) else { throw DataBackupError.unsupportedFormat }
+            try archive.extract(entry, to: directory.appendingPathComponent(storeName + ".images/" + name))
+        }
         let storeURL = directory.appendingPathComponent(storeName)
         guard manager.fileExists(atPath: storeURL.path) else { throw DataBackupError.unsupportedFormat }
         var result = try AppDataBackup.recover(from: storeURL, keychain: Data(contentsOf: directory.appendingPathComponent("Keychain.plist")), allowSourceSidecarCreation: true)

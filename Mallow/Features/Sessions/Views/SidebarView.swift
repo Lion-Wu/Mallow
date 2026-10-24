@@ -123,7 +123,7 @@ struct SidebarView: View {
         #endif
         .alert("CHAT_DELETE_CONFIRMATION",
                isPresented: $showDeleteChatAlert) {
-            Button("COMMON_ACTION_DELETE", role: .destructive) {
+            Button(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), role: .destructive) {
                 let indexes = Set(pendingDeleteSessionIDs.compactMap { sessionID in
                     chatSessionsViewModel.chatSessions.firstIndex(where: { $0.id == sessionID })
                 })
@@ -137,7 +137,7 @@ struct SidebarView: View {
                 pendingDeleteSessionIDs.removeAll()
             }
         } message: {
-            Text("COMMON_IRREVERSIBLE_WARNING")
+            Text(LocalizedStringResource("COMMON_IRREVERSIBLE_WARNING", defaultValue: "This action cannot be undone."))
         }
         .onAppear {
             scheduleSidebarSearchRefresh(debounce: false)
@@ -449,7 +449,7 @@ struct SidebarView: View {
             key: .init(title: "draft"), content: AnyView(macDraftRow))]
         if shouldShowInitialSessionLoading || sidebarGroups.isEmpty {
             rows.append(NativeSidebarRow(id: "chats-header", selectionID: nil, isGroup: true,
-                key: .init(title: "chats"), content: AnyView(Text("CHAT_LIST_TITLE").font(.caption).foregroundStyle(.secondary))))
+                key: .init(title: "chats"), content: AnyView(Text(LocalizedStringResource("CHAT_LIST_TITLE", defaultValue: "Chats")).font(.caption).foregroundStyle(.secondary))))
             let content: AnyView
             let key: String
             if shouldShowInitialSessionLoading {
@@ -472,7 +472,7 @@ struct SidebarView: View {
                         key: .init(title: session.title, preview: sidebarPreview(for: session), isRenaming: renamingSession?.id == session.id),
                         content: AnyView(macSessionRow(session).contextMenu {
                             Button("COMMON_ACTION_RENAME") { renameSession(session) }
-                            Button("COMMON_ACTION_DELETE", role: .destructive) { requestDelete(for: session) }
+                            Button(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), role: .destructive) { requestDelete(for: session) }
                         }), measurementContent: AnyView(macSessionRowContent(session)), canDelete: true))
                 }
             }
@@ -499,7 +499,7 @@ struct SidebarView: View {
                 }
             }
             if shouldShowInitialSessionLoading || sidebarGroups.isEmpty {
-                Section(LocalizedStringKey("CHAT_LIST_TITLE")) {
+                Section(LocalizedStringResource("CHAT_LIST_TITLE", defaultValue: "Chats")) {
                     if shouldShowInitialSessionLoading {
                         sidebarInitialLoadingRow
                             .listRowBackground(Color.clear)
@@ -534,7 +534,7 @@ struct SidebarView: View {
                             }
                             .contextMenu {
                                 Button("COMMON_ACTION_RENAME") { renameSession(session) }
-                                Button("COMMON_ACTION_DELETE", role: .destructive) {
+                                Button(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), role: .destructive) {
                                     requestDelete(for: session)
                                 }
                             }
@@ -567,7 +567,7 @@ struct SidebarView: View {
                 if #available(iOS 26.0, *) {
                     ToolbarItem(placement: .bottomBar) {
                         Button(action: onOpenSettings) {
-                            Label("SETTINGS_TITLE", systemImage: "gear")
+                            Label(LocalizedStringResource("SETTINGS_TITLE", defaultValue: "Settings"), systemImage: "gear")
                         }
                     }
 
@@ -579,20 +579,20 @@ struct SidebarView: View {
 
                     ToolbarItem(placement: .bottomBar) {
                         Button(action: selectDraftSession) {
-                            Label("CHAT_TITLE_NEW", systemImage: "square.and.pencil")
+                            Label(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat"), systemImage: "square.and.pencil")
                         }
                         .disabled(!chatSessionsViewModel.canStartNewSession)
                     }
                 } else {
                     ToolbarItemGroup(placement: .bottomBar) {
                         Button(action: onOpenSettings) {
-                            Label("SETTINGS_TITLE", systemImage: "gear")
+                            Label(LocalizedStringResource("SETTINGS_TITLE", defaultValue: "Settings"), systemImage: "gear")
                         }
 
                         Spacer()
 
                         Button(action: selectDraftSession) {
-                            Label("CHAT_TITLE_NEW", systemImage: "square.and.pencil")
+                            Label(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat"), systemImage: "square.and.pencil")
                         }
                         .disabled(!chatSessionsViewModel.canStartNewSession)
                     }
@@ -616,7 +616,7 @@ struct SidebarView: View {
             }
 
             if shouldShowInitialSessionLoading || sidebarGroups.isEmpty {
-                Section(LocalizedStringKey("CHAT_LIST_TITLE")) {
+                Section(LocalizedStringResource("CHAT_LIST_TITLE", defaultValue: "Chats")) {
                     if shouldShowInitialSessionLoading {
                         sidebarInitialLoadingRow
                     } else if visibleSearchKeyword.isEmpty {
@@ -646,7 +646,7 @@ struct SidebarView: View {
                                 }
                                 .contextMenu {
                                     Button("COMMON_ACTION_RENAME") { renameSession(session) }
-                                    Button("COMMON_ACTION_DELETE", role: .destructive) {
+                                    Button(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), role: .destructive) {
                                         requestDelete(for: session)
                                     }
                                 }
@@ -695,7 +695,7 @@ struct SidebarView: View {
         HStack(spacing: 8) {
             Image(systemName: "plus.circle.fill")
                 .foregroundStyle(.secondary)
-            Text("CHAT_TITLE_NEW")
+            Text(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat"))
                 .font(.headline)
             Spacer()
         }
@@ -737,7 +737,7 @@ struct SidebarView: View {
         HStack(spacing: 12) {
             Image(systemName: "plus.circle.fill")
                 .foregroundStyle(.secondary)
-            Text("CHAT_TITLE_NEW")
+            Text(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat"))
                 .font(.body.weight(.semibold))
             Spacer()
         }

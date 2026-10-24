@@ -104,7 +104,7 @@ struct DataManagementView: View {
             } label: { navigationRow("STORAGE_GROUP_BY_CHAT", systemImage: "bubble.left.and.bubble.right") }
             NavigationLink {
                 DataAttachmentMessageList(model: model, commitEdits: commitEdits)
-            } label: { navigationRow("STORAGE_IMAGES_AND_ATTACHMENTS", systemImage: "photo") }
+            } label: { navigationRow(LocalizedStringResource("STORAGE_IMAGES_AND_ATTACHMENTS", defaultValue: "Images and Attachments"), systemImage: "photo") }
         }
     }
 
@@ -135,7 +135,7 @@ struct DataManagementView: View {
         #endif
     }
 
-    private func navigationRow(_ title: LocalizedStringKey, systemImage: String) -> some View {
+    private func navigationRow(_ title: LocalizedStringResource, systemImage: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: systemImage).foregroundStyle(.secondary).frame(width: 20)
             Text(title).multilineTextAlignment(.leading)
@@ -171,17 +171,17 @@ struct DataStorageChart: View {
     }
 
     private struct Category: Identifiable {
-        let title: LocalizedStringKey
+        let title: LocalizedStringResource
         let bytes: Int64
         let color: Color
         let id: Int
     }
 
     private var categories: [Category] {
-        [Category(title: "CHAT_LIST_TITLE", bytes: usage?.chats ?? 0, color: .blue, id: 0),
-         Category(title: "CHAT_IMAGES", bytes: usage?.images ?? 0, color: .purple, id: 1),
-         Category(title: "SETTINGS_TITLE", bytes: usage?.settings ?? 0, color: .teal, id: 2),
-         Category(title: "STORAGE_DOCUMENTS", bytes: usage?.documents ?? 0, color: .indigo, id: 4),
+        [Category(title: LocalizedStringResource("CHAT_LIST_TITLE", defaultValue: "Chats"), bytes: usage?.chats ?? 0, color: .blue, id: 0),
+         Category(title: LocalizedStringResource("CHAT_IMAGES", defaultValue: "Images"), bytes: usage?.images ?? 0, color: .purple, id: 1),
+         Category(title: LocalizedStringResource("SETTINGS_TITLE", defaultValue: "Settings"), bytes: usage?.settings ?? 0, color: .teal, id: 2),
+         Category(title: LocalizedStringResource("STORAGE_DOCUMENTS", defaultValue: "Documents"), bytes: usage?.documents ?? 0, color: .indigo, id: 4),
          Category(title: "STORAGE_CACHES", bytes: usage?.caches ?? 0, color: .pink, id: 5),
          Category(title: "STORAGE_TEMPORARY_FILES", bytes: usage?.temporaryFiles ?? 0, color: .yellow, id: 6),
          Category(title: "STORAGE_DATABASE_AND_OTHER", bytes: usage?.other ?? 0, color: .gray, id: 7)]
@@ -254,14 +254,14 @@ private struct DataCleanupView: View {
                 Section("STORAGE_NETWORK_CACHE") {
                     LabeledContent("STORAGE_USED", value: bytes(usage.networkCache))
                     Button { selectedCleanup = .networkCache } label: {
-                        DataOperationButtonLabel(title: "STORAGE_ACTION_CLEAR_NETWORK_CACHE", progressMessage: model.progressMessage(for: .cleanNetworkCache))
+                        DataOperationButtonLabel(title: LocalizedStringResource("STORAGE_ACTION_CLEAR_NETWORK_CACHE", defaultValue: "Clear Network Cache"), progressMessage: model.progressMessage(for: .cleanNetworkCache))
                     }
                     .disabled(usage.networkCache == 0)
                 }
                 Section("STORAGE_TEMPORARY_FILES") {
                     LabeledContent("STORAGE_RECLAIMABLE", value: bytes(usage.reclaimableTemporaryFiles))
                     Button { selectedCleanup = .temporaryFiles } label: {
-                        DataOperationButtonLabel(title: "STORAGE_ACTION_REMOVE_TEMPORARY_FILES", progressMessage: model.progressMessage(for: .cleanTemporaryFiles))
+                        DataOperationButtonLabel(title: LocalizedStringResource("STORAGE_ACTION_REMOVE_TEMPORARY_FILES", defaultValue: "Remove Temporary Files"), progressMessage: model.progressMessage(for: .cleanTemporaryFiles))
                     }
                     .disabled(usage.reclaimableTemporaryFiles == 0)
                 }
@@ -286,7 +286,7 @@ private struct DataCleanupView: View {
             }
             Button("COMMON_ACTION_CANCEL", role: .cancel) { selectedCleanup = nil }
         } message: {
-            Text("COMMON_IRREVERSIBLE_WARNING")
+            Text(LocalizedStringResource("COMMON_IRREVERSIBLE_WARNING", defaultValue: "This action cannot be undone."))
         }
         .alert("STORAGE_CACHE_AND_CLEANUP", isPresented: Binding(
             get: { model.errorMessage != nil }, set: { if !$0 { model.errorMessage = nil } }
@@ -407,7 +407,7 @@ struct DataImportPreviewView: View {
     private var statistics: some View {
         statistic("DATA_NEW_MESSAGES", count: messageChanges.filter { $0.kind == .added || $0.kind == .branch }.count)
         statistic("DATA_UPDATED_MESSAGES", count: messageChanges.filter { $0.kind == .updated }.count)
-        statistic("DATA_ISSUES_FOUND", count: skippedCategories.contains { $0.hasUnknownLoss } ? nil : skippedCategories.reduce(0) { $0 + max($1.skipped, $1.issues.count) })
+        statistic(LocalizedStringResource("DATA_ISSUES_FOUND", defaultValue: "Issues Found"), count: skippedCategories.contains { $0.hasUnknownLoss } ? nil : skippedCategories.reduce(0) { $0 + max($1.skipped, $1.issues.count) })
     }
 
     @ViewBuilder
@@ -448,12 +448,12 @@ struct DataImportPreviewView: View {
         }
         if !skippedCategories.isEmpty {
             NavigationLink {
-                skippedItems.navigationTitle("DATA_ISSUES_FOUND")
-            } label: { previewRow("DATA_ISSUES_FOUND", count: skippedCategories.contains { $0.hasUnknownLoss } ? nil : skippedCategories.reduce(0) { $0 + max($1.skipped, $1.issues.count) }) }
+                skippedItems.navigationTitle(LocalizedStringResource("DATA_ISSUES_FOUND", defaultValue: "Issues Found"))
+            } label: { previewRow(LocalizedStringResource("DATA_ISSUES_FOUND", defaultValue: "Issues Found"), count: skippedCategories.contains { $0.hasUnknownLoss } ? nil : skippedCategories.reduce(0) { $0 + max($1.skipped, $1.issues.count) }) }
         }
     }
 
-    private func previewRow(_ title: LocalizedStringKey, count: Int?) -> some View {
+    private func previewRow(_ title: LocalizedStringResource, count: Int?) -> some View {
         HStack {
             Text(title)
             Spacer()
@@ -461,7 +461,7 @@ struct DataImportPreviewView: View {
         }
     }
 
-    private func statistic(_ title: LocalizedStringKey, count: Int?) -> some View {
+    private func statistic(_ title: LocalizedStringResource, count: Int?) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(count?.formatted() ?? String(localized: "COMMON_UNKNOWN", defaultValue: "Unknown")).font(.title.bold())
             Text(title).font(.callout).foregroundStyle(.secondary)
@@ -477,14 +477,14 @@ struct DataImportPreviewView: View {
         return Form {
             if original == nil || original?.title != session.title {
                 Section {
-                    if original == nil { Text("CHAT_TITLE_NEW") }
+                    if original == nil { Text(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat")) }
                     if let original, original.title != session.title {
                         Text(original.title + " → " + session.title).foregroundStyle(.secondary)
                     }
                 }
             }
             if !changes.isEmpty {
-                Section("DATA_CHANGED_MESSAGES") {
+                Section(LocalizedStringResource("DATA_CHANGED_MESSAGES", defaultValue: "Changed Messages")) {
                     ForEach(changes) { change in
                         if let id = change.messageID, let message = messages[id] {
                             NavigationLink {
@@ -494,8 +494,8 @@ struct DataImportPreviewView: View {
                                 VStack(alignment: .leading, spacing: 5) {
                                     if !message.content.isEmpty {
                                         Text(message.content).lineLimit(2)
-                                    } else if message.imageAttachmentsData != nil {
-                                        Label("CHAT_IMAGES", systemImage: "photo")
+                                    } else if message.imageAttachmentReferencesData != nil {
+                                        Label(LocalizedStringResource("CHAT_IMAGES", defaultValue: "Images"), systemImage: "photo")
                                     } else {
                                         Text("DATA_EMPTY").foregroundStyle(.secondary)
                                     }
@@ -528,7 +528,7 @@ struct DataImportPreviewView: View {
     private func messageChange(_ change: DataImportChange, message: ChatMessageBackup) -> some View {
         Form {
             if change.kind == .updated {
-                Section("MESSAGE_TITLE") { DataImportMessageView(message: message) }
+                Section(LocalizedStringResource("MESSAGE_TITLE", defaultValue: "Message")) { DataImportMessageView(message: message) }
                 if let old = originalMessages[message.id] {
                     Section {
                         Text("DATA_IMPORT_REPLACED_FIELDS")
@@ -625,7 +625,7 @@ struct DataImportPreviewView: View {
                                 }
                             }
                         }
-                        Section("MESSAGE_TITLE") {
+                        Section(LocalizedStringResource("MESSAGE_TITLE", defaultValue: "Message")) {
                             if let date = issue.date { Text(date, format: .dateTime).font(.caption).foregroundStyle(.secondary) }
                             Text(issue.name).textSelection(.enabled)
                         }
@@ -690,7 +690,7 @@ private struct DataImportMessageView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                Text(message.isUser ? LocalizedStringKey("CHAT_ROLE_YOU") : LocalizedStringKey("CHAT_ROLE_ASSISTANT")).font(.subheadline.weight(.semibold))
+                Text(message.isUser ? LocalizedStringResource("CHAT_ROLE_YOU") : LocalizedStringResource("CHAT_ROLE_ASSISTANT", defaultValue: "Assistant")).font(.subheadline.weight(.semibold))
                 Spacer()
                 if let createdAt = message.createdAt {
                     Text(createdAt, format: .dateTime).font(.caption).foregroundStyle(.secondary)
@@ -698,17 +698,17 @@ private struct DataImportMessageView: View {
             }
             if !message.content.isEmpty {
                 RichMarkdownView(markdown: message.content)
-            } else if message.imageAttachmentsData == nil {
+            } else if message.imageAttachmentReferencesData == nil {
                 Text("DATA_EMPTY").foregroundStyle(.secondary)
             }
-            if message.imageAttachmentsData != nil { Label("CHAT_IMAGES", systemImage: "photo").font(.caption).foregroundStyle(.secondary) }
+            if message.imageAttachmentReferencesData != nil { Label(LocalizedStringResource("CHAT_IMAGES", defaultValue: "Images"), systemImage: "photo").font(.caption).foregroundStyle(.secondary) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 struct DataOperationButtonLabel: View {
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     var systemImage: String? = nil
     let progressMessage: String?
 

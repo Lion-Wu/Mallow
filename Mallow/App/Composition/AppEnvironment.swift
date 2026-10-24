@@ -148,36 +148,93 @@ final class AppEnvironment: ObservableObject {
         return true
     }
 
-    func stageRawDataExport() throws -> RawDataExport.StagedSnapshot {
-        try flushForDataManagement()
-        // All app-owned database writers run on the main actor. Copy the saved
-        // files before yielding, then compress the private copy in the background.
-        return try RawDataExport.stageApplicationSnapshot()
+    func stageRawDataExport() async throws -> RawDataExport.StagedSnapshot {
+        return try await stageDataSnapshot(sources: RawDataExport.applicationSources())
     }
 
-    func stageDataManagementRead() throws -> RawDataExport.StagedSnapshot {
-        try flushForDataManagement()
+    func stageDataManagementRead() async throws -> RawDataExport.StagedSnapshot {
         let current = StartupPersistentStore.defaultURL
-        let sources = Dictionary(uniqueKeysWithValues: ["", "-wal", "-shm"].map {
+        let sources = Dictionary(uniqueKeysWithValues: ["", "-wal", "-shm", ".images"].map {
             ("default.store" + $0, URL(fileURLWithPath: current.path + $0))
         })
-        return try RawDataExport.stage(sources: sources, keychain: RawDataExport.keychainSnapshot(service: Bundle.main.bundleIdentifier ?? "Mallow"))
+        return try await stageDataSnapshot(sources: sources)
+    }
+
+    private func stageDataSnapshot(sources: [String: URL]) async throws -> RawDataExport.StagedSnapshot {
+        try flushForDataManagement()
+        guard let containerID = boundModelContainer.map(ObjectIdentifier.init) else { throw ChatSessionRepositoryReadError.contextUnavailable }
+        let lease = ChatImageStore.retainFiles(at: StartupPersistentStore.defaultURL)
+        let imageDirectoryPath = ChatImageStore.directory(for: StartupPersistentStore.defaultURL).path
+        let backgroundSources = sources.filter { $0.key == "Documents" || $0.value.path == imageDirectoryPath }
+        // Fix the database and keychain before yielding to another app-owned writer.
+        // Images are immutable and the lease defers deletion until copying finishes.
+        let staged = try RawDataExport.stage(sources: sources.filter { backgroundSources[$0.key] == nil },
+            keychain: RawDataExport.keychainSnapshot(service: Bundle.main.bundleIdentifier ?? "Mallow"))
+        let worker = Task.detached(priority: .userInitiated) {
+            try withExtendedLifetime(lease) { try staged.append(sources: backgroundSources) }
+        }
+        do {
+            try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
+            try Task.checkCancellation()
+            guard boundModelContainer.map(ObjectIdentifier.init) == containerID else { throw DataBackupError.dataChanged }
+            return staged
+        } catch {
+            staged.discardInBackground()
+            throw error
+        }
     }
 
     func ownsDataManagementContext(_ context: ModelContext) -> Bool {
         context.container === boundModelContainer
     }
 
-    func dataManagementSourceMatches(_ reviewed: DataBackupReadResult) throws -> Bool {
-        try flushForDataManagement()
-        guard try AppDataBackup.sourceRevision(at: StartupPersistentStore.defaultURL) == reviewed.sourceRevision else { return false }
+    struct DataManagementReadVersion {
+        fileprivate let containerID: ObjectIdentifier
+        fileprivate let files: DataStoreFileVersion
+        fileprivate let lease: ChatImageStore.ReadLease
+    }
+
+    func validatedDataImportSource(_ reviewed: DataBackupReadResult) async throws -> DataManagementReadVersion? {
+        guard let version = try await validatedDataManagementSource(reviewed.sourceRevision),
+              try dataManagementCredentialsMatch(reviewed) else { return nil }
+        return version
+    }
+
+    private func dataManagementCredentialsMatch(_ reviewed: DataBackupReadResult) throws -> Bool {
         let keychain = try RawDataExport.keychainSnapshot(service: Bundle.main.bundleIdentifier ?? "Mallow")
         return DataBackupCredentials.recover(keychain, presetIDs: Set(reviewed.snapshot.chatServers.map(\.id))).values == reviewed.snapshot.credentials
     }
 
-    func dataManagementSourceMatches(_ revision: SHA256.Digest) throws -> Bool {
+    private func validatedDataManagementSource(_ revision: SHA256.Digest) async throws -> DataManagementReadVersion? {
         try flushForDataManagement()
-        return try AppDataBackup.sourceRevision(at: StartupPersistentStore.defaultURL) == revision
+        guard let containerID = boundModelContainer.map(ObjectIdentifier.init) else { throw ChatSessionRepositoryReadError.contextUnavailable }
+        let storeURL = StartupPersistentStore.defaultURL
+        let lease = ChatImageStore.retainFiles(at: storeURL)
+        let version = DataManagementReadVersion(containerID: containerID, files: try DataStoreFileVersion(at: storeURL), lease: lease)
+        let worker = Task.detached(priority: .userInitiated) {
+            try withExtendedLifetime(lease) { try AppDataBackup.sourceRevision(at: storeURL) }
+        }
+        let actual = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
+        try Task.checkCancellation()
+        try flushForDataManagement()
+        guard boundModelContainer.map(ObjectIdentifier.init) == containerID,
+              try DataStoreFileVersion(at: storeURL) == version.files,
+              actual == revision else { return nil }
+        return version
+    }
+
+    private func requireCurrentDataManagementSource(_ version: DataManagementReadVersion) throws {
+        try flushForDataManagement()
+        guard boundModelContainer.map(ObjectIdentifier.init) == version.containerID,
+              try DataStoreFileVersion(at: StartupPersistentStore.defaultURL) == version.files else {
+            throw DataBackupError.dataChanged
+        }
+    }
+
+    func requireCurrentDataImportSource(_ version: DataManagementReadVersion, reviewed: DataBackupReadResult) throws {
+        try validateDataImportAvailability()
+        try requireCurrentDataManagementSource(version)
+        guard try dataManagementCredentialsMatch(reviewed) else { throw DataBackupError.dataChanged }
     }
 
     private func flushForDataManagement() throws {
@@ -193,14 +250,14 @@ final class AppEnvironment: ObservableObject {
               !audioManager.isAudioPlaying, !audioManager.hasPendingTTSSynthesisWork() else { throw DataBackupError.activityInProgress }
     }
 
-    func applyDataManagementMutation(_ mutation: DataManagementMutation, revision: SHA256.Digest) throws {
+    func applyDataManagementMutation(_ mutation: DataManagementMutation, revision: SHA256.Digest) async throws {
+        guard let version = try await validatedDataManagementSource(revision) else { throw DataBackupError.dataChanged }
         try validateDataImportAvailability()
-        try flushForDataManagement()
+        try requireCurrentDataManagementSource(version)
         guard boundModelContainer != nil,
               let sessionsContext = sessionsModelContext,
               let settingsContext = settingsModelContext else { throw ChatSessionRepositoryReadError.contextUnavailable }
         let storeURL = StartupPersistentStore.defaultURL
-        guard try AppDataBackup.sourceRevision(at: storeURL) == revision else { throw DataBackupError.dataChanged }
         let context: ModelContext
         switch mutation {
         case .deletePreference: context = settingsContext
@@ -213,6 +270,7 @@ final class AppEnvironment: ObservableObject {
         do {
             try mutation.apply(in: context, storeURL: storeURL)
             try Task.checkCancellation()
+            try ChatImageStore.persistPending(in: context)
             try context.save()
         } catch {
             context.rollback()
@@ -244,6 +302,10 @@ final class AppEnvironment: ObservableObject {
             }
         }
         chatSessionsViewModel.refreshChatConfigurationIfNeeded()
+        switch mutation {
+        case .deletePreference, .deleteModelData: break
+        default: try ChatImageStore.removeUnreferencedFiles(at: StartupPersistentStore.defaultURL)
+        }
     }
 
     func quiescePersistentStore() {

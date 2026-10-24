@@ -58,6 +58,10 @@ struct DataRecoveryPlan: Identifiable, Sendable {
     var recoveredCount: Int { categories.reduce(0) { $0 + $1.recovered } }
 
     func discard() { StartupDataRecovery.discard(container: container, directory: directory) }
+
+    func discardInBackground() {
+        DispatchQueue.global(qos: .utility).async { discard() }
+    }
 }
 
 /// The application always uses one fixed persistent store.
@@ -79,6 +83,7 @@ nonisolated enum StartupPersistentStore {
             guard let data = message.messageDocumentData else { throw CocoaError(.fileReadCorruptFile) }
             _ = try JSONDecoder().decode(ChatMessageDocument.self, from: data)
         }
+        try ChatImageStore.removeUnreferencedFiles(at: url)
         return container
     }
 
@@ -87,6 +92,7 @@ nonisolated enum StartupPersistentStore {
         var metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(type: .sqlite, at: plan.storeURL)
         metadata[replacementKey] = plan.id.uuidString
         try NSPersistentStoreCoordinator.setMetadata(metadata, type: .sqlite, at: plan.storeURL)
+        try ChatImageStore.copy(from: plan.storeURL, to: defaultURL)
         let coordinator = NSPersistentStoreCoordinator(managedObjectModel: NSManagedObjectModel())
         try coordinator.replacePersistentStore(at: defaultURL, withPersistentStoreFrom: plan.storeURL, type: .sqlite)
     }
@@ -105,7 +111,7 @@ nonisolated enum StartupPersistentStore {
     static func exportSources(defaultStoreURL: URL = defaultURL) -> [String: URL] {
         let directory = defaultStoreURL.deletingLastPathComponent()
         let names = [defaultStoreURL.lastPathComponent, defaultStoreURL.lastPathComponent + "-wal",
-                     defaultStoreURL.lastPathComponent + "-shm"]
+                     defaultStoreURL.lastPathComponent + "-shm", defaultStoreURL.lastPathComponent + ".images"]
         return Dictionary(uniqueKeysWithValues: names.map { ("Stores/" + $0, directory.appendingPathComponent($0)) })
     }
 
@@ -120,7 +126,7 @@ nonisolated enum StartupPersistentStore {
 
     static func removeStoreFiles(at storeURL: URL) throws {
         let fileManager = FileManager.default
-        let relatedURLs = [storeURL, URL(fileURLWithPath: storeURL.path + "-shm"), URL(fileURLWithPath: storeURL.path + "-wal")]
+        let relatedURLs = [storeURL, URL(fileURLWithPath: storeURL.path + "-shm"), URL(fileURLWithPath: storeURL.path + "-wal"), ChatImageStore.directory(for: storeURL)]
         var firstError: Error?
         for url in relatedURLs where fileManager.fileExists(atPath: url.path) {
             do { try fileManager.removeItem(at: url) }
@@ -228,7 +234,7 @@ nonisolated enum StartupDataRecovery {
             sessions[try row.integer("Z_PK")] = session
             sessionRows[session.id] = row
         }
-        try recover("ChatMessage", title: String(localized: "MESSAGE_LIST", defaultValue: "Messages"), make: recoverMessage) { message, row in
+        try recover("ChatMessage", title: String(localized: "MESSAGE_LIST", defaultValue: "Messages"), make: { try recoverMessage($0, storeURL: sourceURL, validateImages: true) }) { message, row in
             let key = try row.integer("Z_PK")
             let sessionKey = try row.integer("ZSESSION")
             guard let session = sessions[sessionKey] else { throw row.invalid("session") }
@@ -325,13 +331,13 @@ extension StartupDataRecovery {
         return model
     }
 
-    static func recoverMessage(_ row: RecoveryRow) throws -> ChatMessage {
+    static func recoverMessage(_ row: RecoveryRow, storeURL: URL? = nil, validateImages: Bool = false) throws -> ChatMessage {
         let model = ChatMessage(content: "", isUser: false)
         model.id = try row.value("id")
         model.activeChildMessageID = row.recover("activeChildMessageID", defaultValue: model.activeChildMessageID)
         model.importSourceMessageID = row.recover("importSourceMessageID", defaultValue: model.importSourceMessageID)
         let documentData: Data = try row.value("messageDocumentData")
-        model.imageAttachmentsData = row.recover("imageAttachmentsData", defaultValue: model.imageAttachmentsData)
+        model.imageAttachmentReferencesData = row.recover("imageAttachmentReferencesData", defaultValue: model.imageAttachmentReferencesData)
         model.isUser = try row.value("isUser")
         model.isActive = row.recover("isActive", defaultValue: model.isActive)
         model.createdAt = row.recover("createdAt", defaultValue: Optional<Date>.none)
@@ -362,7 +368,22 @@ extension StartupDataRecovery {
         model.errorDescription = row.recover("errorDescription", defaultValue: model.errorDescription)
         // Keep readable payloads unchanged. Invalid structured display data is
         // omitted; the normal renderer can still display the original body.
-        model.imageAttachmentsData = try row.readableItems(model.imageAttachmentsData, of: ChatImageAttachment.self, field: "imageAttachmentsData")
+        model.imageAttachmentReferencesData = try row.readableItems(model.imageAttachmentReferencesData, of: ChatImageAttachment.self, field: "imageAttachmentReferencesData")
+        if let storeURL {
+            let references = ChatImageAttachment.decodeList(from: model.imageAttachmentReferencesData, storeURL: storeURL)
+            var readable: [ChatImageAttachment] = []
+            for reference in references {
+                do {
+                    readable.append(validateImages ? try reference.materialized() : reference)
+                } catch {
+                    let failure = error as NSError
+                    guard failure.domain == NSCocoaErrorDomain,
+                          [NSFileReadNoSuchFileError, NSFileNoSuchFileError, NSFileReadCorruptFileError].contains(failure.code) else { throw error }
+                    row.decodingLoss("imageAttachmentReferencesData", error: error)
+                }
+            }
+            model.imageAttachments = readable
+        }
         try recoverMessageDocument(documentData, into: model, row: row)
         return model
     }

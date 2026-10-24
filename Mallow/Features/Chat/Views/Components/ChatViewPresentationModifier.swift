@@ -164,7 +164,7 @@ struct ChatViewPresentationModifier: ViewModifier {
                 }
             }
         } else {
-            Button("COMMON_ACTION_DELETE", role: .destructive) {
+            Button(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), role: .destructive) {
                 guard let draftID = viewModel.pendingUnsupportedImageQueuedDraftID else { return }
                 viewModel.dismissUnsupportedImageConfirmationForQueuedDraft()
                 onDeleteUnsupportedQueuedDraft(draftID)
@@ -226,7 +226,7 @@ struct ChatViewPresentationModifier: ViewModifier {
             return Alert(
                 title: Text("MESSAGE_DELETE_CONFIRMATION"),
                 message: Text("MESSAGE_DELETE_DESCRIPTION"),
-                primaryButton: .destructive(Text("COMMON_ACTION_DELETE")) {
+                primaryButton: .destructive(Text(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"))) {
                     viewModel.removeQueuedDraft(id: draftID)
                 },
                 secondaryButton: .cancel()

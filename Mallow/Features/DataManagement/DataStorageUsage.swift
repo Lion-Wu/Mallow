@@ -27,8 +27,8 @@ nonisolated enum DataStorageInspector {
     static func measure() throws -> DataStorageUsage {
         let current = StartupPersistentStore.defaultURL
         let reader = try RecoveryStoreReader(url: current)
-        let images = try reader.payloadSize(entity: "ChatMessage", only: "imageAttachmentsData")
-        let chats = try reader.payloadSize(entity: "ChatMessage", excluding: "imageAttachmentsData")
+        let images = try size(of: ChatImageStore.directory(for: current))
+        let chats = try reader.payloadSize(entity: "ChatMessage", excluding: "imageAttachmentReferencesData")
             + reader.payloadSize(entity: "ChatSession")
         let settings = try ["AppSettings", "ChatServerPreset", "VoiceServerPreset", "VoicePreset", "SystemPromptPreset"]
             .reduce(Int64(0)) { try $0 + reader.payloadSize(entity: $1) }
@@ -149,6 +149,7 @@ nonisolated enum DataUnusedFileInspector {
         let store = StartupPersistentStore.defaultURL
         return Set([store.lastPathComponent, store.lastPathComponent + "-wal",
                     store.lastPathComponent + "-shm", store.lastPathComponent + "-journal",
+                    store.lastPathComponent + ".images",
                     "." + store.deletingPathExtension().lastPathComponent + "_SUPPORT",
                     PersistentStoreOwnership.fileName, DataImportTransaction.fileName,
                     "AddressBook", "SyncServices", "CrashReporter", "iCloud", ".DS_Store"])

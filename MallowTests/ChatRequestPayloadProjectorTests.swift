@@ -3,7 +3,7 @@ import XCTest
 
 final class ChatRequestPayloadProjectorTests: XCTestCase {
     func testRequestPayloadProjectorUsesAssistantTextSegmentsWithoutReasoning() throws {
-        let payload = ChatRequestPayloadProjector().transformedMessagesForRequest(
+        let payload = try ChatRequestPayloadProjector().transformedMessagesForRequest(
             messages: [
                 ChatRequestSourceMessage(
                     content: "<think>\nlegacy reasoning\n</think>\nlegacy body",
@@ -24,7 +24,7 @@ final class ChatRequestPayloadProjectorTests: XCTestCase {
     }
 
     func testRequestPayloadProjectorFiltersErrorsAndAddsDeveloperPrompt() throws {
-        let payload = ChatRequestPayloadProjector().transformedMessagesForRequest(
+        let payload = try ChatRequestPayloadProjector().transformedMessagesForRequest(
             messages: [
                 ChatRequestSourceMessage(content: "hello", isUser: true),
                 ChatRequestSourceMessage(content: "transient", isUser: false, isError: true),
@@ -45,7 +45,7 @@ final class ChatRequestPayloadProjectorTests: XCTestCase {
 
     func testRequestPayloadProjectorIncludesUserImagesWhenRequested() throws {
         let attachment = ChatImageAttachment(mimeType: "image/png", data: try XCTUnwrap("image".data(using: .utf8)))
-        let payload = ChatRequestPayloadProjector().transformedMessagesForRequest(
+        let payload = try ChatRequestPayloadProjector().transformedMessagesForRequest(
             messages: [
                 ChatRequestSourceMessage(content: "look", isUser: true, imageAttachments: [attachment])
             ],
@@ -59,7 +59,7 @@ final class ChatRequestPayloadProjectorTests: XCTestCase {
         XCTAssertEqual(parts.first?["type"] as? String, "text")
         XCTAssertEqual(parts.first?["text"] as? String, "look")
         XCTAssertEqual(parts.last?["type"] as? String, "image_url")
-        XCTAssertEqual(imageURL["url"] as? String, attachment.dataURLString)
+        XCTAssertEqual(imageURL["url"] as? String, "data:image/png;base64,aW1hZ2U=")
     }
 
     func testRequestPayloadProjectorPreservesToolCallChronologyAcrossSegmentScopes() throws {
@@ -92,7 +92,7 @@ final class ChatRequestPayloadProjectorTests: XCTestCase {
             )
         )
 
-        let payload = ChatRequestPayloadProjector().transformedMessagesForRequest(
+        let payload = try ChatRequestPayloadProjector().transformedMessagesForRequest(
             messages: [
                 ChatRequestSourceMessage(
                     content: "Done.",
@@ -141,7 +141,7 @@ final class ChatRequestPayloadProjectorTests: XCTestCase {
                 ])])
             ])
         ]
-        let payload = ChatRequestPayloadProjector().transformedMessagesForRequest(
+        let payload = try ChatRequestPayloadProjector().transformedMessagesForRequest(
             messages: [
                 ChatRequestSourceMessage(
                     content: "It is noon.",
@@ -211,7 +211,7 @@ final class ChatRequestPayloadProjectorTests: XCTestCase {
             scope: .body,
             offset: 0
         )
-        let payload = ChatRequestPayloadProjector().transformedMessagesForRequest(
+        let payload = try ChatRequestPayloadProjector().transformedMessagesForRequest(
             messages: [
                 ChatRequestSourceMessage(
                     content: "The clipboard contains secret result.",

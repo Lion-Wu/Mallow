@@ -51,7 +51,7 @@ struct ContentView: View {
             iosContent
         #endif
         }
-        .alert("DATA_SAVING_ISSUE", isPresented: persistenceWriteFailureAlertBinding) {
+        .alert(LocalizedStringResource("DATA_SAVING_ISSUE", defaultValue: "Data Saving Issue"), isPresented: persistenceWriteFailureAlertBinding) {
             Button("COMMON_ACTION_OK") {
                 chatSessionsViewModel.clearPersistenceWriteFailure()
             }
@@ -115,10 +115,10 @@ private extension ContentView {
                 ToolbarItem {
                     if !voiceOverlayViewModel.isPresented {
                         Button(action: { chatSessionsViewModel.startNewSession() }) {
-                            Label("CHAT_TITLE_NEW", systemImage: "plus")
+                            Label(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat"), systemImage: "plus")
                         }
                         .labelStyle(.iconOnly)
-                        .help("CHAT_TITLE_NEW")
+                        .help(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat"))
                         .disabled(!chatSessionsViewModel.canStartNewSession)
                     }
                 }
@@ -165,10 +165,10 @@ private extension ContentView {
                                 Button(action: {
                                     startNewIOSSession()
                                 }) {
-                                    Label("CHAT_TITLE_NEW", systemImage: "square.and.pencil")
+                                    Label(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat"), systemImage: "square.and.pencil")
                                 }
                                 .labelStyle(.iconOnly)
-                                .accessibilityLabel("CHAT_TITLE_NEW")
+                                .accessibilityLabel(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat"))
                                 .disabled(!chatSessionsViewModel.canStartNewSession)
                             }
                         }

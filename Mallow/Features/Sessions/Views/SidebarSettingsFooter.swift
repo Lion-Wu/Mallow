@@ -78,7 +78,7 @@ struct SidebarSettingsFooter: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.primary)
 
-            Text("SETTINGS_TITLE")
+            Text(LocalizedStringResource("SETTINGS_TITLE", defaultValue: "Settings"))
                 .font(.body.weight(.semibold))
                 .foregroundStyle(.primary)
 

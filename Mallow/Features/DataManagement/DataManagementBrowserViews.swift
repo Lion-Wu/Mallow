@@ -118,7 +118,7 @@ private struct DataMaintenanceControls: ViewModifier {
             }
             .alert("DATA_DELETE_CONFIRMATION", isPresented: confirmationBinding(forDeletion: true)) {
                 if let request {
-                    Button("COMMON_ACTION_DELETE", role: .destructive) { apply(request) }
+                    Button(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), role: .destructive) { apply(request) }
                 }
                 Button("COMMON_ACTION_CANCEL", role: .cancel) { request = nil }
             } message: {
@@ -216,7 +216,7 @@ struct DataChatStorageList: View {
         .navigationTitle("STORAGE_GROUP_BY_CHAT").modifier(DataBrowserSearch(text: $search))
         .task { if model.catalog == nil { model.loadCatalog(environment: environment, commitEdits: commitEdits) } }
         .modifier(DataSelectionControls(isSelecting: $selecting, selection: $selected, ids: Set(chats.map(\.id))) {
-            DataDestructiveButton("DATA_ACTION_DELETE_SELECTED", progressMessage: model.progressMessage(for: .deleteChats)) {
+            DataDestructiveButton(LocalizedStringResource("DATA_ACTION_DELETE_SELECTED", defaultValue: "Delete Selected"), progressMessage: model.progressMessage(for: .deleteChats)) {
                 guard let catalog = model.catalog else { return }
                 request = DataMaintenanceRequest(mutation: .deleteChats(selected), revision: catalog.revision,
                     title: String(localized: "CHAT_ACTION_DELETE_MULTIPLE", defaultValue: "Delete Chats"), detail: String(localized: "DATA_DELETE_CHATS_DESCRIPTION", defaultValue: "Selected chats and all their branches and attachments will be removed."))
@@ -257,7 +257,7 @@ private struct DataChatStorageDetail: View {
                     DataChatPreviewView(chat: chat, revision: model.catalog?.revision)
                 }
             }
-            Section("MESSAGE_LIST") {
+            Section(LocalizedStringResource("MESSAGE_LIST", defaultValue: "Messages")) {
                 let messages = (model.catalog?.messages ?? []).filter { $0.sessionID == chat.id }.sorted { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }
                 if model.catalog != nil, messages.isEmpty {
                     Text("MESSAGE_LIST_EMPTY").foregroundStyle(.secondary)
@@ -272,7 +272,7 @@ private struct DataChatStorageDetail: View {
             }
         }.formStyle(.grouped).navigationTitle("STORAGE_CHAT_DATA")
         .modifier(DataActionControls {
-            DataDestructiveButton("CHAT_ACTION_DELETE", progressMessage: model.progressMessage(for: .deleteChats)) {
+            DataDestructiveButton(LocalizedStringResource("CHAT_ACTION_DELETE", defaultValue: "Delete Chat"), progressMessage: model.progressMessage(for: .deleteChats)) {
                 guard let revision = model.catalog?.revision else { return }
                 request = DataMaintenanceRequest(mutation: .deleteChats([chat.id]), revision: revision,
                     title: String(localized: "CHAT_ACTION_DELETE", defaultValue: "Delete Chat"), detail: String(localized: "DATA_DELETE_CHATS_DESCRIPTION", defaultValue: "Selected chats and all their branches and attachments will be removed."))
@@ -325,14 +325,14 @@ struct DataAttachmentMessageList: View {
                 }
             }
         }
-        .navigationTitle("STORAGE_IMAGES_AND_ATTACHMENTS").modifier(DataBrowserSearch(text: $search))
+        .navigationTitle(LocalizedStringResource("STORAGE_IMAGES_AND_ATTACHMENTS", defaultValue: "Images and Attachments")).modifier(DataBrowserSearch(text: $search))
         .task {
             if model.attachmentThumbnails == nil {
                 model.loadCatalog(environment: environment, commitEdits: commitEdits, includeAttachmentThumbnails: true)
             }
         }
         .modifier(DataSelectionControls(isSelecting: $selecting, selection: $selected, ids: Set(messages.map(\.id))) {
-            DataDestructiveButton("DATA_ACTION_DELETE_SELECTED", progressMessage: model.progressMessage(for: .deleteAttachments)) {
+            DataDestructiveButton(LocalizedStringResource("DATA_ACTION_DELETE_SELECTED", defaultValue: "Delete Selected"), progressMessage: model.progressMessage(for: .deleteAttachments)) {
                 guard let revision = model.catalog?.revision else { return }
                 request = DataMaintenanceRequest(mutation: .deleteAllAttachments(selected), revision: revision,
                     title: String(localized: "DATA_ACTION_DELETE_SELECTED_ATTACHMENTS", defaultValue: "Delete Selected Attachments"),
@@ -394,7 +394,7 @@ struct DataAttachmentMessageList: View {
                 }
             }
             #endif
-            .accessibilityLabel("STORAGE_IMAGES_AND_ATTACHMENTS")
+            .accessibilityLabel(LocalizedStringResource("STORAGE_IMAGES_AND_ATTACHMENTS", defaultValue: "Images and Attachments"))
             .accessibilityValue(thumbnails.count.formatted())
         } else if model.progress?.kind == .loadCatalog {
             ProgressView().frame(width: 52, height: 52).accessibilityLabel("COMMON_LOADING_ELLIPSIS")
@@ -427,7 +427,7 @@ private struct DataStoredMessageView: View {
                 LabeledContent("STORAGE_MESSAGES_AND_CHAT_DATA", value: storageSize(currentMessage.bytes - currentMessage.imageBytes))
                 LabeledContent("CHAT_IMAGES", value: storageSize(currentMessage.imageBytes))
             }
-            Section("MESSAGE_TITLE") {
+            Section(LocalizedStringResource("MESSAGE_TITLE", defaultValue: "Message")) {
                 VStack(alignment: .leading, spacing: 12) {
                     if let date = message.date {
                         Text(date, format: .dateTime).font(.caption).foregroundStyle(.secondary)
@@ -436,18 +436,18 @@ private struct DataStoredMessageView: View {
                     RichMarkdownView(markdown: details?.content ?? message.title)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-            Section("STORAGE_IMAGES_AND_ATTACHMENTS") {
+            Section(LocalizedStringResource("STORAGE_IMAGES_AND_ATTACHMENTS", defaultValue: "Images and Attachments")) {
                 if let details {
                     if let problem = details.attachmentIssue {
                         Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary)
                     } else if details.attachments.isEmpty {
                         Text("DATA_EMPTY").foregroundStyle(.secondary)
                     }
-                    ForEach(details.attachments.sorted { $0.data.count > $1.data.count }) { attachment in
+                    ForEach(details.attachments.sorted { $0.byteCount > $1.byteCount }) { attachment in
                         DataSelectionRow(isSelected: selected.contains(attachment.id)) {
                             if !selected.insert(attachment.id).inserted { selected.remove(attachment.id) }
                         } content: {
-                            DataAttachmentPreview(attachment: attachment)
+                            DataAttachmentPreview(attachment: attachment, snapshot: details.snapshot)
                         }.padding(.vertical, 6)
                     }
 
@@ -458,7 +458,7 @@ private struct DataStoredMessageView: View {
         .modifier(DataActionControls(isVisible: details?.attachments.isEmpty == false) {
             if let details, !details.attachments.isEmpty {
                 DataSelectAllButton(ids: Set(details.attachments.map(\.id)), selection: $selected)
-                DataDestructiveButton("DATA_ACTION_DELETE_SELECTED", progressMessage: model.progressMessage(for: .deleteAttachments)) {
+                DataDestructiveButton(LocalizedStringResource("DATA_ACTION_DELETE_SELECTED", defaultValue: "Delete Selected"), progressMessage: model.progressMessage(for: .deleteAttachments)) {
                     guard let revision = model.catalog?.revision else { return }
                     request = DataMaintenanceRequest(mutation: .deleteAttachments(messageID: message.id, attachmentIDs: selected), revision: revision,
                         title: String(localized: "DATA_ACTION_DELETE_SELECTED_ATTACHMENTS", defaultValue: "Delete Selected Attachments"), detail: String(localized: "MESSAGE_DELETE_ATTACHMENTS_DESCRIPTION", defaultValue: "Selected image attachments will be removed from this message."))
@@ -475,23 +475,25 @@ private struct DataStoredMessageView: View {
             error = nil
             selected.removeAll()
             do {
-                let staged = try environment.stageDataManagementRead()
-                defer { staged.discard() }
+                let snapshot = DataPreviewSnapshot(try await environment.stageDataManagementRead())
                 let id = message.id
                 let expected = model.catalog?.revision
-                details = try await DataManagementModel.background {
-                    let source = staged.directory.appendingPathComponent(staged.contentsName).appendingPathComponent("default.store")
-                    guard try AppDataBackup.sourceRevision(at: source) == expected else { throw DataBackupError.dataChanged }
-                    return try DataManagementStore.messageDetails(at: source, id: id)
+                let result = try await DataManagementModel.background {
+                    guard try AppDataBackup.sourceRevision(at: snapshot.storeURL) == expected else { throw DataBackupError.dataChanged }
+                    return try DataManagementStore.messageDetails(in: snapshot, id: id)
                 }
+                try Task.checkCancellation()
+                details = result
             } catch is CancellationError {
             } catch { self.error = error.localizedDescription }
         }
+        .onDisappear { details = nil }
     }
 }
 
 private struct DataAttachmentPreview: View {
     let attachment: ChatImageAttachment
+    let snapshot: DataPreviewSnapshot
     @State private var image: CGImage?
     @State private var loaded = false
 
@@ -502,11 +504,13 @@ private struct DataAttachmentPreview: View {
             } else if loaded {
                 Label("DATA_PREVIEW_UNAVAILABLE", systemImage: "photo.badge.exclamationmark")
             } else { ProgressView().frame(height: 120) }
-            Text(attachment.mimeType + " · " + storageSize(Int64(attachment.data.count))).font(.caption).foregroundStyle(.secondary)
+            Text(attachment.mimeType + " · " + storageSize(Int64(attachment.byteCount))).font(.caption).foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity, alignment: .leading)
-        .task(id: attachment.id) {
-            let data = attachment.data
-            image = try? await DataManagementModel.background {
+        .task(id: snapshot.storeURL) {
+            image = nil
+            loaded = false
+            let result = try? await DataManagementModel.background {
+                let data = try snapshot.loadImageData(attachment)
                 guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary) else { return Optional<CGImage>.none }
                 return CGImageSourceCreateThumbnailAtIndex(source, 0, [
                     kCGImageSourceCreateThumbnailFromImageAlways: true,
@@ -514,6 +518,8 @@ private struct DataAttachmentPreview: View {
                     kCGImageSourceThumbnailMaxPixelSize: 1200
                 ] as CFDictionary)
             }
+            guard !Task.isCancelled else { return }
+            image = result
             loaded = true
         }
     }
@@ -557,7 +563,7 @@ struct DataModelBrowser: View {
                                     Text(item.key).textSelection(.enabled)
                                     if item.kind == .endpoint { LabeledContent("COMMON_SOURCE", value: item.source) }
                                     Text(item.displayValue).textSelection(.enabled)
-                                    DataDestructiveButton("SETTINGS_ACTION_DELETE_SETTING", progressMessage: model.progressMessage(for: .deletePreference)) {
+                                    DataDestructiveButton(LocalizedStringResource("SETTINGS_ACTION_DELETE_SETTING", defaultValue: "Delete Setting"), progressMessage: model.progressMessage(for: .deletePreference)) {
                                         guard let revision = model.catalog?.revision else { return }
                                         request = DataMaintenanceRequest(mutation: .deletePreference(item), revision: revision,
                                             title: String(localized: "SETTINGS_ACTION_DELETE_SETTING", defaultValue: "Delete Setting"), detail: String(localized: "SETTINGS_DELETE_SETTING_DESCRIPTION", defaultValue: "This will delete the selected setting."))
@@ -574,7 +580,7 @@ struct DataModelBrowser: View {
         }.navigationTitle("DATA_MODEL_DATA").modifier(DataBrowserSearch(text: $search))
         .task { if model.catalog == nil { model.loadCatalog(environment: environment, commitEdits: commitEdits) } }
         .modifier(DataSelectionControls(isSelecting: $selecting, selection: $selected, ids: selectableIDs) {
-            DataDestructiveButton("DATA_ACTION_DELETE_SELECTED", progressMessage: model.progressMessage(for: .deleteModelData)) {
+            DataDestructiveButton(LocalizedStringResource("DATA_ACTION_DELETE_SELECTED", defaultValue: "Delete Selected"), progressMessage: model.progressMessage(for: .deleteModelData)) {
                 guard let revision = model.catalog?.revision else { return }
                 let selectedPreferences = preferences.filter { selected.contains($0.id) }
                 guard !selectedPreferences.isEmpty else { return }
@@ -704,7 +710,7 @@ private struct DataUnusedFilesView: View {
                 DataOperationButtonLabel(title: "DATA_ACTION_EXPORT_SELECTED", systemImage: "square.and.arrow.up",
                     progressMessage: model.progressMessage(for: .exportUnusedFiles))
             }.disabled(selected.isEmpty)
-            DataDestructiveButton("DATA_ACTION_DELETE_SELECTED", progressMessage: model.progressMessage(for: .deleteUnusedFiles)) {
+            DataDestructiveButton(LocalizedStringResource("DATA_ACTION_DELETE_SELECTED", defaultValue: "Delete Selected"), progressMessage: model.progressMessage(for: .deleteUnusedFiles)) {
                 pendingDeletion = files.filter { selected.contains($0.id) }
             }.disabled(selected.isEmpty)
         })
@@ -713,7 +719,7 @@ private struct DataUnusedFilesView: View {
         .alert("DATA_DELETE_CONFIRMATION", isPresented: Binding(
             get: { !pendingDeletion.isEmpty }, set: { if !$0 { pendingDeletion = [] } }
         )) {
-            Button("COMMON_ACTION_DELETE", role: .destructive) {
+            Button(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), role: .destructive) {
                 model.deleteUnusedFiles(pendingDeletion)
                 pendingDeletion = []
                 selected.removeAll()
@@ -746,11 +752,11 @@ private struct DataUnusedFilesView: View {
 }
 
 struct DataDestructiveButton: View {
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     let progressMessage: String?
     let action: () -> Void
 
-    init(_ title: LocalizedStringKey, progressMessage: String? = nil, action: @escaping () -> Void) {
+    init(_ title: LocalizedStringResource, progressMessage: String? = nil, action: @escaping () -> Void) {
         self.title = title
         self.progressMessage = progressMessage
         self.action = action
@@ -830,7 +836,7 @@ private struct DataSelectionControls<ID: Hashable, Actions: View>: ViewModifier 
     @ViewBuilder let actions: () -> Actions
 
     private var selectionButton: some View {
-        Button(isSelecting ? LocalizedStringKey("COMMON_ACTION_DONE") : LocalizedStringKey("COMMON_ACTION_SELECT")) {
+        Button(isSelecting ? LocalizedStringResource("COMMON_ACTION_DONE", defaultValue: "Done") : LocalizedStringResource("COMMON_ACTION_SELECT")) {
             isSelecting.toggle()
             selection.removeAll()
         }
@@ -933,7 +939,7 @@ private struct DataChatPreviewView: View {
                         ForEach(messages) { message in
                             VStack(alignment: .leading, spacing: 10) {
                                 HStack {
-                                    Text(message.isUser ? LocalizedStringKey("CHAT_ROLE_YOU") : LocalizedStringKey("CHAT_ROLE_ASSISTANT")).font(.headline)
+                                    Text(message.isUser ? LocalizedStringResource("CHAT_ROLE_YOU") : LocalizedStringResource("CHAT_ROLE_ASSISTANT", defaultValue: "Assistant")).font(.headline)
                                     Spacer()
                                     if let date = message.date {
                                         Text(date, format: .dateTime).font(.caption).foregroundStyle(.secondary)
@@ -947,7 +953,7 @@ private struct DataChatPreviewView: View {
                                 ForEach(message.problems, id: \.self) { problem in
                                     Label(problem, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.secondary)
                                 }
-                                ForEach(message.attachments) { DataAttachmentPreview(attachment: $0) }
+                                ForEach(message.attachments) { DataAttachmentPreview(attachment: $0, snapshot: preview.snapshot) }
                             }.frame(maxWidth: .infinity, alignment: .leading)
                             Divider()
                         }
@@ -960,15 +966,14 @@ private struct DataChatPreviewView: View {
         .task(id: revision) {
             error = nil
             do {
-                let staged = try environment.stageDataManagementRead()
-                defer { staged.discard() }
+                let snapshot = DataPreviewSnapshot(try await environment.stageDataManagementRead())
                 let id = chat.id
                 let expected = revision
                 let result = try await DataManagementModel.background {
-                    let source = staged.directory.appendingPathComponent(staged.contentsName).appendingPathComponent("default.store")
-                    guard try AppDataBackup.sourceRevision(at: source) == expected else { throw DataBackupError.dataChanged }
-                    return try DataManagementStore.chatPreview(at: source, id: id)
+                    guard try AppDataBackup.sourceRevision(at: snapshot.storeURL) == expected else { throw DataBackupError.dataChanged }
+                    return try DataManagementStore.chatPreview(in: snapshot, id: id)
                 }
+                try Task.checkCancellation()
                 preview = result
                 if !result.branches.contains(where: { $0.id == selectedBranch }) {
                     selectedBranch = result.branches.first(where: { $0.id == result.activeLeafID })?.id ?? result.branches.first?.id
@@ -976,6 +981,7 @@ private struct DataChatPreviewView: View {
             } catch is CancellationError {
             } catch { self.error = error.localizedDescription }
         }
+        .onDisappear { preview = nil }
     }
 }
 
@@ -1022,11 +1028,11 @@ private struct DataCleanupIssueList: View {
                     request = DataMaintenanceRequest(mutation: .recoverUnowned(Set(selection.compactMap(\.recordID))), revision: revision,
                         title: String(localized: "RECOVERY_ACTION_RECOVER_SELECTED_MESSAGES", defaultValue: "Recover Selected Messages"), detail: String(localized: "RECOVERY_RESTORE_MESSAGES_DESCRIPTION", defaultValue: "The selected messages and their related history will be restored as separate chats."))
                 } label: {
-                    DataOperationButtonLabel(title: "RECOVERY_ACTION_RECOVER_SELECTED_MESSAGES", systemImage: "arrow.uturn.backward",
+                    DataOperationButtonLabel(title: LocalizedStringResource("RECOVERY_ACTION_RECOVER_SELECTED_MESSAGES", defaultValue: "Recover Selected Messages"), systemImage: "arrow.uturn.backward",
                         progressMessage: model.progressMessage(for: .recoverMessages))
                 }.disabled(selection.isEmpty || selection.contains { $0.entity != "ChatMessage" })
             }
-            DataDestructiveButton("DATA_ACTION_DELETE_SELECTED", progressMessage: model.progressMessage(for: .deleteIssues)) {
+            DataDestructiveButton(LocalizedStringResource("DATA_ACTION_DELETE_SELECTED", defaultValue: "Delete Selected"), progressMessage: model.progressMessage(for: .deleteIssues)) {
                 request = DataMaintenanceRequest(mutation: .deleteIssues(selection), revision: revision,
                     title: String(localized: "DATA_ACTION_DELETE_SELECTED_RECORDS", defaultValue: "Delete Selected Records"), detail: String(localized: "DATA_DELETE_RECORDS_DESCRIPTION", defaultValue: "Selected records will be deleted. Deleting a chat includes all its messages; deleting a message includes its later replies in every branch."))
             }.disabled(selection.isEmpty)
@@ -1081,7 +1087,7 @@ private struct DataCleanupIssueView: View {
                     }
                 }
             }
-            Section("MESSAGE_TITLE") {
+            Section(LocalizedStringResource("MESSAGE_TITLE", defaultValue: "Message")) {
                 if let date = issue.date { Text(date, format: .dateTime).font(.caption).foregroundStyle(.secondary) }
                 Text(content ?? issue.name).textSelection(.enabled)
                 if let error { Text(error).foregroundStyle(.red) }
@@ -1092,11 +1098,11 @@ private struct DataCleanupIssueView: View {
                         request = DataMaintenanceRequest(mutation: .recoverUnowned([id]), revision: revision,
                             title: String(localized: "RECOVERY_ACTION_RECOVER_SEPARATE_CHAT", defaultValue: "Recover as a Separate Chat"), detail: String(localized: "RECOVERY_RESTORE_MESSAGES_DESCRIPTION", defaultValue: "The selected messages and their related history will be restored as separate chats."))
                     } label: {
-                        DataOperationButtonLabel(title: "RECOVERY_ACTION_RECOVER_SEPARATE_CHAT", progressMessage: model.progressMessage(for: .recoverMessages))
+                        DataOperationButtonLabel(title: LocalizedStringResource("RECOVERY_ACTION_RECOVER_SEPARATE_CHAT", defaultValue: "Recover as a Separate Chat"), progressMessage: model.progressMessage(for: .recoverMessages))
                     }
                 }
                 if issue.canDelete {
-                    DataDestructiveButton("DATA_ACTION_DELETE_RECORD", progressMessage: model.progressMessage(for: .deleteIssues)) {
+                    DataDestructiveButton(LocalizedStringResource("DATA_ACTION_DELETE_RECORD", defaultValue: "Delete Record"), progressMessage: model.progressMessage(for: .deleteIssues)) {
                         request = DataMaintenanceRequest(mutation: .deleteIssues([issue]), revision: revision,
                             title: String(localized: "DATA_ACTION_DELETE_RECORD", defaultValue: "Delete Record"), detail: String(localized: "DATA_DELETE_RECORDS_DESCRIPTION", defaultValue: "Selected records will be deleted. Deleting a chat includes all its messages; deleting a message includes its later replies in every branch."))
                     }
@@ -1111,8 +1117,8 @@ private struct DataCleanupIssueView: View {
             }
             error = nil
             do {
-                let staged = try environment.stageDataManagementRead()
-                defer { staged.discard() }
+                let staged = try await environment.stageDataManagementRead()
+                defer { staged.discardInBackground() }
                 let issue = issue
                 let expected = revision
                 content = try await DataManagementModel.background {

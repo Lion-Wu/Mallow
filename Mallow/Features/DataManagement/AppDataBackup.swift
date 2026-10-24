@@ -3,6 +3,37 @@ import CryptoKit
 import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers
+import Darwin
+
+/// Detect writes across a background read without hashing the files on the main actor.
+/// The application holds exclusive writer ownership of the live store; images use
+/// immutable content names, so their publication/removal changes the directory stamp.
+nonisolated struct DataStoreFileVersion: Equatable, Sendable {
+    private struct FileVersion: Equatable, Sendable {
+        let device: Int32
+        let inode: UInt64
+        let size: Int64
+        let modifiedSeconds: Int
+        let modifiedNanoseconds: Int
+        let changedSeconds: Int
+        let changedNanoseconds: Int
+    }
+
+    private let files: [FileVersion?]
+
+    init(at storeURL: URL) throws {
+        files = try [storeURL, URL(fileURLWithPath: storeURL.path + "-wal"), ChatImageStore.directory(for: storeURL)].map { url in
+            var value = stat()
+            guard lstat(url.path, &value) == 0 else {
+                if errno == ENOENT { return nil }
+                throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+            }
+            return FileVersion(device: value.st_dev, inode: value.st_ino, size: value.st_size,
+                modifiedSeconds: value.st_mtimespec.tv_sec, modifiedNanoseconds: value.st_mtimespec.tv_nsec,
+                changedSeconds: value.st_ctimespec.tv_sec, changedNanoseconds: value.st_ctimespec.tv_nsec)
+        }
+    }
+}
 
 nonisolated enum DataBackupError: LocalizedError {
     case integrityCheckFailed
@@ -75,6 +106,21 @@ nonisolated struct AppDataBackup: Equatable, Sendable {
                 revision.update(data: chunk)
             }
         }
+        let imageDirectory = ChatImageStore.directory(for: url)
+        if manager.fileExists(atPath: imageDirectory.path) {
+            for file in try manager.contentsOfDirectory(at: imageDirectory, includingPropertiesForKeys: [.isSymbolicLinkKey, .isRegularFileKey])
+                .filter({ $0.pathExtension == "image" }).sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
+                let properties = try file.resourceValues(forKeys: [.isSymbolicLinkKey, .isRegularFileKey])
+                guard properties.isSymbolicLink != true, properties.isRegularFile == true else { throw CocoaError(.fileReadCorruptFile) }
+                revision.update(data: Data(file.lastPathComponent.utf8))
+                let handle = try FileHandle(forReadingFrom: file)
+                defer { try? handle.close() }
+                while let bytes = try handle.read(upToCount: 1_048_576), !bytes.isEmpty {
+                    try Task.checkCancellation()
+                    revision.update(data: bytes)
+                }
+            }
+        }
         return revision.finalize()
     }
 
@@ -96,7 +142,7 @@ nonisolated struct AppDataBackup: Equatable, Sendable {
             try Task.checkCancellation()
             try validatePayload(message.assistantSegmentsData, as: [ChatAssistantSegment].self)
             try validatePayload(message.openAIResponsesConversationItemsData, as: [JSONValue].self)
-            try validatePayload(message.imageAttachmentsData, as: [ChatImageAttachment].self)
+            try validatePayload(message.imageAttachmentReferencesData, as: [ChatImageAttachment].self)
             try validatePayload(message.toolActivityPlacementsData, as: [ChatToolActivityPlacement].self)
         }
     }

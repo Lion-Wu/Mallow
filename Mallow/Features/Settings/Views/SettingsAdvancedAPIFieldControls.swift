@@ -22,10 +22,10 @@ struct SettingsAdvancedAPISectionHeader: View {
 }
 
 struct SettingsAdvancedAPIMetadataRow: View {
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     let value: String
 
-    init(_ title: LocalizedStringKey, _ value: String) {
+    init(_ title: LocalizedStringResource, _ value: String) {
         self.title = title
         self.value = value
     }

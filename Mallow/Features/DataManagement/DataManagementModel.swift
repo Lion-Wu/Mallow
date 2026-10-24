@@ -90,14 +90,14 @@ final class DataManagementModel: ObservableObject {
     func exportBackup(environment: AppEnvironment, commitEdits: @escaping () -> Void) {
         run(.exportBackup, message: String(localized: "DATA_PREPARING_EXPORT", defaultValue: "Preparing Export...")) {
             commitEdits()
-            let snapshot = try environment.stageRawDataExport()
+            let snapshot = try await environment.stageRawDataExport()
             self.progress?.message = String(localized: "DATA_COMPRESSING", defaultValue: "Compressing Data...")
             do {
                 self.preparedExport = try await Self.background {
                     try DataPreparedExport(archive: snapshot.archive(), source: .backup)
                 }
             } catch {
-                snapshot.discard()
+                snapshot.discardInBackground()
                 throw error
             }
         }
@@ -146,7 +146,7 @@ final class DataManagementModel: ObservableObject {
         run(.mergeImport, message: String(localized: "DATA_CHECKING_CHANGES", defaultValue: "Checking for Changes...")) {
             commitEdits()
             try environment.validateDataImportAvailability()
-            guard try environment.dataManagementSourceMatches(reviewed.original) else {
+            guard try await environment.validatedDataImportSource(reviewed.original) != nil else {
                 let current = try await self.readCurrentData(environment: environment)
                 self.preview = try await Self.background { try DataBackupMerge.preview(current: current, incoming: reviewed.incoming) }
                 throw DataBackupError.dataChanged
@@ -154,16 +154,18 @@ final class DataManagementModel: ObservableObject {
             self.progress?.message = String(localized: "DATA_MERGING", defaultValue: "Merging Data...")
             let worker = Task.detached(priority: .userInitiated) { try reviewed.merged.prepareStore() }
             let plan = try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
-            defer { plan.discard() }
+            defer { plan.discardInBackground() }
             try Task.checkCancellation()
             try environment.validateDataImportAvailability()
-            guard try environment.dataManagementSourceMatches(reviewed.original) else {
+            guard let version = try await environment.validatedDataImportSource(reviewed.original) else {
                 let latest = try await self.readCurrentData(environment: environment)
                 self.preview = try await Self.background { try DataBackupMerge.preview(current: latest, incoming: reviewed.incoming) }
                 throw DataBackupError.dataChanged
             }
             let changedCredentials = reviewed.merged.credentials.filter { !reviewed.original.snapshot.credentials.contains($0) }
-            try coordinator.installImportedStore(plan, credentials: changedCredentials)
+            try await coordinator.installImportedStore(plan, credentials: changedCredentials) {
+                try environment.requireCurrentDataImportSource(version, reviewed: reviewed.original)
+            }
             self.preview = nil
         }
     }
@@ -223,7 +225,7 @@ final class DataManagementModel: ObservableObject {
         run(kind, message: String(localized: "DATA_APPLYING_CHANGES", defaultValue: "Applying Data Changes...")) {
             commitEdits()
             do {
-                try environment.applyDataManagementMutation(mutation, revision: revision)
+                try await environment.applyDataManagementMutation(mutation, revision: revision)
             } catch is CancellationError {
                 throw CancellationError()
             } catch DataBackupError.dataChanged {
@@ -254,8 +256,8 @@ final class DataManagementModel: ObservableObject {
         let thumbnails = includeThumbnails || attachmentThumbnails != nil
         let cleanup = includeCleanupReport || cleanupReport != nil
         needsStorageUpdate = false
-        let staged = try environment.stageDataManagementRead()
-        defer { staged.discard() }
+        let staged = try await environment.stageDataManagementRead()
+        defer { staged.discardInBackground() }
         let snapshot = try await Self.background {
             try DataManagementStore.snapshot(at: staged.directory.appendingPathComponent(staged.contentsName),
                 includeCatalog: catalog, includeThumbnails: thumbnails, includeCleanupReport: cleanup)
@@ -266,8 +268,8 @@ final class DataManagementModel: ObservableObject {
     }
 
     private func readCurrentData(environment: AppEnvironment) async throws -> DataBackupReadResult {
-        let staged = try environment.stageDataManagementRead()
-        defer { staged.discard() }
+        let staged = try await environment.stageDataManagementRead()
+        defer { staged.discardInBackground() }
         return try await Self.background {
             let contents = staged.directory.appendingPathComponent(staged.contentsName)
             return try AppDataBackup.recover(from: contents.appendingPathComponent("default.store"),
@@ -324,5 +326,5 @@ nonisolated final class DataPreparedExport: Sendable {
         #endif
     }
 
-    deinit { archive.discard() }
+    deinit { archive.discardInBackground() }
 }

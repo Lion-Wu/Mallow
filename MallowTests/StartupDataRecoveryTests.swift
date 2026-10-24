@@ -20,7 +20,7 @@ final class StartupDataRecoveryTests: XCTestCase {
                 XCTAssertEqual(messages.count, 3)
                 let answer = try XCTUnwrap(messages.first { !$0.isUser })
                 XCTAssertEqual(answer.assistantText, "Readable answer")
-                XCTAssertEqual(answer.imageAttachments.first?.data, Fixture.image)
+                XCTAssertEqual(try XCTUnwrap(answer.imageAttachments.first).loadData(), Fixture.image)
                 XCTAssertEqual(answer.toolActivityPlacements.first?.activity.title, "Readable tool")
                 XCTAssertEqual(answer.parentMessage?.content, "First question")
                 XCTAssertEqual(try context.fetch(FetchDescriptor<VoicePreset>()).first?.promptText, "Voice reference")
@@ -60,7 +60,14 @@ final class StartupDataRecoveryTests: XCTestCase {
         try withFixture { fixture in
             let source = fixture.root.appendingPathComponent("raw", isDirectory: true)
             try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
-            let files = ["broken.store": Data([0, 255, 1]), "broken.store-wal": Data([7, 8]), "broken.store-shm": Data([9])]
+            let imageDirectory = source.appendingPathComponent("broken.store.images", isDirectory: true)
+            try FileManager.default.createDirectory(at: imageDirectory, withIntermediateDirectories: true)
+            let files = [
+                "broken.store": Data([0, 255, 1]),
+                "broken.store-wal": Data([7, 8]),
+                "broken.store-shm": Data([9]),
+                "broken.store.images/" + String(repeating: "a", count: 64) + ".image": Data([10, 255, 11])
+            ]
             for (name, bytes) in files { try bytes.write(to: source.appendingPathComponent(name)) }
             let keychain = try PropertyListSerialization.data(fromPropertyList: [["acct": "synthetic-key", "v_Data": Data("synthetic-secret".utf8)]], format: .xml, options: 0)
             let crashReports = source.appendingPathComponent("CrashReporter")
@@ -68,7 +75,7 @@ final class StartupDataRecoveryTests: XCTestCase {
             try Data("unrelated report".utf8).write(to: crashReports.appendingPathComponent("report.plist"))
             let sources = StartupPersistentStore.exportSources(defaultStoreURL: source.appendingPathComponent("broken.store"))
             XCTAssertEqual(Set(sources.keys), Set([
-                "Stores/broken.store", "Stores/broken.store-wal", "Stores/broken.store-shm"
+                "Stores/broken.store", "Stores/broken.store-wal", "Stores/broken.store-shm", "Stores/broken.store.images"
             ]))
             let archive = try RawDataExport.prepare(sources: sources, keychain: keychain, temporaryDirectory: fixture.root)
             XCTAssertGreaterThan(try Data(contentsOf: archive.url).count, 0)
@@ -84,9 +91,10 @@ final class StartupDataRecoveryTests: XCTestCase {
             var expected = Dictionary(uniqueKeysWithValues: files.map { ("Stores/" + $0.key, $0.value) })
             expected["Keychain.plist"] = keychain
             for (name, bytes) in expected { XCTAssertEqual(try Data(contentsOf: contents.appendingPathComponent(name)), bytes) }
-            let entries = try XCTUnwrap(FileManager.default.enumerator(at: unpacked, includingPropertiesForKeys: [.isRegularFileKey])?.allObjects as? [URL])
-            let names = try entries.filter { try $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true }
-                .map { String($0.path.dropFirst(unpacked.path.count + 1)) }
+            let entries = try XCTUnwrap(FileManager.default.enumerator(atPath: unpacked.path)?.allObjects as? [String])
+            let names = try entries.filter {
+                try unpacked.appendingPathComponent($0).resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true
+            }
             let expectedNames = Set(expected.keys.map { "Mallow Data/" + $0 }).union(["Mallow Data/Manifest.json"])
             XCTAssertEqual(Set(names), expectedNames)
             #endif
@@ -137,7 +145,7 @@ final class StartupDataRecoveryTests: XCTestCase {
             try StartupPersistentStore.reset(defaultStoreURL: fixture.source)
 
             XCTAssertFalse(manager.fileExists(atPath: fixture.source.path))
-            for suffix in ["-wal", "-shm"] {
+            for suffix in ["-wal", "-shm", ".images"] {
                 XCTAssertFalse(manager.fileExists(atPath: fixture.source.path + suffix))
             }
             XCTAssertEqual(try Data(contentsOf: unrelated), Data("keep".utf8))
@@ -258,6 +266,7 @@ final class StartupDataRecoveryTests: XCTestCase {
                 context.insert(ChatServerPreset(name: "Chat fixture", apiURL: "https://chat.example.test", selectedModel: "fixture-model"))
                 context.insert(VoiceServerPreset(name: "Voice server fixture", serverAddress: "https://voice.example.test"))
                 context.insert(VoicePreset(name: "Voice fixture", promptText: "Voice reference"))
+                try ChatImageStore.persistPending(in: context)
                 try context.save()
             }
             // A read-only backup does not compete with Core Data's asynchronous
@@ -274,6 +283,7 @@ final class StartupDataRecoveryTests: XCTestCase {
                     throw CocoaError(.fileReadUnknown)
                 }
             }
+            try ChatImageStore.copy(from: working, to: source)
         }
 
         func sql(_ statement: String, at url: URL? = nil) throws {

@@ -8,6 +8,9 @@
 import Foundation
 
 final class ChatService: NSObject, @unchecked Sendable {
+    @MainActor private var requestPreparation: Task<Void, Never>?
+    @MainActor private var preparationID = UUID()
+
     let configurationProvider: ChatServiceConfiguring
     private let endpointResolver: ChatEndpointResolving
     private let requestPayloadProjector: ChatRequestPayloadProjecting
@@ -226,8 +229,90 @@ final class ChatService: NSObject, @unchecked Sendable {
                 createdAt: message.createdAt
             )
         }
-        let model = configurationProvider.modelIdentifier
-        let initialPayload = projectedRequestPayload(
+        let configuration = ChatServiceConfiguration(
+            apiBaseURL: configurationProvider.apiBaseURL,
+            modelIdentifier: configurationProvider.modelIdentifier,
+            apiKey: configurationProvider.apiKey,
+            providerHint: configurationProvider.providerHint,
+            requestStyleHint: configurationProvider.requestStyleHint,
+            thinkingCapability: configurationProvider.thinkingCapability,
+            thinkingOption: configurationProvider.thinkingOption,
+            apiAdvancedSettings: configurationProvider.apiAdvancedSettings,
+            toolUseSettings: configurationProvider.toolUseSettings)
+        requestPreparation?.cancel()
+        let id = UUID()
+        preparationID = id
+        let generation = stateQueue.sync {
+            self.activeStreamRequest?.task.cancel()
+            self.activeStreamRequest = nil
+            self.cancelActiveToolExecution()
+            self.stopWatchdog()
+            self.isCancelled = true
+            self.advanceRequestGeneration()
+            self.beginNewStreamCallbackEpoch()
+            return self.requestGeneration
+        }
+        let worker = Task.detached(priority: .userInitiated) { [self] in
+            try prepareRequest(sourceMessages: sourceMessages, lastMessageIndex: lastMessageIndex,
+                continuesAssistantMessage: continuesAssistantMessage, configuration: configuration,
+                developerPrompt: developerPrompt, includeImagesInUserContent: includeImagesInUserContent,
+                endpoint: endpoint)
+        }
+        requestPreparation = Task { [weak self] in
+            do {
+                let prepared = try await withTaskCancellationHandler {
+                    try await worker.value
+                } onCancel: { worker.cancel() }
+                try Task.checkCancellation()
+                guard let self, self.preparationID == id,
+                      self.stateQueue.sync(execute: { self.requestGeneration == generation }) else { return }
+                self.requestPreparation = nil
+                self.onResponseMetadata?(ChatResponseMetadata(
+                    continuationSeed: prepared.continuationSeed,
+                    requestUsedPreviousResponseID: prepared.previousResponseID != nil,
+                    requestPreviousResponseID: prepared.previousResponseID))
+                self.stateQueue.async { [weak self] in
+                    guard let self, self.requestGeneration == generation else { return }
+                    self.activeStreamRequest?.task.cancel()
+                    self.activeStreamRequest = nil
+                    self.cancelActiveToolExecution()
+                    self.stopWatchdog()
+                    self.resetStreamState()
+                    self.openAIResponsesConversationItems = prepared.continuationItems
+                    self.advanceRequestGeneration()
+                    var activeContext = prepared.toolContext
+                    activeContext.requestGeneration = self.requestGeneration
+                    self.activeToolLoopContext = activeContext
+                    self.isCancelled = false
+                    self.startStreaming(endpoint: endpoint, requestBodyData: prepared.body)
+                }
+            } catch is CancellationError {
+            } catch {
+                guard let self, self.preparationID == id, !Task.isCancelled,
+                      self.stateQueue.sync(execute: { self.requestGeneration == generation }) else { return }
+                self.requestPreparation = nil
+                self.onError?(error)
+            }
+        }
+    }
+
+    private struct PreparedImageRequest: Sendable {
+        let body: Data
+        let toolContext: ChatToolLoopContext
+        let continuationItems: [JSONValue]
+        let continuationSeed: ChatContinuationSeed
+        let previousResponseID: String?
+    }
+
+    private func prepareRequest(
+        sourceMessages: [ChatRequestSourceMessage], lastMessageIndex: Int,
+        continuesAssistantMessage: Bool, configuration: ChatServiceConfiguration,
+        developerPrompt: String?, includeImagesInUserContent: Bool,
+        endpoint: ChatAPIEndpointCandidate
+    ) throws -> PreparedImageRequest {
+        try Task.checkCancellation()
+        let model = configuration.modelIdentifier
+        let initialPayload = try projectedRequestPayload(
             sourceMessages: sourceMessages,
             developerPrompt: developerPrompt,
             includeImagesInUserContent: includeImagesInUserContent,
@@ -236,15 +321,15 @@ final class ChatService: NSObject, @unchecked Sendable {
         let payload = initialPayload.messages
         let fullBody = try requestBodyBuilder.buildRequestBodyData(
             model: model, messagePayload: payload, developerPrompt: developerPrompt,
-            endpoint: endpoint, apiAdvancedSettings: configurationProvider.apiAdvancedSettings,
-            toolUseSettings: configurationProvider.toolUseSettings,
+            endpoint: endpoint, apiAdvancedSettings: configuration.apiAdvancedSettings,
+            toolUseSettings: configuration.toolUseSettings,
             previousResponseID: nil,
-            thinkingCapability: configurationProvider.thinkingCapability,
-            thinkingOption: configurationProvider.thinkingOption
+            thinkingCapability: configuration.thinkingCapability,
+            thinkingOption: configuration.thinkingOption
         )
         let configurationFingerprint = try ChatRequestContextBuilder.fingerprint(
             request: requestFactory.makeStreamingRequest(
-                endpoint: endpoint, requestBodyData: fullBody, apiKey: configurationProvider.apiKey
+                endpoint: endpoint, requestBodyData: fullBody, apiKey: configuration.apiKey
             ),
             endpoint: endpoint,
             includeImagesInUserContent: includeImagesInUserContent
@@ -257,7 +342,7 @@ final class ChatService: NSObject, @unchecked Sendable {
         let previousResponseID = continuesAssistantMessage ? nil : Self.previousResponseID(
             in: sourceMessages, endpoint: endpoint,
             currentRequestFingerprint: try prefix.fingerprint(),
-            useProviderContinuationIDs: configurationProvider.toolUseSettings.useProviderContinuationIDs(for: endpoint)
+            useProviderContinuationIDs: configuration.toolUseSettings.useProviderContinuationIDs(for: endpoint)
         )
         let continuationSeed = ChatContinuationSeed(
             configurationFingerprint: configurationFingerprint,
@@ -267,7 +352,7 @@ final class ChatService: NSObject, @unchecked Sendable {
         // native history with the same complete prefix sent for this continuation.
         let continuationItems: [JSONValue]
         if continuesAssistantMessage, endpoint.style == .openAIResponses {
-            continuationItems = requestPayloadProjector.transformedMessagesForRequest(
+            continuationItems = try requestPayloadProjector.transformedMessagesForRequest(
                 messages: [sourceMessages[lastMessageIndex]],
                 developerPrompt: nil,
                 includeImagesInUserContent: false,
@@ -295,33 +380,17 @@ final class ChatService: NSObject, @unchecked Sendable {
                 messagePayload: payload,
                 developerPrompt: developerPrompt,
                 endpoint: endpoint,
-                apiAdvancedSettings: configurationProvider.apiAdvancedSettings,
-                toolUseSettings: configurationProvider.toolUseSettings,
+                apiAdvancedSettings: configuration.apiAdvancedSettings,
+                toolUseSettings: configuration.toolUseSettings,
                 previousResponseID: previousResponseID,
-                thinkingCapability: configurationProvider.thinkingCapability,
-                thinkingOption: configurationProvider.thinkingOption
+                thinkingCapability: configuration.thinkingCapability,
+                thinkingOption: configuration.thinkingOption
             )
         }
-        onResponseMetadata?(ChatResponseMetadata(
-            continuationSeed: continuationSeed,
-            requestUsedPreviousResponseID: previousResponseID != nil,
-            requestPreviousResponseID: previousResponseID
-        ))
-        stateQueue.async { [weak self] in
-            guard let self else { return }
-            self.activeStreamRequest?.task.cancel()
-            self.activeStreamRequest = nil
-            self.cancelActiveToolExecution()
-            self.stopWatchdog()
-            self.resetStreamState()
-            self.openAIResponsesConversationItems = continuationItems
-            self.advanceRequestGeneration()
-            var activeContext = toolContext
-            activeContext.requestGeneration = self.requestGeneration
-            self.activeToolLoopContext = activeContext
-            self.isCancelled = false
-            self.startStreaming(endpoint: endpoint, requestBodyData: requestBodyData)
-        }
+        try Task.checkCancellation()
+        return PreparedImageRequest(body: requestBodyData, toolContext: toolContext,
+            continuationItems: continuationItems, continuationSeed: continuationSeed,
+            previousResponseID: previousResponseID)
     }
 
     static func previousResponseID(
@@ -370,8 +439,8 @@ final class ChatService: NSObject, @unchecked Sendable {
         developerPrompt: String?,
         includeImagesInUserContent: Bool,
         endpoint: ChatAPIEndpointCandidate
-    ) -> ChatToolLoopPayload {
-        ChatToolLoopPayload(messages: requestPayloadProjector.transformedMessagesForRequest(
+    ) throws -> ChatToolLoopPayload {
+        ChatToolLoopPayload(messages: try requestPayloadProjector.transformedMessagesForRequest(
             messages: sourceMessages,
             developerPrompt: developerPrompt,
             includeImagesInUserContent: includeImagesInUserContent,
@@ -382,6 +451,9 @@ final class ChatService: NSObject, @unchecked Sendable {
     /// Cancels the current streaming request.
     @MainActor
     func cancelStreaming() {
+        requestPreparation?.cancel()
+        requestPreparation = nil
+        preparationID = UUID()
         let metadata = stateQueue.sync {
             if var round = self.pendingResponseMetadata.generationRound, round.endedAt == nil {
                 round.endedAt = Date()

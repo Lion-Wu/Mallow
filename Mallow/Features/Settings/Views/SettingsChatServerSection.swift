@@ -41,7 +41,7 @@ struct SettingsChatServerSection: View {
                     Button(role: .destructive) {
                         requestDeletion(.chatServerPreset)
                     } label: {
-                        Label("COMMON_ACTION_DELETE", systemImage: "trash")
+                        Label(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), systemImage: "trash")
                             .foregroundStyle(.red)
                     }
                     .buttonStyle(.plain)
@@ -71,7 +71,7 @@ struct SettingsChatServerSection: View {
                 Button(role: .destructive) {
                     requestDeletion(.chatServerPreset)
                 } label: {
-                    Label("COMMON_ACTION_DELETE", systemImage: "trash")
+                    Label(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), systemImage: "trash")
                         .foregroundStyle(.red)
                 }
                 .buttonStyle(.plain)
@@ -94,7 +94,7 @@ struct SettingsChatServerSection: View {
                 onCommit: { viewModel.commitChatServerEdits() }
             )
 
-            LabeledContent("SETTINGS_API_FORMAT") {
+            LabeledContent {
                 Picker("", selection: $viewModel.selectedChatAPIFormatPreference) {
                     ForEach(ChatProviderDescriptorRegistry.apiFormatOptions) { option in
                         Text(option.displayName).tag(option.preference)
@@ -102,6 +102,8 @@ struct SettingsChatServerSection: View {
                 }
                 .labelsHidden()
                 .pickerStyle(.menu)
+            } label: {
+                Text(LocalizedStringResource("SETTINGS_API_FORMAT", defaultValue: "API Format"))
             }
 
             if viewModel.selectedChatAPIFormatPreference == .automatic {

@@ -9,11 +9,17 @@
 import Foundation
 import UniformTypeIdentifiers
 
-@MainActor
-enum ChatImageQuickLookSupport {
+nonisolated enum ChatImageQuickLookSupport {
     private static let directoryName = "MallowQuickLook"
 
-    static func prepareTemporaryPreviewURL(for attachment: ChatImageAttachment) -> URL? {
+    static func prepareTemporaryPreviewURL(for attachment: ChatImageAttachment) async -> URL? {
+        let worker = Task.detached(priority: .userInitiated) { preparePreview(for: attachment) }
+        let url = await withTaskCancellationHandler { await worker.value } onCancel: { worker.cancel() }
+        if Task.isCancelled { cleanupTemporaryPreviewURL(url); return nil }
+        return url
+    }
+
+    private static func preparePreview(for attachment: ChatImageAttachment) -> URL? {
         let fileManager = FileManager.default
         let directoryURL = fileManager.temporaryDirectory
             .appendingPathComponent(directoryName, isDirectory: true)
@@ -29,7 +35,7 @@ enum ChatImageQuickLookSupport {
         let fileURL = directoryURL.appendingPathComponent(filename, isDirectory: false)
 
         do {
-            try attachment.data.write(to: fileURL, options: .atomic)
+            try attachment.loadData().write(to: fileURL, options: .atomic)
             return fileURL
         } catch {
             return nil

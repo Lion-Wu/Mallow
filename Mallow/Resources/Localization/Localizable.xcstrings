@@ -1714,7 +1714,6 @@
       }
     },
     "CAMERA_ACTION_FLASH_OFF" : {
-      "extractionState" : "migrated",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1773,7 +1772,6 @@
       }
     },
     "CAMERA_ACTION_FLASH_ON" : {
-      "extractionState" : "migrated",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -1832,7 +1830,6 @@
       }
     },
     "CAMERA_ACTION_FLIP" : {
-      "extractionState" : "migrated",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8665,7 +8662,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%@: %@"
+            "value" : "%1$@: %2$@"
           }
         },
         "es" : {
@@ -11252,7 +11249,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "API key %lld: %@"
+            "value" : "API key %1$lld: %2$@"
           }
         },
         "es" : {
@@ -16093,7 +16090,7 @@
       }
     },
     "DATA_SELECTED_COUNT" : {
-      "extractionState" : "migrated",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16109,7 +16106,7 @@
         },
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "new",
             "value" : "%lld Selected"
           }
         },
@@ -17152,7 +17149,7 @@
       }
     },
     "EDITOR_ACTION_OPEN_FULLSCREEN" : {
-      "extractionState" : "migrated",
+      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -17168,7 +17165,7 @@
         },
         "en" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "new",
             "value" : "Open full screen editor"
           }
         },
@@ -17211,7 +17208,6 @@
       }
     },
     "EDITOR_FULLSCREEN" : {
-      "extractionState" : "migrated",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -30098,7 +30094,6 @@
       }
     },
     "SETTINGS_HAPTIC_FEEDBACK" : {
-      "extractionState" : "migrated",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -33216,7 +33211,6 @@
       }
     },
     "SIDEBAR_ACTION_TOGGLE" : {
-      "extractionState" : "migrated",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -34442,7 +34436,6 @@
       }
     },
     "STORAGE_TITLE" : {
-      "extractionState" : "migrated",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -47798,7 +47791,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "TTS server error: %d (%@)"
+            "value" : "TTS server error: %1$d (%2$@)"
           }
         },
         "es" : {

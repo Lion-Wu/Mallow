@@ -137,7 +137,7 @@ private struct SettingsPromptPresetSection: View {
         Button(role: .destructive) {
             onDelete()
         } label: {
-            Label("COMMON_ACTION_DELETE", systemImage: "trash")
+            Label(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), systemImage: "trash")
                 .foregroundStyle(.red)
         }
         .buttonStyle(.plain)

@@ -24,16 +24,16 @@ enum AdvancedAPIBackendOverrideID: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var title: LocalizedStringKey {
+    var title: LocalizedStringResource {
         switch self {
         case .openAIResponses:
-            return "API_FORMAT_OPENAI_RESPONSES"
+            return LocalizedStringResource("API_FORMAT_OPENAI_RESPONSES", defaultValue: "OpenAI Responses")
         case .openAIChat:
-            return "API_FORMAT_OPENAI_CHAT_COMPLETIONS"
+            return LocalizedStringResource("API_FORMAT_OPENAI_CHAT_COMPLETIONS", defaultValue: "OpenAI Chat Completions")
         case .anthropic:
-            return "API_FORMAT_ANTHROPIC_MESSAGES"
+            return LocalizedStringResource("API_FORMAT_ANTHROPIC_MESSAGES", defaultValue: "Anthropic Messages")
         case .lmStudioREST:
-            return "API_FORMAT_LM_STUDIO_REST_V1"
+            return LocalizedStringResource("API_FORMAT_LM_STUDIO_REST_V1", defaultValue: "LM Studio REST v1")
         }
     }
 }

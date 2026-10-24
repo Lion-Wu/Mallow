@@ -66,8 +66,8 @@ struct SettingsToolUseSection: View {
                         .settingsActionButtonStyle()
                     }
 
-                    Toggle("TOOLS_CALENDAR", isOn: toolBinding(\.calendarEnabled))
-                    Toggle("TOOLS_REMINDERS", isOn: toolBinding(\.remindersEnabled))
+                    Toggle(LocalizedStringResource("TOOLS_CALENDAR", defaultValue: "Calendar"), isOn: toolBinding(\.calendarEnabled))
+                    Toggle(LocalizedStringResource("TOOLS_REMINDERS", defaultValue: "Reminders"), isOn: toolBinding(\.remindersEnabled))
                     Toggle("TOOLS_LOCATION", isOn: toolBinding(\.locationEnabled))
                     Toggle("TOOLS_MOTION", isOn: toolBinding(\.motionEnabled))
                     Toggle("TOOLS_DEVICE_CONTEXT", isOn: toolBinding(\.deviceContextEnabled))
@@ -280,7 +280,7 @@ struct SettingsDeveloperRequestPolicySection: View {
             Button("COMMON_ACTION_CANCEL", role: .cancel) {
                 statefulEndpointPendingRemoval = nil
             }
-            Button("COMMON_ACTION_DELETE", role: .destructive) {
+            Button(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), role: .destructive) {
                 guard let endpointURL = statefulEndpointPendingRemoval else { return }
                 viewModel.removeOpenAIResponsesStatefulEndpointURL(endpointURL)
                 statefulEndpointPendingRemoval = nil
@@ -328,7 +328,7 @@ struct SettingsDeveloperRequestPolicySection: View {
             Button(role: .destructive) {
                 statefulEndpointPendingRemoval = endpointURL
             } label: {
-                Label("COMMON_ACTION_DELETE", systemImage: "trash")
+                Label(LocalizedStringResource("COMMON_ACTION_DELETE", defaultValue: "Delete"), systemImage: "trash")
                     .labelStyle(.iconOnly)
                     .foregroundStyle(.red)
             }
@@ -351,8 +351,8 @@ struct SettingsDeveloperToolUseSection: View {
         Section {
             LabeledContent("DATA_GLOBAL_STATE") {
                 Text(viewModel.toolUseSettings.isEnabled
-                    ? LocalizedStringKey("COMMON_STATUS_ENABLED")
-                    : LocalizedStringKey("COMMON_STATUS_DISABLED"))
+                    ? LocalizedStringResource("COMMON_STATUS_ENABLED", defaultValue: "Enabled")
+                    : LocalizedStringResource("COMMON_STATUS_DISABLED", defaultValue: "Disabled"))
                     .foregroundStyle(viewModel.toolUseSettings.isEnabled ? .green : .secondary)
             }
 
@@ -375,8 +375,8 @@ struct SettingsDeveloperToolUseSection: View {
             }
             LabeledContent("TOOLS_AUTOMATIC_HIGH_RISK") {
                 Text(viewModel.toolUseSettings.allowHighRiskToolAutoExecution
-                    ? LocalizedStringKey("COMMON_STATUS_ENABLED")
-                    : LocalizedStringKey("COMMON_STATUS_DISABLED"))
+                    ? LocalizedStringResource("COMMON_STATUS_ENABLED", defaultValue: "Enabled")
+                    : LocalizedStringResource("COMMON_STATUS_DISABLED", defaultValue: "Disabled"))
                     .font(.system(.footnote, design: .monospaced))
                     .foregroundStyle(viewModel.toolUseSettings.allowHighRiskToolAutoExecution ? .red : .secondary)
                     .textSelection(.enabled)

@@ -45,7 +45,8 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
     var content: String
     var assistantSegmentsData: Data?
     var openAIResponsesConversationItemsData: Data?
-    var imageAttachmentsData: Data?
+    var images: [ChatImageAttachment]
+    var imageAttachmentReferencesData: Data? { ChatImageAttachment.encodeList(images) }
     var isUser: Bool
     var isError: Bool
     var isActive: Bool
@@ -88,7 +89,7 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
         content = model.content
         assistantSegmentsData = model.assistantSegmentsData
         openAIResponsesConversationItemsData = model.openAIResponsesConversationItemsData
-        imageAttachmentsData = model.imageAttachmentsData
+        images = try model.imageAttachments.map { try $0.materialized() }
         isUser = model.isUser
         isError = model.isError
         isActive = model.isActive
@@ -133,7 +134,7 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
 
         model.assistantSegmentsData = assistantSegmentsData
         model.openAIResponsesConversationItemsData = openAIResponsesConversationItemsData
-        model.imageAttachmentsData = imageAttachmentsData
+        model.imageAttachments = images
         model.isUser = isUser
         model.isActive = isActive
         model.createdAt = createdAt
@@ -174,7 +175,7 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
         if generationRounds.isEmpty { result.generationRounds = existing.generationRounds }
         result.assistantSegmentsData = assistantSegmentsData ?? existing.assistantSegmentsData
         result.openAIResponsesConversationItemsData = openAIResponsesConversationItemsData ?? existing.openAIResponsesConversationItemsData
-        result.imageAttachmentsData = imageAttachmentsData ?? existing.imageAttachmentsData
+        result.images = images.isEmpty ? existing.images : images
         result.modelIdentifier = modelIdentifier ?? existing.modelIdentifier
         result.apiBaseURL = apiBaseURL ?? existing.apiBaseURL
         result.thinkingOptionRawValue = thinkingOptionRawValue ?? existing.thinkingOptionRawValue

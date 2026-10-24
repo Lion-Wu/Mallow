@@ -71,6 +71,7 @@ final class SwiftDataChatSessionRepository: ChatSessionRepository {
     private let throttleInterval: TimeInterval
     private let onSaveError: (Error?) -> Void
     private var immediatePersistenceEnabled = false
+    private var deletedImageDigests = Set<String>()
     var didPersistSessions: ((Set<UUID>) -> Void)?
 
     init(
@@ -131,6 +132,7 @@ final class SwiftDataChatSessionRepository: ChatSessionRepository {
         guard let context = context else { return }
         pendingSessionIDs.remove(session.id)
         pendingSessions.removeValue(forKey: session.id)
+        deletedImageDigests.formUnion(session.messages.flatMap { $0.imageAttachments.map(\.digest) })
         context.delete(session)
         saveContext(label: "delete session")
     }
@@ -228,6 +230,7 @@ final class SwiftDataChatSessionRepository: ChatSessionRepository {
                 return false
             }
 
+            try ChatImageStore.persistPending(in: context)
             try context.save()
             for sessionID in savedSessionIDs {
                 pendingSessions[sessionID]?.markTransientMessageStatePersisted()
@@ -242,6 +245,17 @@ final class SwiftDataChatSessionRepository: ChatSessionRepository {
             let shouldNotifyObserver = notifyObserver || savedSessionIDs.count > 1
             if shouldNotifyObserver, !savedSessionIDs.isEmpty {
                 didPersistSessions?(savedSessionIDs)
+            }
+            if let configuration = context.container.configurations.first, !configuration.isStoredInMemoryOnly {
+                do {
+                    try ChatImageStore.removeUnreferenced(deletedImageDigests, at: configuration.url)
+                    deletedImageDigests.removeAll()
+                } catch {
+                    // The database has committed. Surface cleanup failure without
+                    // marking successfully saved messages as unpersisted.
+                    onSaveError(error)
+                    print("Image cleanup failed: \(error)")
+                }
             }
             return true
         } catch {

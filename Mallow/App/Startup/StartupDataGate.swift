@@ -105,7 +105,7 @@ final class StartupDataCoordinator: ObservableObject {
     }
 
     func finishExport(_ archive: RawDataExport?) {
-        archive?.discard()
+        archive?.discardInBackground()
         isExporting = false
     }
 
@@ -147,7 +147,7 @@ final class StartupDataCoordinator: ObservableObject {
 
     private func finishRecoveryScan(_ result: Result<DataRecoveryPlan, Error>) {
         guard !Task.isCancelled else {
-            if case .success(let plan) = result { plan.discard() }
+            if case .success(let plan) = result { plan.discardInBackground() }
             return
         }
         recoveryTask = nil
@@ -162,23 +162,27 @@ final class StartupDataCoordinator: ObservableObject {
         recoveryTask?.cancel()
         recoveryTask = nil
         isScanningRecovery = false
-        recoveryPlan?.discard()
+        recoveryPlan?.discardInBackground()
         recoveryPlan = nil
         recoveryError = nil
     }
 
-    func confirmRecovery() {
-        guard let plan = recoveryPlan, plan.recoveredCount > 0 else { return }
+    func confirmRecovery() async {
+        guard case .failed = launchState,
+              !isResettingStore, !isExporting,
+              let plan = recoveryPlan, plan.recoveredCount > 0 else { return }
         recoveryPlan = nil
         recoveryError = nil
-        defer { plan.discard() }
-        do { try replacePersistentStore(with: plan) }
+        defer { plan.discardInBackground() }
+        do { try await replacePersistentStore(with: plan) }
         catch { recoveryError = Self.formatErrorMessage(error) }
     }
 
-    func installImportedStore(_ plan: DataRecoveryPlan, credentials: [DataBackupCredential]) throws {
+    func installImportedStore(_ plan: DataRecoveryPlan, credentials: [DataBackupCredential], validateSource: () throws -> Void) async throws {
         guard case .ready = launchState,
               !isResettingStore, !isRecoveryActive, !isExporting else { throw CocoaError(.userCancelled) }
+        try Task.checkCancellation()
+        try validateSource()
         importCleanupError = nil
         do { try DataImportTransaction.begin(operationID: plan.id, credentials: credentials) }
         catch {
@@ -188,7 +192,7 @@ final class StartupDataCoordinator: ObservableObject {
             }
             throw error
         }
-        do { try replacePersistentStore(with: plan) }
+        do { try await replacePersistentStore(with: plan) }
         catch {
             // Restore credentials only when replacement did not commit.
             // A committed replacement never restores the previous database.
@@ -203,12 +207,21 @@ final class StartupDataCoordinator: ObservableObject {
         catch { importCleanupError = Self.formatErrorMessage(error) }
     }
 
-    private func replacePersistentStore(with plan: DataRecoveryPlan) throws {
+    private func replacePersistentStore(with plan: DataRecoveryPlan) async throws {
         onWillResetPersistentStore?()
+        isResettingStore = true
+        defer { isResettingStore = false }
         launchState = .loading
         do {
-            try StartupPersistentStore.replace(with: plan)
-            let container = try Self.makeContainer()
+            // Once installation begins, wait for it even if the presenting task is
+            // cancelled. The candidate files must outlive the database commit.
+            let result = await Self.makeContainerAsync {
+                try StartupPersistentStore.replace(with: plan)
+                return try Self.makeContainer()
+            }
+            let container = try result.get()
+            // Allow preparation to report a read failure for the new container.
+            isResettingStore = false
             prepareContainer(container)
             guard case .loading = launchState else { throw CocoaError(.fileReadCorruptFile) }
             launchState = .ready(container)

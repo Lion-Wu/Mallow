@@ -129,7 +129,7 @@ struct ChatComposerPanel: View {
                     }
                     .padding(.top, 4)
                     .padding(.trailing, 8)
-                    .accessibilityLabel("EDITOR_ACTION_OPEN_FULLSCREEN")
+                    .accessibilityLabel(LocalizedStringResource("EDITOR_ACTION_OPEN_FULLSCREEN", defaultValue: "Open full screen editor"))
                 }
                 #endif
             }

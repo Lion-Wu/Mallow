@@ -49,7 +49,7 @@ struct SettingsAdvancedAPIParameterControls: View {
                 value: $viewModel.apiAdvancedSettings.anthropicMaxTokens
             )
             Picker("THINKING_TYPE", selection: $viewModel.apiAdvancedSettings.anthropicThinkingModeOverride) {
-                Text("COMMON_DEFAULT").tag("")
+                Text(LocalizedStringResource("COMMON_DEFAULT", defaultValue: "Default")).tag("")
                 Text(verbatim: "disabled").tag("disabled")
                 Text(verbatim: "adaptive").tag("adaptive")
                 Text(verbatim: "enabled").tag("enabled")
@@ -67,7 +67,7 @@ struct SettingsAdvancedAPIParameterControls: View {
                 }
             } else if viewModel.apiAdvancedSettings.anthropicThinkingModeOverride == "adaptive" {
                 TextField("THINKING_OUTPUT_EFFORT", text: $viewModel.apiAdvancedSettings.anthropicEffortOverride,
-                          prompt: Text("COMMON_DEFAULT"))
+                          prompt: Text(LocalizedStringResource("COMMON_DEFAULT", defaultValue: "Default")))
             }
             SettingsAdvancedAPISamplingControls(
                 sampling: $viewModel.apiAdvancedSettings.anthropicSampling,

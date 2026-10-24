@@ -63,13 +63,17 @@ struct SystemCameraCapturePicker: UIViewControllerRepresentable {
                 return
             }
 
-            let selectedImage = (info[.editedImage] ?? info[.originalImage]) as? UIImage
-            guard let imageData = selectedImage?.jpegData(compressionQuality: 0.92), !imageData.isEmpty else {
+            guard let selectedImage = (info[.editedImage] ?? info[.originalImage]) as? UIImage else {
                 parent.onFailure()
                 return
             }
-
-            parent.onCapture(imageData, "image/jpeg")
+            Task { @MainActor [parent] in
+                let data = await Task.detached(priority: .userInitiated) {
+                    selectedImage.jpegData(compressionQuality: 0.92)
+                }.value
+                guard let data, !data.isEmpty else { parent.onFailure(); return }
+                parent.onCapture(data, "image/jpeg")
+            }
         }
     }
 }

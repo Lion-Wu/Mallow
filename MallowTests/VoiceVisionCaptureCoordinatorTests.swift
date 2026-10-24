@@ -15,7 +15,7 @@ final class VoiceVisionCaptureCoordinatorTests: XCTestCase {
         XCTAssertFalse(coordinator.state.isRecording)
     }
 
-    func testHeldUtteranceKeepsSamplesAcrossRecordingPause() {
+    func testHeldUtteranceKeepsSamplesAcrossRecordingPause() throws {
         var coordinator = VoiceVisionCaptureCoordinator()
         let start = TestDate.reference
 
@@ -53,7 +53,7 @@ final class VoiceVisionCaptureCoordinatorTests: XCTestCase {
             isAvailable: true,
             now: start.addingTimeInterval(4)
         )
-        XCTAssertEqual(selected.map(\.data), [Data([1]), Data([2])])
+        XCTAssertEqual(try selected.map { try $0.loadData() }, [Data([1]), Data([2])])
         XCTAssertEqual(coordinator.state.sampleCount, 2)
     }
 }

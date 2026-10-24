@@ -152,12 +152,27 @@ final class ChatStreamingSessionCoordinatorTests: XCTestCase {
     }
 
     func testFailedTextAttemptKeepsDrainedPlaybackCursorAndPlayPauseIntent() {
+        let settings = SettingsManager.shared
+        let originalChatSettings = settings.chatSettings
+        let originalCatalog = settings.readyChatModelCatalog
+        defer {
+            settings.chatSettings = originalChatSettings
+            settings.readyChatModelCatalog = originalCatalog
+        }
+        settings.chatSettings = ChatSettings(apiURL: "https://chat.example.test", selectedModel: "playback-test", apiKey: "test-key")
+        settings.readyChatModelCatalog = ChatModelCatalogReadiness(
+            apiURL: settings.chatSettings.apiURL,
+            apiKey: settings.chatSettings.apiKey,
+            formatPreference: settings.chatModelCapabilities.selectedChatAPIFormatPreference(),
+            modelIDs: [settings.chatSettings.selectedModel]
+        )
+
         for shouldPlay in [true, false] {
             let audio = GlobalAudioManager()
             let service = StubChatStreamingService()
             let viewModel = ChatViewModel(
                 chatSession: ChatSession(title: "Retry playback"),
-                settingsManager: .shared,
+                settingsManager: settings,
                 reachability: ServerReachabilityMonitor(),
                 audioManager: audio,
                 chatService: service,
