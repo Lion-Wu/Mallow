@@ -273,7 +273,7 @@ private extension ContentView {
             ChatSession.self,
             ChatMessage.self,
             AppSettings.self
-        ]),
+        ], version: StartupPersistentStore.version),
         configurations: [ModelConfiguration(isStoredInMemoryOnly: true)]
     )
     _ = chatSessions.attach(context: container.mainContext)
@@ -313,7 +313,7 @@ private extension ContentView {
             ChatSession.self,
             ChatMessage.self,
             AppSettings.self
-        ]),
+        ], version: StartupPersistentStore.version),
         configurations: [ModelConfiguration(isStoredInMemoryOnly: true)]
     )
     _ = chatSessions.attach(context: container.mainContext)

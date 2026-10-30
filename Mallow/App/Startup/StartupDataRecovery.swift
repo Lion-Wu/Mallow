@@ -66,11 +66,14 @@ struct DataRecoveryPlan: Identifiable, Sendable {
 
 /// The application always uses one fixed persistent store.
 nonisolated enum StartupPersistentStore {
+    static let version = Schema.Version(1, 0, 0)
+    static var versionString: String { "\(version.major).\(version.minor).\(version.patch)" }
+
     static let schema = Schema([
         ChatSession.self, ChatMessage.self,
         AppSettings.self, ChatServerPreset.self, VoiceServerPreset.self,
         VoicePreset.self, SystemPromptPreset.self
-    ])
+    ], version: version)
 
     static var defaultURL: URL { ModelConfiguration().url }
     private static let replacementKey = "MallowImportID"

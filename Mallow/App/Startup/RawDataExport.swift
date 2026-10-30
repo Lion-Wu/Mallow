@@ -103,7 +103,7 @@ nonisolated struct RawDataExport {
             }
         }
         let manifest: [String: Any] = [
-            "formatVersion": 1,
+            "formatVersion": StartupPersistentStore.versionString,
             "bundleIdentifier": Bundle.main.bundleIdentifier ?? "Mallow",
             "appVersion": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
             "appBuild": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""

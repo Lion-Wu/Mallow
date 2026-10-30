@@ -15,8 +15,8 @@ nonisolated enum DataBackupArchive {
         }
         let manifestURL = directory.appendingPathComponent("Manifest.json")
         try archive.extract(manifest, to: manifestURL)
-        struct Manifest: Decodable { let formatVersion: Int }
-        guard try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: manifestURL)).formatVersion == 1 else {
+        struct Manifest: Decodable { let formatVersion: String }
+        guard try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: manifestURL)).formatVersion == StartupPersistentStore.versionString else {
             throw DataBackupError.unsupportedFormat
         }
         guard !archive.entries.contains(where: { $0.name == prefix + "Stores/" + DataImportTransaction.fileName }) else {
