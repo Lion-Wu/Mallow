@@ -9,7 +9,7 @@ import Foundation
 
 extension ChatService {
     /// Builds the request and starts the URLSession stream on the serial state queue.
-    func startStreaming(endpoint: ChatAPIEndpointCandidate, requestBodyData: Data) {
+    func startStreaming(endpoint: ChatAPIEndpointCandidate, requestBodyData: Data, toolRegistry: ChatToolRegistry) {
         let request = requestFactory.makeStreamingRequest(
             endpoint: endpoint,
             requestBodyData: requestBodyData,
@@ -29,7 +29,7 @@ extension ChatService {
         )
         deliverResponseMetadata(pendingResponseMetadata)
         let task = session.dataTask(with: request)
-        activeStreamRequest = ChatActiveStreamRequest(task: task, endpoint: endpoint)
+        activeStreamRequest = ChatActiveStreamRequest(task: task, endpoint: endpoint, toolRegistry: toolRegistry)
 
         isToolContinuationStarting = false
         updateLongWaitNotice(nil)

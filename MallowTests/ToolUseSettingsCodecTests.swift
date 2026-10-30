@@ -6,22 +6,16 @@ final class ToolUseSettingsCodecTests: XCTestCase {
         let decoded = ToolUseSettingsCodec.decode(from: nil)
 
         XCTAssertFalse(decoded.isEnabled)
-        XCTAssertFalse(decoded.calendarEnabled)
-        XCTAssertFalse(decoded.remindersEnabled)
-        XCTAssertFalse(decoded.locationEnabled)
-        XCTAssertFalse(decoded.motionEnabled)
-        XCTAssertFalse(decoded.deviceContextEnabled)
-        XCTAssertFalse(decoded.clipboardEnabled)
-        XCTAssertFalse(decoded.urlActionsEnabled)
-        XCTAssertFalse(decoded.javaScriptRuntimeEnabled)
-        XCTAssertFalse(decoded.timeEnabled)
+        for group in ChatToolRegistry.builtIn.groups {
+            XCTAssertFalse(decoded.isGroupEnabled(group.id))
+        }
         XCTAssertEqual(decoded.authorizationMode, .readOnly)
         XCTAssertFalse(decoded.allowHighRiskToolAutoExecution)
         XCTAssertTrue(decoded.useProviderContinuationIDs)
         XCTAssertEqual(decoded.openAIResponsesStatefulEndpointURLs, [
             "https://api.openai.com/v1/responses"
         ])
-        XCTAssertTrue(decoded.enabledToolIDs.isEmpty)
+        XCTAssertTrue(decoded.enabledGroups.isEmpty)
     }
 
     func testDeveloperRuntimeSettingsOnlyApplyWhileDeveloperModeIsEnabled() {
@@ -31,7 +25,7 @@ final class ToolUseSettingsCodecTests: XCTestCase {
 
         var toolSettings = ToolUseSettings.defaults
         toolSettings.isEnabled = true
-        toolSettings.timeEnabled = true
+        toolSettings.setGroup("time", enabled: true)
         toolSettings.useProviderContinuationIDs = false
         toolSettings.openAIResponsesStatefulEndpointURLs = ["https://example.com/v1/responses"]
 
@@ -47,7 +41,7 @@ final class ToolUseSettingsCodecTests: XCTestCase {
         XCTAssertFalse(disabledAdvancedSettings.openAIChatSampling.seedEnabled)
         XCTAssertEqual(disabledAdvancedSettings.openAIChatSampling.seed, 0)
         XCTAssertTrue(disabledToolSettings.isEnabled)
-        XCTAssertTrue(disabledToolSettings.timeEnabled)
+        XCTAssertTrue(disabledToolSettings.isGroupEnabled("time"))
         XCTAssertEqual(disabledToolSettings.useProviderContinuationIDs, ToolUseSettings.defaults.useProviderContinuationIDs)
         XCTAssertEqual(
             disabledToolSettings.openAIResponsesStatefulEndpointURLs,
@@ -121,7 +115,6 @@ final class ToolUseSettingsCodecTests: XCTestCase {
                 name: "Read-write still asks for \($0.rawValue)",
                 tool: $0,
                 settings: readWrite,
-                endpoint: localEndpoint,
                 expected: .ask
             )
         }
@@ -130,7 +123,6 @@ final class ToolUseSettingsCodecTests: XCTestCase {
                 name: "Explicit automatic permission allows \($0.rawValue)",
                 tool: $0,
                 settings: automatic,
-                endpoint: localEndpoint,
                 expected: .allow
             )
         }
@@ -138,62 +130,37 @@ final class ToolUseSettingsCodecTests: XCTestCase {
             name: "Ask-every-time overrides automatic permission",
             tool: .javaScriptRun,
             settings: askEveryTime,
-            endpoint: localEndpoint,
-            expected: .ask
-        ))
-        cases.append(AuthorizationDecisionCase(
-            name: "Remote endpoint uses the same high-risk policy",
-            tool: .systemOpenURL,
-            settings: readWrite,
-            endpoint: remoteEndpoint,
             expected: .ask
         ))
 
         assertAuthorizationDecisions(cases)
     }
 
-    func testRemoteReadAuthorizationPolicyMatrix() {
+    func testReadAuthorizationPolicyMatrix() {
         let settings = ToolUseSettings(
             isEnabled: true,
-            calendarEnabled: true,
-            remindersEnabled: false,
-            locationEnabled: false,
-            motionEnabled: false,
-            deviceContextEnabled: true,
-            timeEnabled: true
+            enabledGroups: ["calendar", "deviceContext", "time"]
         )
         assertAuthorizationDecisions([
             .init(
                 name: "Calendar read",
                 tool: .calendarListEvents,
                 settings: settings,
-                endpoint: remoteEndpoint,
                 expected: .allow
             ),
             .init(
                 name: "Device context read",
                 tool: .deviceContext,
                 settings: settings,
-                endpoint: remoteEndpoint,
                 expected: .allow
             ),
             .init(
                 name: "System time read",
                 tool: .systemGetTime,
                 settings: settings,
-                endpoint: remoteEndpoint,
                 expected: .allow
             )
         ])
-    }
-
-    private var localEndpoint: ChatAPIEndpointCandidate {
-        ChatAPIEndpointCandidate(
-            provider: .lmStudio,
-            style: .lmStudioRESTV1,
-            chatURL: URL(string: "http://localhost:1234/api/v1/chat")!,
-            modelsURL: URL(string: "http://localhost:1234/api/v1/models")!
-        )
     }
 
     private var remoteEndpoint: ChatAPIEndpointCandidate {
@@ -211,14 +178,7 @@ final class ToolUseSettingsCodecTests: XCTestCase {
     ) -> ToolUseSettings {
         ToolUseSettings(
             isEnabled: true,
-            calendarEnabled: false,
-            remindersEnabled: false,
-            locationEnabled: true,
-            motionEnabled: false,
-            deviceContextEnabled: false,
-            clipboardEnabled: true,
-            urlActionsEnabled: true,
-            javaScriptRuntimeEnabled: true,
+            enabledGroups: ["location", "clipboard", "urlActions", "javaScriptRuntime"],
             authorizationMode: mode,
             allowHighRiskToolAutoExecution: allowAutomatic
         )
@@ -226,16 +186,13 @@ final class ToolUseSettingsCodecTests: XCTestCase {
 
     private func assertAuthorizationDecisions(_ cases: [AuthorizationDecisionCase]) {
         for testCase in cases {
-            XCTAssertTrue(
-                testCase.settings.enabledToolIDs.contains(testCase.tool),
-                testCase.name
-            )
+            guard let registration = ChatToolRegistry.builtIn.registration(id: testCase.tool) else {
+                XCTFail("Missing tool registration: \(testCase.tool.rawValue)")
+                continue
+            }
+            XCTAssertTrue(testCase.settings.isEnabled && registration.isEnabled(testCase.settings), testCase.name)
             XCTAssertEqual(
-                ChatToolAuthorizationPolicy.decision(
-                    for: testCase.tool,
-                    settings: testCase.settings,
-                    endpoint: testCase.endpoint
-                ),
+                ChatToolAuthorizationPolicy.decision(for: registration.definition, settings: testCase.settings),
                 testCase.expected,
                 testCase.name
             )
@@ -247,6 +204,5 @@ private struct AuthorizationDecisionCase {
     let name: String
     let tool: ChatToolID
     let settings: ToolUseSettings
-    let endpoint: ChatAPIEndpointCandidate
     let expected: ChatToolAuthorizationPolicy.Decision
 }

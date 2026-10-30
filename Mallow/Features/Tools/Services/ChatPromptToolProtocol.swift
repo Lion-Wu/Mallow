@@ -260,7 +260,7 @@ enum ChatPromptToolProtocol {
             .object([
                 "type": .string("function"),
                 "function": .object([
-                    "name": .string(definition.id.rawValue),
+                    "name": .string(definition.name),
                     "description": .string(definition.description),
                     "parameters": definition.parametersSchema
                 ])

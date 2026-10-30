@@ -66,16 +66,10 @@ struct SettingsToolUseSection: View {
                         .settingsActionButtonStyle()
                     }
 
-                    Toggle(LocalizedStringResource("TOOLS_CALENDAR", defaultValue: "Calendar"), isOn: toolBinding(\.calendarEnabled))
-                    Toggle(LocalizedStringResource("TOOLS_REMINDERS", defaultValue: "Reminders"), isOn: toolBinding(\.remindersEnabled))
-                    Toggle("TOOLS_LOCATION", isOn: toolBinding(\.locationEnabled))
-                    Toggle("TOOLS_MOTION", isOn: toolBinding(\.motionEnabled))
-                    Toggle("TOOLS_DEVICE_CONTEXT", isOn: toolBinding(\.deviceContextEnabled))
-                    Toggle("TOOLS_TIME", isOn: toolBinding(\.timeEnabled))
-                        .disabled(viewModel.toolUseSettings.requiresTimeTool)
-                    Toggle("TOOLS_CLIPBOARD", isOn: toolBinding(\.clipboardEnabled))
-                    Toggle("TOOLS_URL_ACTIONS", isOn: toolBinding(\.urlActionsEnabled))
-                    Toggle("TOOLS_JAVASCRIPT_RUNTIME", isOn: toolBinding(\.javaScriptRuntimeEnabled))
+                    ForEach(ChatToolRegistry.builtIn.groups) { group in
+                        Toggle(group.title, isOn: groupBinding(group.id))
+                            .disabled(group.id == "time" && viewModel.toolUseSettings.requiresTimeTool)
+                    }
 
                     if let status = viewModel.toolUseStatusMessage {
                         Text(status)
@@ -89,16 +83,7 @@ struct SettingsToolUseSection: View {
     }
 
     private var allToolsEnabled: Bool {
-        let settings = viewModel.toolUseSettings
-        return settings.calendarEnabled &&
-            settings.remindersEnabled &&
-            settings.locationEnabled &&
-            settings.motionEnabled &&
-            settings.deviceContextEnabled &&
-            settings.timeEnabled &&
-            settings.clipboardEnabled &&
-            settings.urlActionsEnabled &&
-            settings.javaScriptRuntimeEnabled
+        ChatToolRegistry.builtIn.groups.allSatisfy { viewModel.toolUseSettings.isGroupEnabled($0.id) }
     }
 
     private var highRiskAutoExecutionBinding: Binding<Bool> {
@@ -142,19 +127,11 @@ struct SettingsToolUseSection: View {
 
     private func setAllToolsEnabled(_ enabled: Bool) {
         var next = viewModel.toolUseSettings
-        next.calendarEnabled = enabled
-        next.remindersEnabled = enabled
-        next.locationEnabled = enabled
-        next.motionEnabled = enabled
-        next.deviceContextEnabled = enabled
-        next.timeEnabled = enabled
-        next.clipboardEnabled = enabled
-        next.urlActionsEnabled = enabled
-        next.javaScriptRuntimeEnabled = enabled
+        for group in ChatToolRegistry.builtIn.groups { next.setGroup(group.id, enabled: enabled) }
         viewModel.toolUseSettings = next
     }
 
-    private func toolBinding(_ keyPath: WritableKeyPath<ToolUseSettings, Bool>) -> Binding<Bool> {
+    private func toolBinding<Value>(_ keyPath: WritableKeyPath<ToolUseSettings, Value>) -> Binding<Value> {
         Binding(
             get: { viewModel.toolUseSettings[keyPath: keyPath] },
             set: { value in
@@ -165,12 +142,12 @@ struct SettingsToolUseSection: View {
         )
     }
 
-    private func toolBinding<Value: Equatable>(_ keyPath: WritableKeyPath<ToolUseSettings, Value>) -> Binding<Value> {
+    private func groupBinding(_ id: String) -> Binding<Bool> {
         Binding(
-            get: { viewModel.toolUseSettings[keyPath: keyPath] },
+            get: { viewModel.toolUseSettings.isGroupEnabled(id) },
             set: { value in
                 var next = viewModel.toolUseSettings
-                next[keyPath: keyPath] = value
+                next.setGroup(id, enabled: value)
                 viewModel.toolUseSettings = next
             }
         )
@@ -344,7 +321,7 @@ struct SettingsDeveloperToolUseSection: View {
     @ObservedObject var viewModel: SettingsViewModel
 
     private var allDefinitions: [ChatToolDefinition] {
-        ChatToolID.allCases.map { ChatToolDefinitions.definition(for: $0) }
+        ChatToolRegistry.builtIn.definitions
     }
 
     var body: some View {
@@ -357,7 +334,7 @@ struct SettingsDeveloperToolUseSection: View {
             }
 
             LabeledContent("TOOLS_ENABLED_LIST") {
-                Text(LocalizedStringResource("TOOLS_ENABLED_COUNT_RATIO", defaultValue: "\(viewModel.toolUseSettings.enabledToolIDs.count) / \(ChatToolID.allCases.count)"))
+                Text(LocalizedStringResource("TOOLS_ENABLED_COUNT_RATIO", defaultValue: "\(allDefinitions.filter { isEnabled($0.id) }.count) / \(allDefinitions.count)"))
                     .monospacedDigit()
             }
 
@@ -400,7 +377,7 @@ struct SettingsDeveloperToolUseSection: View {
                     .padding(.top, 6)
                 } label: {
                     HStack {
-                        Label(definition.id.rawValue, systemImage: iconName(for: definition.id))
+                        Label(definition.name, systemImage: iconName(for: definition.id))
                             .font(.subheadline.weight(.semibold))
                         Spacer()
                         Text(stateText(for: definition.id))
@@ -421,7 +398,8 @@ struct SettingsDeveloperToolUseSection: View {
     }
 
     private func isEnabled(_ id: ChatToolID) -> Bool {
-        viewModel.toolUseSettings.isEnabled && viewModel.toolUseSettings.enabledToolIDs.contains(id)
+        let settings = viewModel.toolUseSettings
+        return settings.isEnabled && ChatToolRegistry.builtIn.registration(id: id)?.isEnabled(settings) == true
     }
 
     private func stateText(for id: ChatToolID) -> String {
@@ -429,26 +407,7 @@ struct SettingsDeveloperToolUseSection: View {
     }
 
     private func iconName(for id: ChatToolID) -> String {
-        switch id {
-        case .calendarListEvents, .calendarCreateEvent, .calendarDeleteEvent, .calendarShowEvents:
-            return "calendar"
-        case .remindersListReminders, .remindersCreateReminder, .remindersDeleteReminder, .remindersShowReminders:
-            return "checklist"
-        case .locationCurrent:
-            return "location"
-        case .motionDevice:
-            return "gyroscope"
-        case .deviceContext:
-            return "desktopcomputer"
-        case .clipboardGetText, .clipboardSetText:
-            return "doc.on.clipboard"
-        case .systemOpenURL:
-            return "arrow.up.forward.app"
-        case .systemGetTime:
-            return "clock"
-        case .javaScriptRun:
-            return "curlybraces"
-        }
+        ChatToolRegistry.builtIn.registration(id: id)?.group.icon ?? "wrench.and.screwdriver"
     }
 
     private func toolDetailRow(_ title: LocalizedStringKey, value: String) -> some View {

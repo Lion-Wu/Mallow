@@ -253,7 +253,7 @@ final class ChatStreamingSessionCoordinatorTests: XCTestCase {
             service.stateQueue.async {
                 service.beginNewStreamCallbackEpoch()
                 service.isCancelled = false
-                service.activeStreamRequest = ChatActiveStreamRequest(task: task, endpoint: endpoint)
+                service.activeStreamRequest = ChatActiveStreamRequest(task: task, endpoint: endpoint, toolRegistry: .builtIn)
                 service.emitDelta("ok")
                 service.finishStreamOrRunPendingTools()
                 service.urlSession(
@@ -279,7 +279,7 @@ final class ChatStreamingSessionCoordinatorTests: XCTestCase {
         let executor = SuspendedChatToolExecutor()
         var toolSettings = ToolUseSettings.defaults
         toolSettings.isEnabled = true
-        toolSettings.timeEnabled = true
+        toolSettings.setGroup("time", enabled: true)
         let service = ChatService(
             configurationProvider: ChatServiceConfiguration(
                 apiBaseURL: "https://example.invalid/v1",
@@ -302,7 +302,8 @@ final class ChatStreamingSessionCoordinatorTests: XCTestCase {
             model: "model",
             endpoint: endpoint,
             iteration: 0,
-            previousResponseID: nil
+            previousResponseID: nil,
+            toolRegistry: try ChatToolCatalog.prepareBuiltIn(settings: toolSettings)
         )
         mutableContext.requestGeneration = 1
         let context = mutableContext
@@ -320,7 +321,8 @@ final class ChatStreamingSessionCoordinatorTests: XCTestCase {
                 service.isCancelled = false
                 service.activeStreamRequest = ChatActiveStreamRequest(
                     task: service.session.dataTask(with: endpoint.chatURL),
-                    endpoint: endpoint
+                    endpoint: endpoint,
+                    toolRegistry: context.toolRegistry
                 )
                 service.activeToolLoopContext = context
                 service.pendingToolCalls = [call]
@@ -381,10 +383,13 @@ private actor SuspendedChatToolExecutor: ChatToolExecuting {
     private var cancellationObserved = false
     private var performedSideEffect = false
 
+    func prepareTools(settings: ToolUseSettings) async throws -> ChatToolRegistry {
+        try ChatToolCatalog.prepareBuiltIn(settings: settings)
+    }
+
     func execute(
         _ call: ChatToolCallEnvelope,
-        settings: ToolUseSettings,
-        endpoint: ChatAPIEndpointCandidate
+        context: ChatToolExecutionContext
     ) async -> ChatToolResultEnvelope {
         started = true
         do {

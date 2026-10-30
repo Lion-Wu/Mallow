@@ -11,12 +11,10 @@ enum ChatToolSchemaEncoder {
     static func applyToolSchemas(
         to requestBody: inout [String: Any],
         endpoint: ChatAPIEndpointCandidate,
-        settings: ToolUseSettings,
-        previousResponseID: String? = nil,
-        allowedToolIDs: Set<ChatToolID>? = nil
+        definitions: [ChatToolDefinition],
+        previousResponseID: String? = nil
     ) {
-        let definitions = ChatToolDefinitions.definitions(enabledIDs: settings.enabledToolIDs)
-        guard settings.isEnabled, !definitions.isEmpty else { return }
+        guard !definitions.isEmpty else { return }
         applyGeneralToolInstructions(
             to: &requestBody,
             endpoint: endpoint,
@@ -27,10 +25,7 @@ enum ChatToolSchemaEncoder {
         case .openAIResponsesAPI:
             removeOpenAIResponsesJSONMode(from: &requestBody)
             requestBody["tools"] = definitions.map(openAIResponsesTool)
-            requestBody["tool_choice"] = openAIResponsesToolChoice(
-                definitions: definitions,
-                allowedToolIDs: allowedToolIDs
-            )
+            requestBody["tool_choice"] = "auto"
 
         case .openAIChatCompletionsAPI:
             requestBody.removeValue(forKey: "response_format")
@@ -106,44 +101,18 @@ enum ChatToolSchemaEncoder {
     private static func openAIResponsesTool(_ definition: ChatToolDefinition) -> [String: Any] {
         let tool: [String: Any] = [
             "type": "function",
-            "name": definition.id.rawValue,
+            "name": definition.name,
             "description": definition.description,
             "parameters": definition.parametersSchema.jsonObject
         ]
         return tool
     }
 
-    private static func openAIResponsesToolChoice(
-        definitions: [ChatToolDefinition],
-        allowedToolIDs: Set<ChatToolID>?
-    ) -> Any {
-        guard let allowedToolIDs, !allowedToolIDs.isEmpty else {
-            return "auto"
-        }
-        let allowedTools = definitions
-            .map(\.id)
-            .filter(allowedToolIDs.contains)
-            .map { id in
-                [
-                    "type": "function",
-                    "name": id.rawValue
-                ]
-            }
-        guard !allowedTools.isEmpty, allowedTools.count < definitions.count else {
-            return "auto"
-        }
-        return [
-            "type": "allowed_tools",
-            "mode": "auto",
-            "tools": allowedTools
-        ]
-    }
-
     private static func openAIChatCompletionsTool(_ definition: ChatToolDefinition) -> [String: Any] {
         [
             "type": "function",
             "function": [
-                "name": definition.id.rawValue,
+                "name": definition.name,
                 "description": definition.description,
                 "parameters": definition.parametersSchema.jsonObject
             ]
@@ -152,7 +121,7 @@ enum ChatToolSchemaEncoder {
 
     private static func anthropicTool(_ definition: ChatToolDefinition) -> [String: Any] {
         [
-            "name": definition.id.rawValue,
+            "name": definition.name,
             "description": definition.description,
             "input_schema": definition.parametersSchema.jsonObject
         ]

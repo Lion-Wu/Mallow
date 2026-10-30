@@ -7,17 +7,18 @@
 
 import Foundation
 
-struct ChatToolArgumentReader {
-    private let values: [String: Any]
+struct ChatToolArgumentReader: Sendable {
+    private let fields: [String: JSONValue]
+    private var values: [String: Any] { fields.mapValues(\.jsonObject) }
 
     var argumentsValue: JSONValue {
-        .object(values.mapValues(JSONValue.normalized))
+        .object(fields)
     }
 
     init(argumentsJSON: String) throws {
         let trimmed = argumentsJSON.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            values = [:]
+            fields = [:]
             return
         }
         guard let data = trimmed.data(using: .utf8),
@@ -25,7 +26,7 @@ struct ChatToolArgumentReader {
               let dictionary = object as? [String: Any] else {
             throw ChatToolError.invalidArguments(NSLocalizedString("TOOLS_ARGUMENTS_INVALID_JSON", value: "Tool arguments were not valid JSON.", comment: "Tool-use error"))
         }
-        values = dictionary
+        fields = dictionary.mapValues(JSONValue.normalized)
     }
 
     func string(_ key: String) -> String? {

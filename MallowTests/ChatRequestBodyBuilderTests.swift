@@ -19,6 +19,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
             developerPrompt: nil,
             endpoint: endpoint,
             apiAdvancedSettings: APIAdvancedSettings(openAIChatMaxCompletionTokens: 777),
+            toolDefinitions: [],
             thinkingCapability: nil,
             thinkingOption: nil
         )
@@ -50,6 +51,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
             developerPrompt: "new system prompt",
             endpoint: endpoint,
             apiAdvancedSettings: APIAdvancedSettings(),
+            toolDefinitions: [],
             thinkingCapability: nil,
             thinkingOption: nil
         )
@@ -94,6 +96,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
                 anthropicThinkingBudgetEnabled: true,
                 anthropicThinkingBudget: 1024
             ),
+            toolDefinitions: [],
             thinkingCapability: nil,
             thinkingOption: .high
         )
@@ -136,6 +139,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
             developerPrompt: "local system",
             endpoint: endpoint,
             apiAdvancedSettings: APIAdvancedSettings(lmStudioMaxTokens: 256),
+            toolDefinitions: [],
             thinkingCapability: nil,
             thinkingOption: nil
         )
@@ -201,20 +205,15 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
             previousResponseID: "resp_second_tool"
         )
 
+        let toolSettings = ToolUseSettings(isEnabled: true, enabledGroups: ["deviceContext"])
         let data = try ChatRequestBodyBuilder().buildRequestBodyData(
             model: "local-model",
             messagePayload: secondPayload,
             developerPrompt: "local system",
             endpoint: endpoint,
             apiAdvancedSettings: APIAdvancedSettings(),
-            toolUseSettings: ToolUseSettings(
-                isEnabled: true,
-                calendarEnabled: false,
-                remindersEnabled: false,
-                locationEnabled: false,
-                motionEnabled: false,
-                deviceContextEnabled: true
-            ),
+            toolUseSettings: toolSettings,
+            toolDefinitions: try ChatToolCatalog.prepareBuiltIn(settings: toolSettings).definitions,
             previousResponseID: "resp_second_tool",
             thinkingCapability: nil,
             thinkingOption: nil
@@ -250,6 +249,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
             developerPrompt: nil,
             endpoint: endpoint,
             apiAdvancedSettings: APIAdvancedSettings(),
+            toolDefinitions: [],
             previousResponseID: "resp_previous",
             thinkingCapability: nil,
             thinkingOption: nil
@@ -489,6 +489,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
             developerPrompt: nil,
             endpoint: openAIEndpoint,
             apiAdvancedSettings: APIAdvancedSettings(openAIChatMaxCompletionTokens: 404, openAIChatSampling: sampling),
+            toolDefinitions: [],
             thinkingCapability: nil,
             thinkingOption: nil
         )
@@ -512,6 +513,7 @@ final class ChatRequestBodyBuilderTests: XCTestCase {
             developerPrompt: nil,
             endpoint: lmStudioNativeEndpoint,
             apiAdvancedSettings: APIAdvancedSettings(lmStudioMaxTokens: 606, lmStudioSampling: sampling),
+            toolDefinitions: [],
             thinkingCapability: nil,
             thinkingOption: nil
         )

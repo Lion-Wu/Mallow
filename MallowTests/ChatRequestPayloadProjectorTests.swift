@@ -187,7 +187,7 @@ final class ChatRequestPayloadProjectorTests: XCTestCase {
             argumentsJSON: #"{"query":"secret request"}"#,
             provider: nil
         )
-        let sensitiveSummary = ChatToolDefinitions.activitySummary(
+        let sensitiveSummary = ChatToolRegistry.builtIn.summary(
             for: call,
             resultSummary: "secret result"
         )

@@ -92,7 +92,7 @@ struct ChatToolCallAccumulator: Equatable {
             }
 
             let finishReason = (choice["finish_reason"] as? String)?.lowercased()
-            if isOpenAIToolFinishReason(finishReason) {
+            if finishReason == "tool_calls" {
                 completed.append(contentsOf: openAIChunks.sorted(by: { $0.key < $1.key }).compactMap { _, partial in
                     partial.name.isEmpty ? nil : partial.envelope(provider: provider)
                 })
@@ -107,10 +107,6 @@ struct ChatToolCallAccumulator: Equatable {
             for item in toolCalls {
                 absorbChatCompletionsToolCallItem(item)
             }
-        }
-
-        if let functionCall = container["function_call"] as? [String: Any] {
-            absorbLegacyFunctionCall(functionCall)
         }
     }
 
@@ -140,18 +136,6 @@ struct ChatToolCallAccumulator: Equatable {
             }
         }
 
-        openAIChunks[key] = partial
-    }
-
-    private mutating func absorbLegacyFunctionCall(_ functionCall: [String: Any]) {
-        let key = "legacy-function-call"
-        var partial = openAIChunks[key] ?? PartialToolCall(callID: key, name: "", arguments: "")
-        if let name = functionCall["name"] as? String {
-            partial.name = mergedFunctionName(existing: partial.name, incoming: name)
-        }
-        if let arguments = normalizedArgumentFragment(from: functionCall["arguments"]) {
-            partial.arguments += arguments
-        }
         openAIChunks[key] = partial
     }
 
@@ -286,13 +270,6 @@ struct ChatToolCallAccumulator: Equatable {
     private func normalizedIdentifier(_ value: String?) -> String? {
         let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? nil : trimmed
-    }
-
-    private func isOpenAIToolFinishReason(_ finishReason: String?) -> Bool {
-        guard let finishReason else { return false }
-        return finishReason == "tool_calls" ||
-            finishReason == "tool_call" ||
-            finishReason == "function_call"
     }
 
     private func responseIsComplete(_ response: [String: Any], eventType: String) -> Bool {

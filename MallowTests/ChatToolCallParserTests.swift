@@ -492,6 +492,7 @@ final class ChatToolCallParserTests: XCTestCase {
             developerPrompt: nil,
             endpoint: endpoint,
             apiAdvancedSettings: .defaults,
+            toolDefinitions: [],
             thinkingCapability: nil,
             thinkingOption: nil
         )
@@ -519,16 +520,13 @@ final class ChatToolCallParserTests: XCTestCase {
             requestStyleHint: .lmStudioRESTV1,
             toolUseSettings: ToolUseSettings(
                 isEnabled: true,
-                calendarEnabled: false,
-                remindersEnabled: false,
-                locationEnabled: false,
-                motionEnabled: false,
-                deviceContextEnabled: true
+                enabledGroups: ["deviceContext"]
             )
         ))
         service.activeStreamRequest = ChatActiveStreamRequest(
             task: service.session.dataTask(with: endpoint.chatURL),
-            endpoint: endpoint
+            endpoint: endpoint,
+            toolRegistry: try ChatToolRegistry.builtIn.enabled(using: service.configurationProvider.toolUseSettings)
         )
         return service
     }

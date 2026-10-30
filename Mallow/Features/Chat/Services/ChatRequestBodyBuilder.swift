@@ -15,6 +15,7 @@ protocol ChatRequestBodyBuilding: Sendable {
         endpoint: ChatAPIEndpointCandidate,
         apiAdvancedSettings: APIAdvancedSettings,
         toolUseSettings: ToolUseSettings,
+        toolDefinitions: [ChatToolDefinition],
         previousResponseID: String?,
         thinkingCapability: ModelThinkingCapability?,
         thinkingOption: ModelThinkingOption?
@@ -40,6 +41,7 @@ struct ChatRequestBodyBuilder: ChatRequestBodyBuilding, Sendable {
         endpoint: ChatAPIEndpointCandidate,
         apiAdvancedSettings: APIAdvancedSettings,
         toolUseSettings: ToolUseSettings = .defaults,
+        toolDefinitions: [ChatToolDefinition],
         previousResponseID: String? = nil,
         thinkingCapability: ModelThinkingCapability?,
         thinkingOption: ModelThinkingOption?
@@ -72,9 +74,8 @@ struct ChatRequestBodyBuilder: ChatRequestBodyBuilding, Sendable {
         ChatToolSchemaEncoder.applyToolSchemas(
             to: &requestBody,
             endpoint: endpoint,
-            settings: toolUseSettings,
-            previousResponseID: effectivePreviousResponseID,
-            allowedToolIDs: nil
+            definitions: toolDefinitions,
+            previousResponseID: effectivePreviousResponseID
         )
         ChatToolResultMessageEncoder.applyResponsesPreviousResponseID(
             effectivePreviousResponseID,

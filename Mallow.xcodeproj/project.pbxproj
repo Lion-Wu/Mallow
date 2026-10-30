@@ -43,6 +43,19 @@
 		CA0905000000000000000005 /* RequestStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0905000000000000000006 /* RequestStatusView.swift */; };
 		F514BD68F40741539A1872CA /* TextSelectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92A53B05B12C4E0689036C84 /* TextSelectionSheet.swift */; };
 		FD0577A52CB626FD009FC45C /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0577A42CB626FD009FC45C /* SettingsViewModel.swift */; };
+		FD077270308CC501004B69ED /* URLToolModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD07726F308CC501004B69ED /* URLToolModule.swift */; };
+		FD077272308CC503004B69ED /* ChatToolFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD077271308CC503004B69ED /* ChatToolFormatting.swift */; };
+		FD077274308CC505004B69ED /* JavaScriptToolModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD077273308CC505004B69ED /* JavaScriptToolModule.swift */; };
+		FD077276308CC507004B69ED /* CalendarToolModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD077275308CC507004B69ED /* CalendarToolModule.swift */; };
+		FD077278308CC50A004B69ED /* LocationToolModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD077277308CC50A004B69ED /* LocationToolModule.swift */; };
+		FD07727A308CC50C004B69ED /* RemindersToolModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD077279308CC50C004B69ED /* RemindersToolModule.swift */; };
+		FD07727C308CC50E004B69ED /* ClipboardToolModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD07727B308CC50E004B69ED /* ClipboardToolModule.swift */; };
+		FD07727E308CC50F004B69ED /* TimeToolModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD07727D308CC50F004B69ED /* TimeToolModule.swift */; };
+		FD077280308CC511004B69ED /* MotionToolModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD07727F308CC511004B69ED /* MotionToolModule.swift */; };
+		FD077282308CC514004B69ED /* DeviceToolModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD077281308CC514004B69ED /* DeviceToolModule.swift */; };
+		FD077284308CC541004B69ED /* ChatToolRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD077283308CC541004B69ED /* ChatToolRegistry.swift */; };
+		FD07728D308CC94C004B69ED /* ChatToolSchemaValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD07728C308CC94C004B69ED /* ChatToolSchemaValidator.swift */; };
+		FD077291308CCA37004B69ED /* ChatToolCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD077290308CCA37004B69ED /* ChatToolCatalog.swift */; };
 		FD0A0A102F123E0000000001 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0A0A0F2F123E0000000001 /* AppEnvironment.swift */; };
 		FD0B94DF2CD9080700DBFA1D /* ChatSessionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0B94DE2CD9080700DBFA1D /* ChatSessionsViewModel.swift */; };
 		FD0B94E12CD9082600DBFA1D /* ChatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0B94E02CD9082600DBFA1D /* ChatSession.swift */; };
@@ -228,7 +241,6 @@
 		FDAA1001000000000000010D /* ChatService+ToolLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA0001000000000000010D /* ChatService+ToolLoop.swift */; };
 		FDAA1001000000000000010E /* SettingsToolUseSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA0001000000000000010E /* SettingsToolUseSection.swift */; };
 		FDAA1001000000000000010F /* ToolActivityBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA0001000000000000010F /* ToolActivityBubble.swift */; };
-		FDAA10010000000000000110 /* MCPClientTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA00010000000000000110 /* MCPClientTypes.swift */; };
 		FDAA10010000000000000111 /* ChatPromptToolProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA00010000000000000111 /* ChatPromptToolProtocol.swift */; };
 		FDAA10010000000000000112 /* ChatService+PromptTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA00010000000000000112 /* ChatService+PromptTools.swift */; };
 		FDAA10010000000000000114 /* ChatToolInlineContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDAA00010000000000000114 /* ChatToolInlineContentView.swift */; };
@@ -416,6 +428,19 @@
 		CA0905000000000000000006 /* RequestStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RequestStatusView.swift; path = Mallow/Shared/UI/Feedback/RequestStatusView.swift; sourceTree = SOURCE_ROOT; };
 		D4570041CD56B63DCA44B5C0 /* AppChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppChrome.swift; path = Mallow/Shared/UI/Chrome/AppChrome.swift; sourceTree = SOURCE_ROOT; };
 		FD0577A42CB626FD009FC45C /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsViewModel.swift; path = Mallow/Features/Settings/ViewModels/SettingsViewModel.swift; sourceTree = SOURCE_ROOT; };
+		FD07726F308CC501004B69ED /* URLToolModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLToolModule.swift; sourceTree = "<group>"; };
+		FD077271308CC503004B69ED /* ChatToolFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatToolFormatting.swift; sourceTree = "<group>"; };
+		FD077273308CC505004B69ED /* JavaScriptToolModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JavaScriptToolModule.swift; sourceTree = "<group>"; };
+		FD077275308CC507004B69ED /* CalendarToolModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarToolModule.swift; sourceTree = "<group>"; };
+		FD077277308CC50A004B69ED /* LocationToolModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationToolModule.swift; sourceTree = "<group>"; };
+		FD077279308CC50C004B69ED /* RemindersToolModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersToolModule.swift; sourceTree = "<group>"; };
+		FD07727B308CC50E004B69ED /* ClipboardToolModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardToolModule.swift; sourceTree = "<group>"; };
+		FD07727D308CC50F004B69ED /* TimeToolModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeToolModule.swift; sourceTree = "<group>"; };
+		FD07727F308CC511004B69ED /* MotionToolModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionToolModule.swift; sourceTree = "<group>"; };
+		FD077281308CC514004B69ED /* DeviceToolModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceToolModule.swift; sourceTree = "<group>"; };
+		FD077283308CC541004B69ED /* ChatToolRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatToolRegistry.swift; sourceTree = "<group>"; };
+		FD07728C308CC94C004B69ED /* ChatToolSchemaValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatToolSchemaValidator.swift; sourceTree = "<group>"; };
+		FD077290308CCA37004B69ED /* ChatToolCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatToolCatalog.swift; sourceTree = "<group>"; };
 		FD0A0A0F2F123E0000000001 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppEnvironment.swift; path = Mallow/App/Composition/AppEnvironment.swift; sourceTree = SOURCE_ROOT; };
 		FD0B94DD2CD8E63500DBFA1D /* Mallow.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Mallow.entitlements; sourceTree = "<group>"; };
 		FD0B94DE2CD9080700DBFA1D /* ChatSessionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatSessionsViewModel.swift; path = Mallow/Features/Sessions/ViewModels/ChatSessionsViewModel.swift; sourceTree = SOURCE_ROOT; };
@@ -602,7 +627,6 @@
 		FDAA0001000000000000010D /* ChatService+ToolLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ChatService+ToolLoop.swift"; path = "Mallow/Features/Chat/Services/ChatService+ToolLoop.swift"; sourceTree = SOURCE_ROOT; };
 		FDAA0001000000000000010E /* SettingsToolUseSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsToolUseSection.swift; path = Mallow/Features/Settings/Views/SettingsToolUseSection.swift; sourceTree = SOURCE_ROOT; };
 		FDAA0001000000000000010F /* ToolActivityBubble.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ToolActivityBubble.swift; path = Mallow/Features/Chat/Views/Components/ToolActivityBubble.swift; sourceTree = SOURCE_ROOT; };
-		FDAA00010000000000000110 /* MCPClientTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MCPClientTypes.swift; path = Mallow/Features/MCP/Models/MCPClientTypes.swift; sourceTree = SOURCE_ROOT; };
 		FDAA00010000000000000111 /* ChatPromptToolProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatPromptToolProtocol.swift; path = Mallow/Features/Tools/Services/ChatPromptToolProtocol.swift; sourceTree = SOURCE_ROOT; };
 		FDAA00010000000000000112 /* ChatService+PromptTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ChatService+PromptTools.swift"; path = "Mallow/Features/Chat/Services/ChatService+PromptTools.swift"; sourceTree = SOURCE_ROOT; };
 		FDAA00010000000000000114 /* ChatToolInlineContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatToolInlineContentView.swift; path = Mallow/Features/Chat/Views/Components/ChatToolInlineContentView.swift; sourceTree = SOURCE_ROOT; };
@@ -815,6 +839,23 @@
 				B329D6612B39497A000A17C9 /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		FD07726E308CC4F5004B69ED /* BuiltIn */ = {
+			isa = PBXGroup;
+			children = (
+				FD07726F308CC501004B69ED /* URLToolModule.swift */,
+				FD077271308CC503004B69ED /* ChatToolFormatting.swift */,
+				FD077273308CC505004B69ED /* JavaScriptToolModule.swift */,
+				FD077275308CC507004B69ED /* CalendarToolModule.swift */,
+				FD077277308CC50A004B69ED /* LocationToolModule.swift */,
+				FD077279308CC50C004B69ED /* RemindersToolModule.swift */,
+				FD07727B308CC50E004B69ED /* ClipboardToolModule.swift */,
+				FD07727D308CC50F004B69ED /* TimeToolModule.swift */,
+				FD07727F308CC511004B69ED /* MotionToolModule.swift */,
+				FD077281308CC514004B69ED /* DeviceToolModule.swift */,
+			);
+			path = BuiltIn;
 			sourceTree = "<group>";
 		};
 		FD4260202F30000000000001 /* Rendering */ = {
@@ -1074,7 +1115,6 @@
 			children = (
 				AE1014000000000000030000 /* DataManagement */,
 				FD910000000000000000000E /* Chat */,
-				FDAC30000000000000000004 /* MCP */,
 				FD910000000000000000000F /* Sessions */,
 				FD9100000000000000000010 /* Settings */,
 				FDAC30000000000000000001 /* Tools */,
@@ -1482,6 +1522,7 @@
 			children = (
 				FDAC30000000000000000002 /* Models */,
 				FDAC30000000000000000003 /* Services */,
+				FD07726E308CC4F5004B69ED /* BuiltIn */,
 			);
 			path = Tools;
 			sourceTree = "<group>";
@@ -1515,24 +1556,11 @@
 				FDAA00010000000000000107 /* EventKitToolAdapters.swift */,
 				FDAA00010000000000000111 /* ChatPromptToolProtocol.swift */,
 				FDAA00010000000000000115 /* SystemUtilityTools.swift */,
+				FD077283308CC541004B69ED /* ChatToolRegistry.swift */,
+				FD07728C308CC94C004B69ED /* ChatToolSchemaValidator.swift */,
+				FD077290308CCA37004B69ED /* ChatToolCatalog.swift */,
 			);
 			path = Services;
-			sourceTree = "<group>";
-		};
-		FDAC30000000000000000004 /* MCP */ = {
-			isa = PBXGroup;
-			children = (
-				FDAC30000000000000000005 /* Models */,
-			);
-			path = MCP;
-			sourceTree = "<group>";
-		};
-		FDAC30000000000000000005 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				FDAA00010000000000000110 /* MCPClientTypes.swift */,
-			);
-			path = Models;
 			sourceTree = "<group>";
 		};
 		FDB5FD402F0000010000001C /* Localization */ = {
@@ -1723,10 +1751,12 @@
 				FDA8D93E2E7F12190012B42F /* AVAudioDelegate.swift in Sources */,
 				FDA8D92C2E7F0ED00012B42F /* TailLinesText.swift in Sources */,
 				FDF714C12E7FC54100B62D71 /* IncrementalTextSegmenter.swift in Sources */,
+				FD077272308CC503004B69ED /* ChatToolFormatting.swift in Sources */,
 				FD0B94E12CD9082600DBFA1D /* ChatSession.swift in Sources */,
 				FDA8D92E2E7F0EE30012B42F /* PreferenceKeys.swift in Sources */,
 				B4A629592B59617A006125B5 /* ChatViewModel.swift in Sources */,
 				FDFE0A0B2F123D0000000001 /* ChatViewModel+RealtimeMallowSession.swift in Sources */,
+				FD07727A308CC50C004B69ED /* RemindersToolModule.swift in Sources */,
 				FDFE0A9B2F123D0000000001 /* ChatViewModel+Drafts.swift in Sources */,
 				FDA8D9362E7F0F360012B42F /* VoiceMessageView.swift in Sources */,
 				FD9000000000000000000190 /* MessageBubbleControls.swift in Sources */,
@@ -1798,6 +1828,7 @@
 				FD40D5742CA875CC0064E732 /* ContentView.swift in Sources */,
 				FDF0B0022F8F000000000001 /* RealtimeVoiceWindowController.swift in Sources */,
 				FDA8D93A2E7F11F00012B42F /* AudioRequests.swift in Sources */,
+				FD077274308CC505004B69ED /* JavaScriptToolModule.swift in Sources */,
 				FDA8D9442E7F12AA0012B42F /* TextSegmentation.swift in Sources */,
 				FD0C3AC72C9F54A9009095A1 /* Models.swift in Sources */,
 				FD9000000000000000000102 /* AppLocalization.swift in Sources */,
@@ -1837,9 +1868,12 @@
 				FD9000000000000000000182 /* ChatRealtimeNarrationCoordinator.swift in Sources */,
 				FD9000000000000000000184 /* ChatMessageBranchState.swift in Sources */,
 				FD900000000000000000019E /* ChatUserTurnAppender.swift in Sources */,
+				FD077291308CCA37004B69ED /* ChatToolCatalog.swift in Sources */,
 				FD90000000000000000001A0 /* ChatRealtimeVoiceDraftPlanner.swift in Sources */,
 				FD90000000000000000001A2 /* JSONValue.swift in Sources */,
 				FDAA10010000000000000101 /* ToolUseSettings.swift in Sources */,
+				FD077270308CC501004B69ED /* URLToolModule.swift in Sources */,
+				FD07727C308CC50E004B69ED /* ClipboardToolModule.swift in Sources */,
 				FDAA10010000000000000102 /* ChatToolTypes.swift in Sources */,
 				FDAA10010000000000000103 /* ChatToolDefinitions.swift in Sources */,
 				FDAA10010000000000000104 /* ChatToolSchemaEncoder.swift in Sources */,
@@ -1851,12 +1885,12 @@
 				FDAA1001000000000000010A /* DeviceContextTool.swift in Sources */,
 				FDAA1001000000000000010B /* ChatToolCallParser.swift in Sources */,
 				FDAA1001000000000000010C /* ChatToolResultMessageEncoder.swift in Sources */,
+				FD077282308CC514004B69ED /* DeviceToolModule.swift in Sources */,
 				FDAA1001000000000000010D /* ChatService+ToolLoop.swift in Sources */,
 				FDAA1001000000000000010E /* SettingsToolUseSection.swift in Sources */,
 				FDAA1001000000000000010F /* ToolActivityBubble.swift in Sources */,
 				FDAA1001000000000000012D /* ChatToolPresentationView.swift in Sources */,
 				FDAA10010000000000000114 /* ChatToolInlineContentView.swift in Sources */,
-				FDAA10010000000000000110 /* MCPClientTypes.swift in Sources */,
 				FDAA10010000000000000111 /* ChatPromptToolProtocol.swift in Sources */,
 				FDAA10010000000000000112 /* ChatService+PromptTools.swift in Sources */,
 				FDAA10010000000000000115 /* SystemUtilityTools.swift in Sources */,
@@ -1876,10 +1910,12 @@
 				FDFE0A172F123D0000000001 /* VoicePreset.swift in Sources */,
 				FDFE0A192F123D0000000001 /* ChatServerPreset.swift in Sources */,
 				FDFE0A1B2F123D0000000001 /* VoiceServerPreset.swift in Sources */,
+				FD07728D308CC94C004B69ED /* ChatToolSchemaValidator.swift in Sources */,
 				FDFE0A1D2F123D0000000001 /* SystemPromptPreset.swift in Sources */,
 				FDFE0A1F2F123D0000000001 /* AppSettings.swift in Sources */,
 				FD9000000000000000000112 /* ChatStreamingModels.swift in Sources */,
 				FDFE0A292F123D0000000001 /* LMStudioStreamingModels.swift in Sources */,
+				FD077284308CC541004B69ED /* ChatToolRegistry.swift in Sources */,
 				FDFE0A2B2F123D0000000001 /* AnthropicStreamingModels.swift in Sources */,
 				FD9000000000000000000114 /* ChatServiceConfiguration.swift in Sources */,
 				FDFE0AAD2F123D0000000001 /* ChatServiceDelegateProxy.swift in Sources */,
@@ -1894,7 +1930,9 @@
 				FDFE0AE72F123D0000000001 /* ChatEndpointCandidateFactory.swift in Sources */,
 				FD9000000000000000000120 /* ChatRequestBodyBuilder.swift in Sources */,
 				FDAC20010000000000000002 /* ChatRequestContextBuilder.swift in Sources */,
+				FD07727E308CC50F004B69ED /* TimeToolModule.swift in Sources */,
 				FDFE0B012F123D0000000001 /* ChatRequestAdvancedConfigurationApplier.swift in Sources */,
+				FD077278308CC50A004B69ED /* LocationToolModule.swift in Sources */,
 				FDFE0B032F123D0000000001 /* ChatRequestThinkingConfigurationApplier.swift in Sources */,
 				FD90000000000000000001CA /* ChatRequestBodyProviderEncoder.swift in Sources */,
 				FD9000000000000000000122 /* ChatResponseMetadataExtractor.swift in Sources */,
@@ -1981,8 +2019,10 @@
 				FDFE0AAB2F123D0000000001 /* SettingsManager+LaunchTasks.swift in Sources */,
 				FDFE0B212F12400000000001 /* SettingsManager+StateAccess.swift in Sources */,
 				FDFE0B232F12400000000001 /* SettingsManager+Initialization.swift in Sources */,
+				FD077276308CC507004B69ED /* CalendarToolModule.swift in Sources */,
 				FDFE0A852F123D0000000001 /* ChatConversationTurnController.swift in Sources */,
 				FDFE0A992F123D0000000001 /* SettingsViewModel+PresetBindings.swift in Sources */,
+				FD077280308CC511004B69ED /* MotionToolModule.swift in Sources */,
 				FDFE0A812F123D0000000001 /* SettingsViewModelSuppressionController.swift in Sources */,
 				FD0577A52CB626FD009FC45C /* SettingsViewModel.swift in Sources */,
 			);

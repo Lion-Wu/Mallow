@@ -20,9 +20,11 @@ protocol LocationToolServing: Sendable {
 struct CoreLocationTool: LocationToolServing {
     func currentLocation(arguments: ChatToolArgumentReader) async throws -> ChatToolExecutionPayload {
         #if canImport(CoreLocation)
+        try Task.checkCancellation()
         let provider = await LocationSnapshotProvider()
         let location = try await provider.currentLocation()
-        let place = await reverseGeocodedPlace(for: location)
+        let place = try await provider.reverseGeocodedPlace(for: location)
+        try Task.checkCancellation()
         let roundedLatitude = (location.coordinate.latitude * 100_000).rounded() / 100_000
         let roundedLongitude = (location.coordinate.longitude * 100_000).rounded() / 100_000
         var payload: [String: JSONValue] = [
@@ -54,15 +56,6 @@ struct CoreLocationTool: LocationToolServing {
         #endif
     }
 
-    #if canImport(CoreLocation)
-    private func reverseGeocodedPlace(for location: CLLocation) async -> LocationPlaceDescription? {
-        let geocoder = CLGeocoder()
-        guard let placemark = try? await geocoder.reverseGeocodeLocation(location).first else {
-            return nil
-        }
-        return LocationPlaceDescription(placemark: placemark)
-    }
-    #endif
 }
 
 #if canImport(CoreLocation)
@@ -168,7 +161,9 @@ struct LocationPlaceDescription: Sendable {
 @MainActor
 private final class LocationSnapshotProvider: NSObject, @preconcurrency CLLocationManagerDelegate, @unchecked Sendable {
     private let manager = CLLocationManager()
+    private let geocoder = CLGeocoder()
     private var continuation: CheckedContinuation<CLLocation, Error>?
+    private var geocodingContinuation: CheckedContinuation<LocationPlaceDescription?, Error>?
     private var timeoutTask: Task<Void, Never>?
     private var didStartUpdating = false
 
@@ -179,19 +174,61 @@ private final class LocationSnapshotProvider: NSObject, @preconcurrency CLLocati
     }
 
     func currentLocation() async throws -> CLLocation {
+        try Task.checkCancellation()
         guard CLLocationManager.locationServicesEnabled() else {
             throw ChatToolError.unsupported(NSLocalizedString("TOOLS_LOCATION_SERVICES_DISABLED", value: "Location services are disabled.", comment: "Tool-use error"))
         }
 
-        return try await withCheckedThrowingContinuation { continuation in
-            self.continuation = continuation
-            self.timeoutTask = Task { @MainActor [weak self] in
-                try? await Task.sleep(nanoseconds: 15_000_000_000)
-                self?.finish(.failure(ChatToolError.failed(NSLocalizedString("TOOLS_LOCATION_TIMEOUT", value: "Location request timed out.", comment: "Tool-use error"))))
-            }
+        let location = try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            return try await withCheckedThrowingContinuation { continuation in
+                self.continuation = continuation
+                self.timeoutTask = Task { @MainActor [weak self] in
+                    do {
+                        try await Task.sleep(nanoseconds: 15_000_000_000)
+                    } catch {
+                        return
+                    }
+                    self?.finish(.failure(ChatToolError.failed(NSLocalizedString("TOOLS_LOCATION_TIMEOUT", value: "Location request timed out.", comment: "Tool-use error"))))
+                }
 
-            handleAuthorizationStatus(manager.authorizationStatus)
+                handleAuthorizationStatus(manager.authorizationStatus)
+            }
+        } onCancel: {
+            Task { @MainActor in
+                self.finish(.failure(CancellationError()))
+            }
         }
+        try Task.checkCancellation()
+        return location
+    }
+
+    func reverseGeocodedPlace(for location: CLLocation) async throws -> LocationPlaceDescription? {
+        let place = try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            return try await withCheckedThrowingContinuation { continuation in
+                geocodingContinuation = continuation
+                geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, _ in
+                    let place = placemarks?.first.map { LocationPlaceDescription(placemark: $0) }
+                    Task { @MainActor [weak self] in
+                        self?.finishGeocoding(.success(place))
+                    }
+                }
+            }
+        } onCancel: {
+            Task { @MainActor in
+                self.geocoder.cancelGeocode()
+                self.finishGeocoding(.failure(CancellationError()))
+            }
+        }
+        try Task.checkCancellation()
+        return place
+    }
+
+    private func finishGeocoding(_ result: Result<LocationPlaceDescription?, Error>) {
+        guard let continuation = geocodingContinuation else { return }
+        geocodingContinuation = nil
+        continuation.resume(with: result)
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -247,14 +284,12 @@ private final class LocationSnapshotProvider: NSObject, @preconcurrency CLLocati
     }
 
     private func finish(_ result: Result<CLLocation, Error>) {
-        timeoutTask?.cancel()
-        timeoutTask = nil
-        if didStartUpdating {
-            manager.stopUpdatingLocation()
-            didStartUpdating = false
-        }
         guard let continuation else { return }
         self.continuation = nil
+        timeoutTask?.cancel()
+        timeoutTask = nil
+        manager.stopUpdatingLocation()
+        didStartUpdating = false
         continuation.resume(with: result)
     }
 

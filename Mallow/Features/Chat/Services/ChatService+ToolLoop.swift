@@ -135,8 +135,8 @@ extension ChatService {
         for call in calls {
             guard !Task.isCancelled,
                   await isCurrentRequestGenerationAsync(context.requestGeneration) else { return results }
-            let title = ChatToolDefinitions.activityTitle(for: call.name)
-            let argumentSummary = ChatToolDefinitions.activitySummary(for: call)
+            let title = context.toolRegistry.title(for: call.name)
+            let argumentSummary = context.toolRegistry.summary(for: call)
             let modelRequestPayload = modelRequestPayload(for: call)
             emitToolActivity(.init(
                 id: call.callID,
@@ -146,44 +146,25 @@ extension ChatService {
                 summary: argumentSummary,
                 modelRequestPayload: modelRequestPayload
             ), requestGeneration: context.requestGeneration)
-            if let authorizationFailure = await authorizeToolCallIfNeeded(
-                call,
-                title: title,
-                endpoint: context.endpoint,
-                requestGeneration: context.requestGeneration
-            ) {
-                guard !Task.isCancelled,
-                      await isCurrentRequestGenerationAsync(context.requestGeneration) else { return results }
-                results.append(authorizationFailure)
-                emitToolActivity(.init(
-                    id: call.callID,
-                    toolName: call.name,
-                    title: title,
-                    phase: .denied,
-                    summary: ChatToolDefinitions.activitySummary(
-                        for: call,
-                        resultSummary: authorizationFailure.summary
-                    ),
-                    modelRequestPayload: modelRequestPayload,
-                    resultPayload: authorizationFailure.payload
-                ), requestGeneration: context.requestGeneration)
-                continue
-            }
-            guard !Task.isCancelled,
-                  await isCurrentRequestGenerationAsync(context.requestGeneration) else { return results }
-            emitToolActivity(.init(
-                id: call.callID,
-                toolName: call.name,
-                title: title,
-                phase: .running,
-                summary: argumentSummary,
-                modelRequestPayload: modelRequestPayload
-            ), requestGeneration: context.requestGeneration)
-            let result = await toolExecutor.execute(
-                call,
-                settings: configurationProvider.toolUseSettings,
-                endpoint: context.endpoint
-            )
+            let result = await toolExecutor.execute(call, context: ChatToolExecutionContext(
+                registry: context.toolRegistry,
+                currentSettings: { [weak self] in self?.configurationProvider.toolUseSettings ?? .defaults },
+                authorize: { [weak self] request in
+                    guard let self else { return false }
+                    self.emitToolActivity(.init(
+                        id: call.callID, toolName: call.name, title: title, phase: .authorizing,
+                        summary: context.toolRegistry.summary(for: call, resultSummary: String(localized: "TOOLS_WAITING_APPROVAL", defaultValue: "Waiting for approval.")),
+                        authorizationRequest: request, modelRequestPayload: modelRequestPayload
+                    ), requestGeneration: context.requestGeneration)
+                    return await self.toolAuthorizationCoordinator.waitForDecision(requestID: request.id)
+                },
+                willExecute: { [weak self] in
+                    self?.emitToolActivity(.init(
+                        id: call.callID, toolName: call.name, title: title, phase: .running,
+                        summary: argumentSummary, modelRequestPayload: modelRequestPayload
+                    ), requestGeneration: context.requestGeneration)
+                }
+            ))
             guard !Task.isCancelled,
                   await isCurrentRequestGenerationAsync(context.requestGeneration) else { return results }
             results.append(result)
@@ -203,7 +184,7 @@ extension ChatService {
                 toolName: call.name,
                 title: title,
                 phase: phase,
-                summary: ChatToolDefinitions.activitySummary(
+                summary: context.toolRegistry.summary(
                     for: call,
                     resultSummary: result.summary
                 ),
@@ -213,75 +194,6 @@ extension ChatService {
             ), requestGeneration: context.requestGeneration)
         }
         return results
-    }
-
-    private func authorizeToolCallIfNeeded(
-        _ call: ChatToolCallEnvelope,
-        title: String,
-        endpoint: ChatAPIEndpointCandidate,
-        requestGeneration: UInt64
-    ) async -> ChatToolResultEnvelope? {
-        guard let toolID = call.toolID else { return nil }
-        let settings = configurationProvider.toolUseSettings
-        guard settings.enabledToolIDs.contains(toolID) else {
-            return ChatToolResultEnvelope(
-                callID: call.callID,
-                name: call.name,
-                status: .denied,
-                payload: ["error": .string(NSLocalizedString("TOOLS_DISABLED_FOR_ENDPOINT", value: "This tool is disabled for the current endpoint.", comment: "Tool-use error"))],
-                summary: NSLocalizedString("TOOLS_DISABLED_FOR_ENDPOINT", value: "This tool is disabled for the current endpoint.", comment: "Tool-use error")
-            )
-        }
-        let decision = ChatToolAuthorizationPolicy.decision(
-            for: toolID,
-            settings: settings,
-            endpoint: endpoint
-        )
-        switch decision {
-        case .allow:
-            return nil
-        case let .deny(message):
-            return ChatToolResultEnvelope(
-                callID: call.callID,
-                name: call.name,
-                status: .denied,
-                payload: ["error": .string(message)],
-                summary: message
-            )
-        case .ask:
-            break
-        }
-
-        let request = ChatToolAuthorizationRequest(
-            id: "\(requestGeneration):\(call.callID):\(UUID().uuidString)",
-            toolName: call.name,
-            title: title,
-            operationKind: toolID.operationKind,
-            argumentsSummary: call.argumentsJSON
-        )
-        emitToolActivity(.init(
-            id: call.callID,
-            toolName: call.name,
-            title: title,
-            phase: .authorizing,
-            summary: ChatToolDefinitions.activitySummary(
-                for: call,
-                resultSummary: NSLocalizedString("TOOLS_WAITING_APPROVAL", value: "Waiting for approval.", comment: "Tool activity summary")
-            ),
-            authorizationRequest: request,
-            modelRequestPayload: modelRequestPayload(for: call)
-        ), requestGeneration: requestGeneration)
-        let allowed = await toolAuthorizationCoordinator.waitForDecision(requestID: request.id)
-        guard allowed else {
-            return ChatToolResultEnvelope(
-                callID: call.callID,
-                name: call.name,
-                status: .denied,
-                payload: ["error": .string(NSLocalizedString("TOOLS_CALL_DENIED", value: "Tool call was denied by the user.", comment: "Tool-use error"))],
-                summary: NSLocalizedString("TOOLS_CALL_DENIED", value: "Tool call was denied by the user.", comment: "Tool-use error")
-            )
-        }
-        return nil
     }
 
     private func continueAfterToolResults(
@@ -336,6 +248,7 @@ extension ChatService {
                         endpoint: context.endpoint,
                         apiAdvancedSettings: self.configurationProvider.apiAdvancedSettings,
                         toolUseSettings: self.configurationProvider.toolUseSettings,
+                        toolDefinitions: context.toolRegistry.definitions,
                         previousResponseID: nextContext.previousResponseID,
                         thinkingCapability: self.configurationProvider.thinkingCapability,
                         thinkingOption: self.configurationProvider.thinkingOption
@@ -347,7 +260,7 @@ extension ChatService {
                         requestUsedPreviousResponseID: nextContext.previousResponseID != nil,
                         requestPreviousResponseID: nextContext.previousResponseID
                     ))
-                    self.startStreaming(endpoint: context.endpoint, requestBodyData: body)
+                    self.startStreaming(endpoint: context.endpoint, requestBodyData: body, toolRegistry: context.toolRegistry)
                 } catch {
                     if self.isCurrentRequestGeneration(context.requestGeneration) {
                         self.failCurrentStreamWithServerError(error.localizedDescription)
@@ -388,7 +301,7 @@ extension ChatService {
         emitToolActivity(.init(
             id: "\(lastCall.callID)-continuation",
             toolName: lastCall.name,
-            title: ChatToolDefinitions.activityTitle(for: lastCall.name),
+            title: activeToolLoopContext?.toolRegistry.title(for: lastCall.name) ?? lastCall.name,
             phase: .processing
         ))
     }
@@ -446,13 +359,13 @@ extension ChatService {
     }
 
     private func emitGeneratingToolActivities(_ calls: [ChatToolCallEnvelope]) {
-        for call in calls where call.toolID != nil {
+        for call in calls where activeStreamRequest?.toolRegistry.registration(named: call.name) != nil {
             let activity = ChatToolActivity(
                 id: call.callID,
                 toolName: call.name,
-                title: ChatToolDefinitions.activityTitle(for: call.name),
+                title: activeStreamRequest?.toolRegistry.title(for: call.name) ?? call.name,
                 phase: .generating,
-                summary: ChatToolDefinitions.activitySummary(for: call)
+                summary: activeStreamRequest?.toolRegistry.summary(for: call)
             )
             guard generatingToolActivities[call.callID] != activity else { continue }
             generatingToolActivities[call.callID] = activity

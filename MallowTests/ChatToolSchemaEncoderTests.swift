@@ -8,13 +8,7 @@ final class ChatToolSchemaEncoderTests: XCTestCase {
         ChatToolSchemaEncoder.applyToolSchemas(
             to: &body,
             endpoint: endpoint(style: .openAIResponses, chatURL: "https://api.openai.com/v1/responses"),
-            settings: enabledSettings(
-                calendar: false,
-                reminders: false,
-                location: false,
-                motion: false,
-                device: true
-            )
+            definitions: try ChatToolCatalog.prepareBuiltIn(settings: ToolUseSettings(isEnabled: true, enabledGroups: ["deviceContext"])).definitions
         )
 
         let tool = try XCTUnwrap((body["tools"] as? [[String: Any]])?.first)
@@ -27,19 +21,13 @@ final class ChatToolSchemaEncoderTests: XCTestCase {
         XCTAssertNil(tool["strict"])
     }
 
-    func testAnthropicToolsAddToolResultTrustInstructionToSystemPrompt() {
+    func testAnthropicToolsAddToolResultTrustInstructionToSystemPrompt() throws {
         var body: [String: Any] = ["model": "claude-test", "system": "Be concise."]
 
         ChatToolSchemaEncoder.applyToolSchemas(
             to: &body,
             endpoint: endpoint(style: .anthropicMessages, chatURL: "https://api.anthropic.com/v1/messages"),
-            settings: enabledSettings(
-                calendar: false,
-                reminders: false,
-                location: false,
-                motion: false,
-                device: true
-            )
+            definitions: try ChatToolCatalog.prepareBuiltIn(settings: ToolUseSettings(isEnabled: true, enabledGroups: ["deviceContext"])).definitions
         )
 
         let system = body["system"] as? String
@@ -52,57 +40,34 @@ final class ChatToolSchemaEncoderTests: XCTestCase {
         ChatToolSchemaEncoder.applyToolSchemas(
             to: &body,
             endpoint: endpoint(style: .lmStudioRESTV1, chatURL: "http://localhost:1234/api/v1/chat"),
-            settings: enabledSettings(
-                calendar: false,
-                reminders: false,
-                location: false,
-                motion: false,
-                device: true
-            )
+            definitions: try ChatToolCatalog.prepareBuiltIn(settings: ToolUseSettings(isEnabled: true, enabledGroups: ["deviceContext"])).definitions
         )
 
         let prompt = try XCTUnwrap(body["system_prompt"] as? String)
         XCTAssertTrue(prompt.contains(ChatToolID.deviceContext.rawValue))
-        for disabledToolID in ChatToolID.allCases where disabledToolID != .deviceContext {
+        for disabledToolID in ChatToolRegistry.builtIn.definitions.map(\.id) where disabledToolID != .deviceContext {
             XCTAssertFalse(prompt.contains(disabledToolID.rawValue), disabledToolID.rawValue)
         }
     }
 
-    func testDeleteToolSchemasRequireStableIdentifiers() {
-        let calendarSchema = ChatToolDefinitions.definition(for: .calendarDeleteEvent).parametersSchema
-        let reminderSchema = ChatToolDefinitions.definition(for: .remindersDeleteReminder).parametersSchema
+    func testDeleteToolSchemasRequireStableIdentifiers() throws {
+        let calendarSchema = try XCTUnwrap(ChatToolRegistry.builtIn.registration(id: .calendarDeleteEvent)).definition.parametersSchema
+        let reminderSchema = try XCTUnwrap(ChatToolRegistry.builtIn.registration(id: .remindersDeleteReminder)).definition.parametersSchema
 
         XCTAssertEqual(Self.requiredFields(in: calendarSchema), ["event_id"])
         XCTAssertEqual(Self.requiredFields(in: reminderSchema), ["reminder_id"])
     }
 
-    func testDisabledSettingsDoNotAddSchemas() {
+    func testDisabledSettingsDoNotAddSchemas() throws {
         var body: [String: Any] = ["model": "gpt-test"]
 
         ChatToolSchemaEncoder.applyToolSchemas(
             to: &body,
             endpoint: endpoint(style: .openAIChatCompletions, chatURL: "https://example.com/v1/chat/completions"),
-            settings: .defaults
+            definitions: try ChatToolCatalog.prepareBuiltIn(settings: .defaults).definitions
         )
 
         XCTAssertNil(body["tools"])
-    }
-
-    private func enabledSettings(
-        calendar: Bool = true,
-        reminders: Bool = true,
-        location: Bool = true,
-        motion: Bool = true,
-        device: Bool = true
-    ) -> ToolUseSettings {
-        ToolUseSettings(
-            isEnabled: true,
-            calendarEnabled: calendar,
-            remindersEnabled: reminders,
-            locationEnabled: location,
-            motionEnabled: motion,
-            deviceContextEnabled: device
-        )
     }
 
     private func endpoint(style: ChatRequestStyle, chatURL: String) -> ChatAPIEndpointCandidate {

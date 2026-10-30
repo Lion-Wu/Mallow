@@ -15,50 +15,31 @@ enum ToolAuthorizationMode: String, Codable, CaseIterable, Sendable {
 
 struct ToolUseSettings: Codable, Equatable, Sendable {
     var isEnabled: Bool
-    var calendarEnabled: Bool
-    var remindersEnabled: Bool
-    var locationEnabled: Bool
-    var motionEnabled: Bool
-    var deviceContextEnabled: Bool
-    var clipboardEnabled: Bool
-    var urlActionsEnabled: Bool
-    var javaScriptRuntimeEnabled: Bool
-    private var isTimeExplicitlyEnabled: Bool
-    var timeEnabled: Bool {
-        get { isTimeExplicitlyEnabled || requiresTimeTool }
-        set { isTimeExplicitlyEnabled = newValue }
+    var enabledGroups: Set<String>
+
+    func isGroupEnabled(_ id: String) -> Bool {
+        enabledGroups.contains(id) || (id == "time" && requiresTimeTool)
     }
+
+    mutating func setGroup(_ id: String, enabled: Bool) {
+        if enabled { enabledGroups.insert(id) } else { enabledGroups.remove(id) }
+    }
+
     var authorizationMode: ToolAuthorizationMode
     var allowHighRiskToolAutoExecution: Bool
     var useProviderContinuationIDs: Bool
     var openAIResponsesStatefulEndpointURLs: [String]
 
     init(
-        isEnabled: Bool,
-        calendarEnabled: Bool,
-        remindersEnabled: Bool,
-        locationEnabled: Bool,
-        motionEnabled: Bool,
-        deviceContextEnabled: Bool,
-        clipboardEnabled: Bool = false,
-        urlActionsEnabled: Bool = false,
-        javaScriptRuntimeEnabled: Bool = false,
-        timeEnabled: Bool = false,
+        isEnabled: Bool = false,
+        enabledGroups: Set<String> = [],
         authorizationMode: ToolAuthorizationMode = .readOnly,
         allowHighRiskToolAutoExecution: Bool = false,
         useProviderContinuationIDs: Bool = true,
         openAIResponsesStatefulEndpointURLs: [String] = ToolUseSettings.defaultOpenAIResponsesStatefulEndpointURLs
     ) {
         self.isEnabled = isEnabled
-        self.calendarEnabled = calendarEnabled
-        self.remindersEnabled = remindersEnabled
-        self.locationEnabled = locationEnabled
-        self.motionEnabled = motionEnabled
-        self.deviceContextEnabled = deviceContextEnabled
-        self.clipboardEnabled = clipboardEnabled
-        self.urlActionsEnabled = urlActionsEnabled
-        self.javaScriptRuntimeEnabled = javaScriptRuntimeEnabled
-        self.isTimeExplicitlyEnabled = timeEnabled
+        self.enabledGroups = enabledGroups
         self.authorizationMode = authorizationMode
         self.allowHighRiskToolAutoExecution = allowHighRiskToolAutoExecution
         self.useProviderContinuationIDs = useProviderContinuationIDs
@@ -67,35 +48,19 @@ struct ToolUseSettings: Codable, Equatable, Sendable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.init(
-            isEnabled: try container.decode(Bool.self, forKey: .isEnabled),
-            calendarEnabled: try container.decode(Bool.self, forKey: .calendarEnabled),
-            remindersEnabled: try container.decode(Bool.self, forKey: .remindersEnabled),
-            locationEnabled: try container.decode(Bool.self, forKey: .locationEnabled),
-            motionEnabled: try container.decode(Bool.self, forKey: .motionEnabled),
-            deviceContextEnabled: try container.decode(Bool.self, forKey: .deviceContextEnabled),
-            clipboardEnabled: try container.decode(Bool.self, forKey: .clipboardEnabled),
-            urlActionsEnabled: try container.decode(Bool.self, forKey: .urlActionsEnabled),
-            javaScriptRuntimeEnabled: try container.decode(Bool.self, forKey: .javaScriptRuntimeEnabled),
-            timeEnabled: try container.decode(Bool.self, forKey: .timeEnabled),
-            authorizationMode: try container.decode(ToolAuthorizationMode.self, forKey: .authorizationMode),
-            allowHighRiskToolAutoExecution: try container.decode(Bool.self, forKey: .allowHighRiskToolAutoExecution),
-            useProviderContinuationIDs: try container.decode(Bool.self, forKey: .useProviderContinuationIDs),
-            openAIResponsesStatefulEndpointURLs: try container.decode([String].self, forKey: .openAIResponsesStatefulEndpointURLs)
+        enabledGroups = try container.decode(Set<String>.self, forKey: .enabledGroups)
+        isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
+        authorizationMode = try container.decode(ToolAuthorizationMode.self, forKey: .authorizationMode)
+        allowHighRiskToolAutoExecution = try container.decode(Bool.self, forKey: .allowHighRiskToolAutoExecution)
+        useProviderContinuationIDs = try container.decode(Bool.self, forKey: .useProviderContinuationIDs)
+        openAIResponsesStatefulEndpointURLs = Self.normalizedOpenAIResponsesStatefulEndpointURLs(
+            try container.decode([String].self, forKey: .openAIResponsesStatefulEndpointURLs)
         )
     }
 
     enum CodingKeys: String, CodingKey {
+        case enabledGroups
         case isEnabled
-        case calendarEnabled
-        case remindersEnabled
-        case locationEnabled
-        case motionEnabled
-        case deviceContextEnabled
-        case clipboardEnabled
-        case urlActionsEnabled
-        case javaScriptRuntimeEnabled
-        case timeEnabled
         case authorizationMode
         case allowHighRiskToolAutoExecution
         case useProviderContinuationIDs
@@ -105,15 +70,7 @@ struct ToolUseSettings: Codable, Equatable, Sendable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(isEnabled, forKey: .isEnabled)
-        try container.encode(calendarEnabled, forKey: .calendarEnabled)
-        try container.encode(remindersEnabled, forKey: .remindersEnabled)
-        try container.encode(locationEnabled, forKey: .locationEnabled)
-        try container.encode(motionEnabled, forKey: .motionEnabled)
-        try container.encode(deviceContextEnabled, forKey: .deviceContextEnabled)
-        try container.encode(clipboardEnabled, forKey: .clipboardEnabled)
-        try container.encode(urlActionsEnabled, forKey: .urlActionsEnabled)
-        try container.encode(javaScriptRuntimeEnabled, forKey: .javaScriptRuntimeEnabled)
-        try container.encode(isTimeExplicitlyEnabled, forKey: .timeEnabled)
+        try container.encode(enabledGroups, forKey: .enabledGroups)
         try container.encode(authorizationMode, forKey: .authorizationMode)
         try container.encode(allowHighRiskToolAutoExecution, forKey: .allowHighRiskToolAutoExecution)
         try container.encode(useProviderContinuationIDs, forKey: .useProviderContinuationIDs)
@@ -127,22 +84,7 @@ struct ToolUseSettings: Codable, Equatable, Sendable {
         "https://api.openai.com/v1/responses"
     ]
 
-    static let defaults = ToolUseSettings(
-        isEnabled: false,
-        calendarEnabled: false,
-        remindersEnabled: false,
-        locationEnabled: false,
-        motionEnabled: false,
-        deviceContextEnabled: false,
-        clipboardEnabled: false,
-        urlActionsEnabled: false,
-        javaScriptRuntimeEnabled: false,
-        timeEnabled: false,
-        authorizationMode: .readOnly,
-        allowHighRiskToolAutoExecution: false,
-        useProviderContinuationIDs: true,
-        openAIResponsesStatefulEndpointURLs: defaultOpenAIResponsesStatefulEndpointURLs
-    )
+    static let defaults = ToolUseSettings()
 
     func resettingDeveloperRequestPolicyToDefaults() -> ToolUseSettings {
         var next = self
@@ -153,42 +95,9 @@ struct ToolUseSettings: Codable, Equatable, Sendable {
     }
 
     var requiresTimeTool: Bool {
-        selectedNonTimeToolIDs.contains { toolID in
-            toolID.generalRuleRequirements.contains(.dateTime)
+        ChatToolRegistry.builtIn.registrations.contains {
+            enabledGroups.contains($0.group.id) && $0.definition.generalRuleRequirements.contains(.dateTime)
         }
-    }
-
-    var enabledToolIDs: Set<ChatToolID> {
-        guard isEnabled else { return [] }
-        var ids = selectedNonTimeToolIDs
-        if timeEnabled { ids.insert(.systemGetTime) }
-        return ids
-    }
-
-    private var selectedNonTimeToolIDs: Set<ChatToolID> {
-        var ids = Set<ChatToolID>()
-        if calendarEnabled {
-            ids.insert(.calendarListEvents)
-            ids.insert(.calendarCreateEvent)
-            ids.insert(.calendarDeleteEvent)
-            ids.insert(.calendarShowEvents)
-        }
-        if remindersEnabled {
-            ids.insert(.remindersListReminders)
-            ids.insert(.remindersCreateReminder)
-            ids.insert(.remindersDeleteReminder)
-            ids.insert(.remindersShowReminders)
-        }
-        if locationEnabled { ids.insert(.locationCurrent) }
-        if motionEnabled { ids.insert(.motionDevice) }
-        if deviceContextEnabled { ids.insert(.deviceContext) }
-        if clipboardEnabled {
-            ids.insert(.clipboardGetText)
-            ids.insert(.clipboardSetText)
-        }
-        if urlActionsEnabled { ids.insert(.systemOpenURL) }
-        if javaScriptRuntimeEnabled { ids.insert(.javaScriptRun) }
-        return ids
     }
 
     func useProviderContinuationIDs(for endpoint: ChatAPIEndpointCandidate) -> Bool {
@@ -279,12 +188,9 @@ enum ChatToolAuthorizationPolicy {
         case deny(String)
     }
 
-    static func decision(
-        for toolID: ChatToolID,
-        settings: ToolUseSettings,
-        endpoint _: ChatAPIEndpointCandidate
-    ) -> Decision {
-        if toolID.requiresHighRiskAutoExecution && !settings.allowHighRiskToolAutoExecution {
+    static func decision(for definition: ChatToolDefinition, settings: ToolUseSettings) -> Decision {
+        if definition.requiresConfirmation { return .ask }
+        if definition.requiresHighRiskAutoExecution && !settings.allowHighRiskToolAutoExecution {
             return .ask
         }
 
@@ -292,28 +198,17 @@ enum ChatToolAuthorizationPolicy {
         case .askEveryTime:
             return .ask
         case .readOnly:
-            switch toolID.operationKind {
+            switch definition.operationKind {
             case .read, .display:
                 return .allow
             case .write, .action, .compute:
                 return .ask
             }
         case .readWrite:
-            switch toolID.operationKind {
+            switch definition.operationKind {
             case .read, .write, .display, .action, .compute:
                 return .allow
             }
-        }
-    }
-}
-
-private extension ChatToolID {
-    var requiresHighRiskAutoExecution: Bool {
-        switch self {
-        case .locationCurrent, .clipboardGetText, .clipboardSetText, .systemOpenURL, .javaScriptRun:
-            return true
-        default:
-            return false
         }
     }
 }

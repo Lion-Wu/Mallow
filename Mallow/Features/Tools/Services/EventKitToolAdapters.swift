@@ -618,23 +618,13 @@ private extension Dictionary where Key == String, Value == JSONValue {
 #if canImport(EventKit)
 private enum EventKitAuthorization {
     static func requestCalendarAccess(store: EKEventStore) async throws {
-        if #available(iOS 17.0, macOS 14.0, visionOS 1.0, *) {
-            let granted = try await store.requestFullAccessToEvents()
-            guard granted else { throw ChatToolError.denied(NSLocalizedString("TOOLS_CALENDAR_PERMISSION_DENIED", value: "Calendar permission was denied.", comment: "Tool-use error")) }
-        } else {
-            let granted = try await store.requestAccess(to: .event)
-            guard granted else { throw ChatToolError.denied(NSLocalizedString("TOOLS_CALENDAR_PERMISSION_DENIED", value: "Calendar permission was denied.", comment: "Tool-use error")) }
-        }
+        let granted = try await store.requestFullAccessToEvents()
+        guard granted else { throw ChatToolError.denied(NSLocalizedString("TOOLS_CALENDAR_PERMISSION_DENIED", value: "Calendar permission was denied.", comment: "Tool-use error")) }
     }
 
     static func requestReminderAccess(store: EKEventStore) async throws {
-        if #available(iOS 17.0, macOS 14.0, visionOS 1.0, *) {
-            let granted = try await store.requestFullAccessToReminders()
-            guard granted else { throw ChatToolError.denied(NSLocalizedString("TOOLS_REMINDERS_PERMISSION_DENIED", value: "Reminders permission was denied.", comment: "Tool-use error")) }
-        } else {
-            let granted = try await store.requestAccess(to: .reminder)
-            guard granted else { throw ChatToolError.denied(NSLocalizedString("TOOLS_REMINDERS_PERMISSION_DENIED", value: "Reminders permission was denied.", comment: "Tool-use error")) }
-        }
+        let granted = try await store.requestFullAccessToReminders()
+        guard granted else { throw ChatToolError.denied(NSLocalizedString("TOOLS_REMINDERS_PERMISSION_DENIED", value: "Reminders permission was denied.", comment: "Tool-use error")) }
     }
 }
 

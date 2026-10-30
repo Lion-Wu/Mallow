@@ -766,28 +766,7 @@ struct MessageDetailsView: View {
     }
 
     private func iconName(forToolName name: String) -> String {
-        switch ChatToolID(toolName: name) {
-        case .calendarListEvents, .calendarCreateEvent, .calendarDeleteEvent, .calendarShowEvents:
-            return "calendar"
-        case .remindersListReminders, .remindersCreateReminder, .remindersDeleteReminder, .remindersShowReminders:
-            return "checklist"
-        case .locationCurrent:
-            return "location"
-        case .motionDevice:
-            return "gyroscope"
-        case .deviceContext:
-            return "desktopcomputer"
-        case .clipboardGetText, .clipboardSetText:
-            return "doc.on.clipboard"
-        case .systemOpenURL:
-            return "arrow.up.forward.app"
-        case .systemGetTime:
-            return "clock"
-        case .javaScriptRun:
-            return "curlybraces"
-        case .none:
-            return "wrench.and.screwdriver"
-        }
+        ChatToolRegistry.builtIn.registration(named: name)?.group.icon ?? "wrench.and.screwdriver"
     }
 
     private func color(for phase: ChatToolActivityPhase) -> Color {

@@ -253,7 +253,7 @@ final class ChatService: NSObject, @unchecked Sendable {
             return self.requestGeneration
         }
         let worker = Task.detached(priority: .userInitiated) { [self] in
-            try prepareRequest(sourceMessages: sourceMessages, lastMessageIndex: lastMessageIndex,
+            try await prepareRequest(sourceMessages: sourceMessages, lastMessageIndex: lastMessageIndex,
                 continuesAssistantMessage: continuesAssistantMessage, configuration: configuration,
                 developerPrompt: developerPrompt, includeImagesInUserContent: includeImagesInUserContent,
                 endpoint: endpoint)
@@ -284,7 +284,7 @@ final class ChatService: NSObject, @unchecked Sendable {
                     activeContext.requestGeneration = self.requestGeneration
                     self.activeToolLoopContext = activeContext
                     self.isCancelled = false
-                    self.startStreaming(endpoint: endpoint, requestBodyData: prepared.body)
+                    self.startStreaming(endpoint: endpoint, requestBodyData: prepared.body, toolRegistry: prepared.toolContext.toolRegistry)
                 }
             } catch is CancellationError {
             } catch {
@@ -309,8 +309,9 @@ final class ChatService: NSObject, @unchecked Sendable {
         continuesAssistantMessage: Bool, configuration: ChatServiceConfiguration,
         developerPrompt: String?, includeImagesInUserContent: Bool,
         endpoint: ChatAPIEndpointCandidate
-    ) throws -> PreparedImageRequest {
+    ) async throws -> PreparedImageRequest {
         try Task.checkCancellation()
+        let toolRegistry = try await toolExecutor.prepareTools(settings: configuration.toolUseSettings)
         let model = configuration.modelIdentifier
         let initialPayload = try projectedRequestPayload(
             sourceMessages: sourceMessages,
@@ -323,6 +324,7 @@ final class ChatService: NSObject, @unchecked Sendable {
             model: model, messagePayload: payload, developerPrompt: developerPrompt,
             endpoint: endpoint, apiAdvancedSettings: configuration.apiAdvancedSettings,
             toolUseSettings: configuration.toolUseSettings,
+            toolDefinitions: toolRegistry.definitions,
             previousResponseID: nil,
             thinkingCapability: configuration.thinkingCapability,
             thinkingOption: configuration.thinkingOption
@@ -368,7 +370,8 @@ final class ChatService: NSObject, @unchecked Sendable {
             model: model,
             endpoint: endpoint,
             iteration: 0,
-            previousResponseID: previousResponseID
+            previousResponseID: previousResponseID,
+            toolRegistry: toolRegistry
         )
 
         let requestBodyData: Data
@@ -382,6 +385,7 @@ final class ChatService: NSObject, @unchecked Sendable {
                 endpoint: endpoint,
                 apiAdvancedSettings: configuration.apiAdvancedSettings,
                 toolUseSettings: configuration.toolUseSettings,
+                toolDefinitions: toolRegistry.definitions,
                 previousResponseID: previousResponseID,
                 thinkingCapability: configuration.thinkingCapability,
                 thinkingOption: configuration.thinkingOption
@@ -495,6 +499,7 @@ struct ChatToolLoopContext: Sendable {
     var endpoint: ChatAPIEndpointCandidate
     var iteration: Int
     var previousResponseID: String?
+    let toolRegistry: ChatToolRegistry
     var requestGeneration: UInt64 = 0
     var didRetryWithoutPreviousResponseID = false
 }
@@ -506,6 +511,7 @@ struct ChatToolLoopPayload: @unchecked Sendable {
 struct ChatActiveStreamRequest {
     let task: URLSessionDataTask
     let endpoint: ChatAPIEndpointCandidate
+    let toolRegistry: ChatToolRegistry
 }
 
 struct ChatStreamCallbackToken: Hashable, Sendable {

@@ -4,15 +4,17 @@ import XCTest
 final class ChatToolExecutorTests: XCTestCase {
     func testSchemaMismatchIsRejectedBeforeAdapterExecution() async {
         let calendar = FakeCalendarTool()
-        let result = await makeExecutor(calendarTool: calendar).execute(
+        let registry = makeRegistry(calendarTool: calendar)
+        let result = await ChatToolExecutor(registry: registry).execute(
             ChatToolCallEnvelope(
                 callID: "calendar-create",
                 name: ChatToolID.calendarCreateEvent.rawValue,
                 argumentsJSON: #"{"title":"Class","start":"tomorrow","end":"tomorrow 1 hour from now","calendar_name":42}"#,
                 provider: .openAI
             ),
-            settings: enabledSettings(),
-            endpoint: localEndpoint()
+            context: ChatToolExecutionContext(
+                registry: registry, currentSettings: { Self.enabledSettings() }, authorize: { _ in false }
+            )
         )
 
         XCTAssertEqual(result.status, .invalidArguments)
@@ -22,15 +24,17 @@ final class ChatToolExecutorTests: XCTestCase {
 
     func testDisabledToolUseDoesNotInvokeAdapter() async {
         let calendar = FakeCalendarTool()
-        let result = await makeExecutor(calendarTool: calendar).execute(
+        let registry = makeRegistry(calendarTool: calendar)
+        let result = await ChatToolExecutor(registry: registry).execute(
             ChatToolCallEnvelope(
                 callID: "calendar",
                 name: ChatToolID.calendarListEvents.rawValue,
                 argumentsJSON: "{}",
                 provider: .openAI
             ),
-            settings: .defaults,
-            endpoint: localEndpoint()
+            context: ChatToolExecutionContext(
+                registry: registry, currentSettings: { .defaults }, authorize: { _ in false }
+            )
         )
 
         XCTAssertEqual(result.status, .failed)
@@ -38,15 +42,17 @@ final class ChatToolExecutorTests: XCTestCase {
     }
 
     func testEnabledToolReturnsAdapterPayload() async {
-        let result = await makeExecutor().execute(
+        let registry = makeRegistry()
+        let result = await ChatToolExecutor(registry: registry).execute(
             ChatToolCallEnvelope(
                 callID: "device",
                 name: ChatToolID.deviceContext.rawValue,
                 argumentsJSON: "{}",
                 provider: .openAI
             ),
-            settings: enabledSettings(),
-            endpoint: localEndpoint()
+            context: ChatToolExecutionContext(
+                registry: registry, currentSettings: { Self.enabledSettings() }, authorize: { _ in false }
+            )
         )
 
         XCTAssertEqual(result.status, .success)
@@ -54,29 +60,31 @@ final class ChatToolExecutorTests: XCTestCase {
         XCTAssertEqual(result.summary, "device ok")
     }
 
-    func testWriteToolStillRequiresApprovalByPolicyForRemoteEndpointInReadOnlyMode() {
-        var settings = enabledSettings()
-        settings.calendarEnabled = true
+    func testWriteToolStillRequiresApprovalByPolicyInReadOnlyMode() throws {
+        var settings = Self.enabledSettings()
         settings.authorizationMode = .readOnly
 
         for toolID in [ChatToolID.calendarCreateEvent, .calendarDeleteEvent, .remindersDeleteReminder] {
+            let definition = try XCTUnwrap(ChatToolRegistry.builtIn.registration(id: toolID)).definition
             XCTAssertEqual(
-                ChatToolAuthorizationPolicy.decision(for: toolID, settings: settings, endpoint: remoteEndpoint()),
+                ChatToolAuthorizationPolicy.decision(for: definition, settings: settings),
                 .ask
             )
         }
     }
 
     func testCalendarDeleteToolUsesExactEventIdentifier() async {
-        let result = await makeExecutor().execute(
+        let registry = makeRegistry()
+        let result = await ChatToolExecutor(registry: registry).execute(
             ChatToolCallEnvelope(
                 callID: "calendar-delete",
                 name: ChatToolID.calendarDeleteEvent.rawValue,
                 argumentsJSON: #"{"event_id":"example-event-id"}"#,
                 provider: .openAI
             ),
-            settings: enabledSettings(),
-            endpoint: localEndpoint()
+            context: ChatToolExecutionContext(
+                registry: registry, currentSettings: { Self.enabledSettings() }, authorize: { _ in false }
+            )
         )
 
         XCTAssertEqual(result.status, .success)
@@ -84,15 +92,17 @@ final class ChatToolExecutorTests: XCTestCase {
     }
 
     func testReminderDeleteToolUsesExactReminderIdentifier() async {
-        let result = await makeExecutor().execute(
+        let registry = makeRegistry()
+        let result = await ChatToolExecutor(registry: registry).execute(
             ChatToolCallEnvelope(
                 callID: "reminder-delete",
                 name: ChatToolID.remindersDeleteReminder.rawValue,
                 argumentsJSON: #"{"reminder_id":"example-reminder-id"}"#,
                 provider: .openAI
             ),
-            settings: enabledSettings(),
-            endpoint: localEndpoint()
+            context: ChatToolExecutionContext(
+                registry: registry, currentSettings: { Self.enabledSettings() }, authorize: { _ in false }
+            )
         )
 
         XCTAssertEqual(result.status, .success)
@@ -141,42 +151,21 @@ final class ChatToolExecutorTests: XCTestCase {
         XCTAssertThrowsError(try reader.bool("enabled"))
     }
 
-    private func makeExecutor(calendarTool: FakeCalendarTool = FakeCalendarTool()) -> ChatToolExecutor {
-        ChatToolExecutor(
+    private func makeRegistry(calendarTool: FakeCalendarTool = FakeCalendarTool()) -> ChatToolRegistry {
+        ChatToolRegistry.builtIn(services: ChatToolServices(
             calendarTool: calendarTool,
             remindersTool: FakeRemindersTool(),
             locationTool: FakeLocationTool(),
             motionTool: FakeMotionTool(),
             deviceTool: FakeDeviceTool()
-        )
+        ))
     }
 
-    private func enabledSettings() -> ToolUseSettings {
+    private static func enabledSettings() -> ToolUseSettings {
         ToolUseSettings(
             isEnabled: true,
-            calendarEnabled: true,
-            remindersEnabled: true,
-            locationEnabled: true,
-            motionEnabled: true,
-            deviceContextEnabled: true
-        )
-    }
-
-    private func localEndpoint() -> ChatAPIEndpointCandidate {
-        ChatAPIEndpointCandidate(
-            provider: .lmStudio,
-            style: .lmStudioRESTV1,
-            chatURL: URL(string: "http://localhost:1234/api/v1/chat")!,
-            modelsURL: URL(string: "http://localhost:1234/api/v1/models")!
-        )
-    }
-
-    private func remoteEndpoint() -> ChatAPIEndpointCandidate {
-        ChatAPIEndpointCandidate(
-            provider: .openAI,
-            style: .openAIChatCompletions,
-            chatURL: URL(string: "https://api.openai.com/v1/chat/completions")!,
-            modelsURL: URL(string: "https://api.openai.com/v1/models")!
+            enabledGroups: ["calendar", "reminders", "location", "motion", "deviceContext"],
+            authorizationMode: .readWrite
         )
     }
 }

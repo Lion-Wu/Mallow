@@ -7,28 +7,18 @@
 
 import Foundation
 
-enum ChatToolID: String, CaseIterable, Codable, Sendable {
-    case calendarListEvents = "calendar_list_events"
-    case calendarCreateEvent = "calendar_create_event"
-    case calendarDeleteEvent = "calendar_delete_event"
-    case calendarShowEvents = "calendar_show_events"
-    case remindersListReminders = "reminders_list_reminders"
-    case remindersCreateReminder = "reminders_create_reminder"
-    case remindersDeleteReminder = "reminders_delete_reminder"
-    case remindersShowReminders = "reminders_show_reminders"
-    case locationCurrent = "location_get_current_location"
-    case motionDevice = "motion_get_device_motion"
-    case deviceContext = "device_get_context"
-    case clipboardGetText = "clipboard_get_text"
-    case clipboardSetText = "clipboard_set_text"
-    case systemOpenURL = "system_open_url"
-    case systemGetTime = "system_get_time"
-    case javaScriptRun = "javascript_run"
+struct ChatToolID: RawRepresentable, Hashable, Codable, Sendable {
+    let rawValue: String
 
-    init?(toolName: String) {
-        let normalized = toolName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let id = ChatToolID(rawValue: normalized) else { return nil }
-        self = id
+    init(rawValue: String) { self.rawValue = rawValue }
+
+    init(from decoder: Decoder) throws {
+        rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
     }
 }
 
@@ -40,52 +30,19 @@ enum ChatToolOperationKind: String, Codable, Sendable {
     case compute
 }
 
-extension ChatToolID {
-    var operationKind: ChatToolOperationKind {
-        switch self {
-        case .calendarListEvents, .remindersListReminders, .locationCurrent, .motionDevice, .deviceContext, .clipboardGetText, .systemGetTime:
-            return .read
-        case .calendarCreateEvent, .calendarDeleteEvent,
-             .remindersCreateReminder, .remindersDeleteReminder,
-             .clipboardSetText:
-            return .write
-        case .calendarShowEvents, .remindersShowReminders:
-            return .display
-        case .systemOpenURL:
-            return .action
-        case .javaScriptRun:
-            return .compute
-        }
-    }
-}
-
 enum ChatToolGeneralRule: Hashable, Sendable {
     case dateTime
 }
 
-extension ChatToolID {
-    var generalRuleRequirements: Set<ChatToolGeneralRule> {
-        switch self {
-        case .calendarListEvents, .calendarCreateEvent, .calendarShowEvents,
-             .remindersListReminders, .remindersCreateReminder, .remindersShowReminders:
-            return [.dateTime]
-        case .calendarDeleteEvent, .remindersDeleteReminder,
-             .locationCurrent, .motionDevice, .deviceContext,
-             .clipboardGetText, .clipboardSetText,
-             .systemOpenURL, .systemGetTime, .javaScriptRun:
-            return []
-        }
-    }
-}
-
 struct ChatToolDefinition: Equatable, Sendable {
     let id: ChatToolID
+    var name: String { id.rawValue }
+    let operationKind: ChatToolOperationKind
+    let requiresHighRiskAutoExecution: Bool
+    var requiresConfirmation: Bool = false
+    var generalRuleRequirements: Set<ChatToolGeneralRule> = []
     let description: String
     let parametersSchema: JSONValue
-
-    var generalRuleRequirements: Set<ChatToolGeneralRule> {
-        id.generalRuleRequirements
-    }
 }
 
 struct ChatToolCallEnvelope: Equatable, Sendable {
@@ -109,9 +66,6 @@ struct ChatToolCallEnvelope: Equatable, Sendable {
         self.provider = provider
     }
 
-    var toolID: ChatToolID? {
-        ChatToolID(toolName: name)
-    }
 }
 
 enum ChatToolResultStatus: String, Codable, Sendable {
@@ -155,6 +109,7 @@ struct ChatToolResultEnvelope: Equatable, Sendable {
         ]
         return JSONValue.object(object).compactJSONString
     }
+
 }
 
 enum ChatToolActivityPhase: String, Codable, Sendable {

@@ -333,6 +333,7 @@ extension ChatService {
                 endpoint: context.endpoint,
                 apiAdvancedSettings: configurationProvider.apiAdvancedSettings,
                 toolUseSettings: configurationProvider.toolUseSettings,
+                toolDefinitions: context.toolRegistry.definitions,
                 previousResponseID: nil,
                 thinkingCapability: configurationProvider.thinkingCapability,
                 thinkingOption: configurationProvider.thinkingOption
@@ -345,7 +346,7 @@ extension ChatService {
                 continuationSeed: continuationSeed,
                 requestUsedPreviousResponseID: false
             ))
-            startStreaming(endpoint: context.endpoint, requestBodyData: body)
+            startStreaming(endpoint: context.endpoint, requestBodyData: body, toolRegistry: context.toolRegistry)
             return true
         } catch {
             return false

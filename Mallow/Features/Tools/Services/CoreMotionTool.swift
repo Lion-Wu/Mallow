@@ -24,9 +24,9 @@ struct CoreMotionTool: MotionToolServing {
         }
         manager.deviceMotionUpdateInterval = 0.1
         manager.startDeviceMotionUpdates()
+        defer { manager.stopDeviceMotionUpdates() }
         try await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
         let motion = manager.deviceMotion
-        manager.stopDeviceMotionUpdates()
 
         guard let motion else {
             throw ChatToolError.failed(NSLocalizedString("TOOLS_MOTION_NO_SAMPLE", value: "No device motion sample was received.", comment: "Tool-use error"))

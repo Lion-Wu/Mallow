@@ -14,7 +14,7 @@ extension ChatService {
               endpoint.toolCallingTransport == .promptProtocol else {
             return false
         }
-        return !configurationProvider.toolUseSettings.enabledToolIDs.isEmpty
+        return activeStreamRequest?.toolRegistry.definitions.isEmpty == false
     }
 
     func handlePromptToolDelta(_ piece: String, marksPrimaryOutput: Bool) {
@@ -141,11 +141,11 @@ extension ChatService {
             provider: activeStreamRequest?.endpoint.provider
         ).first
         let toolName = call?.name ?? "tool_call"
-        let title = call.map { ChatToolDefinitions.activityTitle(for: $0.name) }
+        let title = call.map { activeStreamRequest?.toolRegistry.title(for: $0.name) ?? $0.name }
             ?? NSLocalizedString("TOOLS_GENERATING_CALL", value: "Generating Tool Call", comment: "Tool activity title")
         let summary: String?
         if let call {
-            summary = ChatToolDefinitions.activitySummary(for: call)
+            summary = activeStreamRequest?.toolRegistry.summary(for: call)
         } else {
             summary = promptToolPreviewSummary()
         }
