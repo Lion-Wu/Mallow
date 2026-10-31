@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AE1031000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AE1031000000000000000002 /* PrivacyInfo.xcprivacy */; };
 		9531A726E227629A33E3B380 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 219680AEAF301A24A236086F /* KeychainStore.swift */; };
 		A19000000000000000000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = A19000000000000000000002 /* AppIcon.icon */; platformFilters = (ios, macos, ); };
 		A9C4B2103F8A4D2200C0DE02 /* MacCameraCaptureSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C4B2103F8A4D2200C0DE01 /* MacCameraCaptureSheet.swift */; };
@@ -32,6 +31,7 @@
 		AE1014000000000000020008 /* DataBackupArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1014000000000000010008 /* DataBackupArchive.swift */; };
 		AE101500000000000002000A /* DataManagementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE101500000000000001000A /* DataManagementStore.swift */; };
 		AE101500000000000002000B /* DataManagementBrowserViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE101500000000000001000B /* DataManagementBrowserViews.swift */; };
+		AE1031000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AE1031000000000000000002 /* PrivacyInfo.xcprivacy */; };
 		B329D65B2B394979000A17C9 /* MallowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B329D65A2B394979000A17C9 /* MallowApp.swift */; };
 		B329D65F2B39497A000A17C9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B329D65E2B39497A000A17C9 /* Assets.xcassets */; };
 		B329D6622B39497A000A17C9 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B329D6612B39497A000A17C9 /* Preview Assets.xcassets */; };
@@ -392,7 +392,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		AE1031000000000000000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Resources/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		219680AEAF301A24A236086F /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = KeychainStore.swift; path = Mallow/Core/Security/KeychainStore.swift; sourceTree = SOURCE_ROOT; };
 		92A53B05B12C4E0689036C84 /* TextSelectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TextSelectionSheet.swift; path = Mallow/Features/Chat/Views/Components/TextSelectionSheet.swift; sourceTree = SOURCE_ROOT; };
 		A19000000000000000000002 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
@@ -418,6 +417,7 @@
 		AE1014000000000000010008 /* DataBackupArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataBackupArchive.swift; path = Mallow/Features/DataManagement/DataBackupArchive.swift; sourceTree = SOURCE_ROOT; };
 		AE101500000000000001000A /* DataManagementStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataManagementStore.swift; path = Mallow/Features/DataManagement/DataManagementStore.swift; sourceTree = SOURCE_ROOT; };
 		AE101500000000000001000B /* DataManagementBrowserViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DataManagementBrowserViews.swift; path = Mallow/Features/DataManagement/DataManagementBrowserViews.swift; sourceTree = SOURCE_ROOT; };
+		AE1031000000000000000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Resources/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B329D6572B394979000A17C9 /* Mallow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mallow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B329D65A2B394979000A17C9 /* MallowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MallowApp.swift; path = Mallow/App/Entrypoint/MallowApp.swift; sourceTree = SOURCE_ROOT; };
 		B329D65E2B39497A000A17C9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -2235,6 +2235,7 @@
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Read and create calendar events when you ask the assistant to work with your schedule.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Read and create calendar events when you ask the assistant to work with your schedule.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take photos and add them to chat messages.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Connect to the chat and voice servers you configure on your local network to send messages and generate speech.";
 				INFOPLIST_KEY_NSLocationUsageDescription = "Read your current location when you ask the assistant to use location context.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Read your current location when you ask the assistant to use location context.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record your voice to support voice mode.";
@@ -2301,6 +2302,7 @@
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Read and create calendar events when you ask the assistant to work with your schedule.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Read and create calendar events when you ask the assistant to work with your schedule.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take photos and add them to chat messages.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Connect to the chat and voice servers you configure on your local network to send messages and generate speech.";
 				INFOPLIST_KEY_NSLocationUsageDescription = "Read your current location when you ask the assistant to use location context.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Read your current location when you ask the assistant to use location context.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record your voice to support voice mode.";

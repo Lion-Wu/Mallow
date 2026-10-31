@@ -301,6 +301,66 @@
         }
       }
     },
+    "NSLocalNetworkUsageDescription" : {
+      "comment" : "Privacy - Local Network Usage Description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الاتصال بخوادم الدردشة والصوت التي تضبطها على شبكتك المحلية لإرسال الرسائل وتوليد الكلام."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindung mit den von dir im lokalen Netzwerk konfigurierten Chat- und Sprachservern herstellen, um Nachrichten zu senden und Sprache zu erzeugen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Connect to the chat and voice servers you configure on your local network to send messages and generate speech."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectarse a los servidores de chat y voz que configures en tu red local para enviar mensajes y generar voz."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se connecter aux serveurs de discussion et de synthèse vocale que vous configurez sur votre réseau local pour envoyer des messages et générer de la parole."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ローカルネットワーク上で設定したチャットサーバーと音声サーバーに接続し、メッセージの送信と音声の生成を行うために使用します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로컬 네트워크에 설정한 채팅 및 음성 서버에 연결하여 메시지를 보내고 음성을 생성하는 데 사용합니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接你在局域网中配置的聊天和语音服务器，用于发送消息和生成语音。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連接你在區域網路中設定的聊天和語音伺服器，用於傳送訊息和產生語音。"
+          }
+        }
+      }
+    },
     "NSLocationUsageDescription" : {
       "comment" : "Privacy - Location Usage Description",
       "extractionState" : "extracted_with_value",
