@@ -48,105 +48,313 @@ private final class TCPProbeResumeGate: @unchecked Sendable {
     }
 }
 
-/// Performs lightweight reachability checks for the text-generation and TTS servers.
+/// Connection evidence from a real request, independent of API success or failure.
+struct ServerConnectionObservation: Sendable {
+    let baseURL: String
+    let observedAt = Date()
+    let errorCode: URLError.Code?
+
+    init(baseURL: String, errorCode: URLError.Code? = nil) {
+        self.baseURL = baseURL
+        self.errorCode = errorCode
+    }
+}
+
+/// Observes network changes and checks endpoints only when their status is needed.
 @MainActor
 final class ServerReachabilityMonitor: ObservableObject {
+    enum Service: Hashable {
+        case chat, tts
+    }
+
+    private enum ProbeResult {
+        case completed
+        case superseded
+    }
+
+    private struct Probe {
+        let id: UUID
+        let task: Task<ProbeResult, Never>
+    }
+
     private let noticePublisher: any AppNoticePublishing
+    // These values describe the latest evidence, not a guarantee of API availability.
     @Published private(set) var isChatReachable: Bool?
     @Published private(set) var isTTSReachable: Bool?
 
-    private var monitorTask: Task<Void, Never>?
-    private let pollInterval: TimeInterval = 5
+    private var pathMonitor: NWPathMonitor?
+    private var pathMonitorID: UUID?
+    private var lastPath: NWPath?
+    private var awaitingInitialPath = false
+    private var snapshotProvider: (@MainActor () -> ServerReachabilitySnapshot)?
+    private var snapshot: ServerReachabilitySnapshot?
+    private var probes: [Service: Probe] = [:]
+    // Timestamps order observations; they do not expire connection state.
+    private var observationDates: [Service: Date] = [:]
+    private var pendingServices: Set<Service> = []
+    private var isActive = true
 
     init(noticePublisher: any AppNoticePublishing = NoopAppNoticePublisher.shared) {
         self.noticePublisher = noticePublisher
     }
 
-    /// Starts periodic reachability checks (immediately, then on an interval).
-    func startMonitoring(snapshotProvider: @escaping @MainActor () -> ServerReachabilitySnapshot) {
-        monitorTask?.cancel()
-        monitorTask = Task { [weak self] in
-            guard let self else { return }
-            // Immediate check without waiting.
-            await self.checkAll(snapshot: snapshotProvider())
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(pollInterval))
-                await self.checkAll(snapshot: snapshotProvider())
-            }
+    func startMonitoring(
+        snapshotProvider: @escaping @MainActor () -> ServerReachabilitySnapshot
+    ) {
+        self.snapshotProvider = snapshotProvider
+        updateSnapshot(snapshotProvider())
+        startPathMonitorIfNeeded()
+    }
+
+    func setActive(_ active: Bool) {
+        guard isActive != active else { return }
+        isActive = active
+        if active {
+            startPathMonitorIfNeeded()
+        } else {
+            stopMonitoring()
         }
     }
 
     func stopMonitoring() {
-        monitorTask?.cancel()
-        monitorTask = nil
+        pathMonitorID = nil
+        pathMonitor?.cancel()
+        pathMonitor = nil
+        cancelProbes()
     }
 
-    /// Checks both chat and TTS endpoints and surfaces banners when unreachable.
-    func checkAll(snapshot: ServerReachabilitySnapshot) async {
-        await check(chatBase: snapshot.chatBaseURL)
-        if snapshot.requiresTTSNetworkService {
-            await checkTTS(ttsBase: snapshot.ttsBaseURL)
-        } else {
+    private func startPathMonitorIfNeeded() {
+        guard isActive, pathMonitor == nil, snapshotProvider != nil else { return }
+        let monitor = NWPathMonitor()
+        let id = UUID()
+        pathMonitorID = id
+        awaitingInitialPath = true
+        pathMonitor = monitor
+        monitor.pathUpdateHandler = { [weak self] path in
+            Task { @MainActor [weak self] in
+                guard let self, self.pathMonitorID == id else { return }
+                self.networkPathChanged(path)
+            }
+        }
+        monitor.start(queue: DispatchQueue(label: "Mallow.NetworkPath"))
+    }
+
+    private func networkPathChanged(_ path: NWPath) {
+        guard let snapshotProvider else { return }
+        let isInitialUpdate = awaitingInitialPath
+        awaitingInitialPath = false
+        let pathChanged = lastPath.map { $0 != path } ?? false
+        if !isInitialUpdate, !pathChanged { return }
+        lastPath = path
+        updateSnapshot(snapshotProvider())
+        var services = pendingServices
+        if pathChanged {
+            // Recheck every path change, even when the system reports no usable path.
+            // Preserve the last result until new connection evidence replaces it.
+            cancelProbes()
+            services.formUnion([.chat, .tts])
+        }
+        pendingServices.formUnion(services)
+        // The first path callback is a baseline, not another launch check.
+        guard !services.isEmpty else { return }
+        let requestedServices = services
+        let monitorID = pathMonitorID
+        Task { [weak self] in
+            guard let self, self.isActive, self.pathMonitorID == monitorID,
+                  let snapshotProvider = self.snapshotProvider else { return }
+            await self.checkAll(snapshot: snapshotProvider(), services: requestedServices)
+        }
+    }
+
+    func updateSnapshot(_ newSnapshot: ServerReachabilitySnapshot) {
+        if snapshot?.chatBaseURL != newSnapshot.chatBaseURL {
+            invalidate(.chat)
+        }
+        if snapshot?.ttsBaseURL != newSnapshot.ttsBaseURL ||
+            snapshot?.requiresTTSNetworkService != newSnapshot.requiresTTSNetworkService {
+            invalidate(.tts)
+        }
+        snapshot = newSnapshot
+        if !newSnapshot.requiresTTSNetworkService {
             isTTSReachable = true
-            await clear(.tts)
+            pendingServices.remove(.tts)
+            clearConnectionNotice(for: .tts)
         }
     }
 
-    /// Clears existing notices for the given category when connectivity is restored.
-    private func clear(_ category: AppErrorNotice.Category) async {
-        await MainActor.run {
-            self.noticePublisher.clear(category: category)
-        }
-    }
-
-    private func check(chatBase: String) async {
-        guard let endpoint = hostPort(from: chatBase, defaultPort: 80) else {
-            await MainActor.run { self.isChatReachable = nil }
+    /// Reuse the last observation until an explicit probe or a real request updates it.
+    func checkAll(
+        snapshot: ServerReachabilitySnapshot,
+        services: Set<Service> = [.chat, .tts],
+        force: Bool = false
+    ) async {
+        guard !Task.isCancelled else { return }
+        updateSnapshot(snapshot)
+        // Keep the intent until a probe takes ownership, including across scene pauses.
+        pendingServices.formUnion(services.filter { force || observationDates[$0] == nil })
+        guard isActive else {
+            // A launch check requested while the scene is inactive runs on activation.
+            pendingServices.formUnion(services)
             return
         }
-        do {
-            try await tcpProbe(host: endpoint.host, port: endpoint.port)
-            await MainActor.run { self.isChatReachable = true }
-            await clear(.textModel)
-        } catch is CancellationError {
-            return
-        } catch {
-            await MainActor.run {
-                self.isChatReachable = false
-                if self.shouldPublishNotice(for: .textModel) {
-                    self.noticePublisher.publishCritical(
-                        title: NSLocalizedString("CHAT_SERVER_UNREACHABLE", value: "Text server unreachable", comment: "Shown when the LLM endpoint cannot be reached"),
-                        message: friendlyMessage(for: error, base: chatBase),
-                        category: .textModel
-                    )
+        repeat {
+            await withTaskGroup(of: Void.self) { group in
+                for service in services {
+                    group.addTask { await self.check(service) }
                 }
+            }
+            // A path change may also replace a service that finished before its peers.
+        } while isActive && !Task.isCancelled && services.contains {
+            pendingServices.contains($0) || probes[$0] != nil
+        }
+    }
+
+    func record(_ observation: ServerConnectionObservation, for service: Service) {
+        if let snapshotProvider { updateSnapshot(snapshotProvider()) }
+        guard let base = baseURL(for: service),
+              base.trimmingCharacters(in: .whitespacesAndNewlines) ==
+                observation.baseURL.trimmingCharacters(in: .whitespacesAndNewlines),
+              observation.observedAt >= (observationDates[service] ?? .distantPast) else { return }
+        let reachable: Bool?
+        switch observation.errorCode {
+        case nil:
+            reachable = true
+        case .cannotFindHost, .dnsLookupFailed, .cannotConnectToHost,
+             .notConnectedToInternet, .networkConnectionLost:
+            reachable = false
+        case .timedOut:
+            // A timeout does not establish whether the server is offline or merely busy.
+            reachable = nil
+        default:
+            // Cancellation, TLS, authorization and payload errors retain their own UI.
+            return
+        }
+        observationDates[service] = observation.observedAt
+        setReachable(reachable, for: service)
+        if reachable == true {
+            clearConnectionNotice(for: service)
+        } else if let code = observation.errorCode {
+            publishConnectionFailure(URLError(code), base: base, service: service)
+        }
+    }
+
+    private func check(_ service: Service) async {
+        while isActive, !Task.isCancelled {
+            guard let base = baseURL(for: service),
+                  let endpoint = hostPort(from: base, defaultPort: service == .chat ? 80 : 9880) else {
+                pendingServices.remove(service)
+                return
+            }
+            let probe: Probe
+            if let currentProbe = probes[service] {
+                probe = currentProbe
+            } else {
+                guard pendingServices.contains(service) || observationDates[service] == nil else { return }
+                probe = startProbe(service, base: base, endpoint: endpoint)
+                probes[service] = probe
+            }
+            pendingServices.remove(service)
+            switch await probe.task.value {
+            case .completed:
+                return
+            case .superseded:
+                // Follow only explicit lifecycle replacements, never retry a failed probe.
+                continue
             }
         }
     }
 
-    private func checkTTS(ttsBase: String) async {
-        guard let endpoint = hostPort(from: ttsBase, defaultPort: 9880) else {
-            await MainActor.run { self.isTTSReachable = nil }
-            return
-        }
-        do {
-            try await tcpProbe(host: endpoint.host, port: endpoint.port)
-            await MainActor.run { self.isTTSReachable = true }
-            await clear(.tts)
-        } catch is CancellationError {
-            return
-        } catch {
-            await MainActor.run {
-                self.isTTSReachable = false
-                if self.shouldPublishNotice(for: .tts) {
-                    self.noticePublisher.publishCritical(
-                        title: NSLocalizedString("VOICE_TTS_SERVER_UNREACHABLE", value: "TTS server unreachable", comment: "Shown when the TTS endpoint cannot be reached"),
-                        message: friendlyMessage(for: error, base: ttsBase),
-                        category: .tts
-                    )
-                }
+    private func startProbe(
+        _ service: Service,
+        base: String,
+        endpoint: (host: String, port: UInt16)
+    ) -> Probe {
+        let id = UUID()
+        let startedAt = Date()
+        let task = Task { [weak self] () -> ProbeResult in
+            guard let self else { return .completed }
+            defer {
+                if self.probes[service]?.id == id { self.probes[service] = nil }
             }
+            do {
+                try await self.tcpProbe(host: endpoint.host, port: endpoint.port)
+                guard !Task.isCancelled, self.probes[service]?.id == id else { return .superseded }
+                guard (self.observationDates[service] ?? .distantPast) <= startedAt else { return .completed }
+                self.observationDates[service] = Date()
+                self.setReachable(true, for: service)
+                self.clearConnectionNotice(for: service)
+            } catch is CancellationError {
+                return .superseded
+            } catch {
+                guard !Task.isCancelled, self.probes[service]?.id == id else { return .superseded }
+                guard (self.observationDates[service] ?? .distantPast) <= startedAt else { return .completed }
+                self.observationDates[service] = Date()
+                self.setReachable(false, for: service)
+                self.publishConnectionFailure(error, base: base, service: service)
+            }
+            return .completed
         }
+        return Probe(id: id, task: task)
+    }
+
+    private func baseURL(for service: Service) -> String? {
+        guard let snapshot else { return nil }
+        switch service {
+        case .chat: return snapshot.chatBaseURL
+        case .tts: return snapshot.requiresTTSNetworkService ? snapshot.ttsBaseURL : nil
+        }
+    }
+
+    private func setReachable(_ reachable: Bool?, for service: Service) {
+        switch service {
+        case .chat: isChatReachable = reachable
+        case .tts: isTTSReachable = reachable
+        }
+    }
+
+    private func invalidate(_ service: Service) {
+        if let probe = probes.removeValue(forKey: service) {
+            pendingServices.insert(service)
+            probe.task.cancel()
+        }
+        observationDates[service] = nil
+        setReachable(nil, for: service)
+        clearConnectionNotice(for: service)
+    }
+
+    private func cancelProbes() {
+        pendingServices.formUnion(probes.keys)
+        let activeProbes = probes.values
+        probes.removeAll()
+        for probe in activeProbes { probe.task.cancel() }
+    }
+
+    private func category(for service: Service) -> AppErrorNotice.Category {
+        service == .chat ? .chatConnection : .ttsConnection
+    }
+
+    private func noticeTitle(for service: Service) -> String {
+        switch service {
+        case .chat:
+            return NSLocalizedString("CHAT_SERVER_UNREACHABLE", value: "Text server unreachable", comment: "Shown when the LLM endpoint cannot be reached")
+        case .tts:
+            return NSLocalizedString("VOICE_TTS_SERVER_UNREACHABLE", value: "Voice server unreachable", comment: "Shown when the TTS endpoint cannot be reached")
+        }
+    }
+
+    private func publishConnectionFailure(_ error: Error, base: String, service: Service) {
+        let category = category(for: service)
+        guard shouldPublishNotice(for: category) else { return }
+        noticePublisher.publishCritical(
+            title: noticeTitle(for: service),
+            message: friendlyMessage(for: error, base: base),
+            category: category
+        )
+    }
+
+    private func clearConnectionNotice(for service: Service) {
+        // Connection recovery must not dismiss an unrelated API or playback error.
+        noticePublisher.clear(category: category(for: service))
     }
 
     private func hostPort(from base: String, defaultPort: UInt16) -> (host: String, port: UInt16)? {

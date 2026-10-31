@@ -67,6 +67,8 @@ struct TTSPresetApplyStatus: Equatable {
 final class TTSPresetApplyCoordinator {
     typealias StatusPublisher = @MainActor @Sendable (TTSPresetApplyStatus) -> Void
 
+    var connectionReporter: @MainActor @Sendable (ServerConnectionObservation) -> Void = { _ in }
+
     private let presetApplyService: TTSPresetApplyService
     private let now: @Sendable () -> Date
     private(set) var status: TTSPresetApplyStatus
@@ -89,7 +91,10 @@ final class TTSPresetApplyCoordinator {
         update(status.starting(), publish: publish)
 
         do {
-            try await presetApplyService.apply(request) { [weak self] retryStatus in
+            let report = connectionReporter
+            try await presetApplyService.apply(request, connectionReporter: { observation in
+                await report(observation)
+            }) { [weak self] retryStatus in
                 await MainActor.run {
                     guard let self else { return }
                     self.update(self.status.updatingRetry(retryStatus), publish: publish)

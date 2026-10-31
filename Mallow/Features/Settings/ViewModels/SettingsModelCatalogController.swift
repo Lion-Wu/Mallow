@@ -110,7 +110,7 @@ struct SettingsModelCatalogState {
         if let statusError = underlyingError as? HTTPStatusError {
             message = String(
                 format: NSLocalizedString(
-                    "CHAT_SERVER_HTTP_ERROR", value: "Chat server responded with status %d.",
+                    "CHAT_SERVER_HTTP_ERROR", value: "Text server responded with status %d.",
                     comment: "Displayed when the chat server returns an error"
                 ),
                 statusError.statusCode
@@ -152,6 +152,7 @@ struct SettingsModelCatalogDetection {
 
 @MainActor
 final class SettingsModelCatalogController {
+    var connectionReporter: @MainActor (ServerConnectionObservation) -> Void = { _ in }
     private let modelCatalogFetchCoordinator: ModelCatalogFetchCoordinator
     private let noticePublisher: any AppNoticePublishing
     private var activeRequestID = UUID()
@@ -245,6 +246,13 @@ final class SettingsModelCatalogController {
                         await MainActor.run {
                             guard let self, self.activeRequestID == requestID else { return }
                             applyState(loadingState)
+                        }
+                    },
+                    onConnectionResult: { [weak self, requestID] errorCode in
+                        let observation = ServerConnectionObservation(baseURL: apiURL, errorCode: errorCode)
+                        await MainActor.run {
+                            guard let self, self.activeRequestID == requestID else { return }
+                            self.connectionReporter(observation)
                         }
                     },
                     onRetry: { [weak self, requestID, loadingState] candidate, nextAttempt, _, error in

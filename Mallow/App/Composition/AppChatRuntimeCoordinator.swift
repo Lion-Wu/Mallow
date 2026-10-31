@@ -49,10 +49,18 @@ final class AppChatRuntimeCoordinator {
     }
 
     private func startLaunchTasks() {
-        Task { [settingsManager] in
-            await settingsManager.applyPresetOnLaunchIfNeeded()
-        }
+        // The startup catalog request also establishes the text server's connection state.
         settingsManager.fetchAvailableChatModels()
+        Task { [settingsManager, reachabilityMonitor] in
+            let snapshot = settingsManager.serverReachabilitySnapshot
+            guard snapshot.requiresTTSNetworkService else { return }
+            if settingsManager.selectedPresetApplyRequest() != nil {
+                // Applying the voice preset already contacts this server; do not probe it too.
+                await settingsManager.applyPresetOnLaunchIfNeeded()
+            } else {
+                await reachabilityMonitor.checkAll(snapshot: snapshot, services: [.tts])
+            }
+        }
     }
 
     private func observeSettingsChanges() {
@@ -75,15 +83,6 @@ final class AppChatRuntimeCoordinator {
             .removeDuplicates()
             .sink { [weak self] _ in
                 self?.chatSessionsViewModel.refreshChatConfigurationIfNeeded()
-            }
-            .store(in: &cancellables)
-
-        settingsManager.$chatSettings
-            .map { $0.apiURL.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .removeDuplicates()
-            .dropFirst()
-            .sink { [weak self] _ in
-                self?.kickReachabilityCheck()
             }
             .store(in: &cancellables)
 
@@ -150,15 +149,15 @@ final class AppChatRuntimeCoordinator {
     }
 
     private func startReachabilityMonitoring() {
-        reachabilityMonitor.startMonitoring { [settingsManager] in
-            settingsManager.serverReachabilitySnapshot
-        }
+        reachabilityMonitor.startMonitoring(
+            snapshotProvider: { [settingsManager] in settingsManager.serverReachabilitySnapshot }
+        )
     }
 
     private func kickReachabilityCheck() {
         reachabilityTask?.cancel()
         reachabilityTask = Task { [settingsManager, reachabilityMonitor] in
-            await reachabilityMonitor.checkAll(snapshot: settingsManager.serverReachabilitySnapshot)
+            await reachabilityMonitor.checkAll(snapshot: settingsManager.serverReachabilitySnapshot, services: [.tts])
         }
     }
 }

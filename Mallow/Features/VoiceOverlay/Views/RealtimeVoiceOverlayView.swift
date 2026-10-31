@@ -394,9 +394,9 @@ struct RealtimeVoiceOverlayView: View {
     private func serviceTitle(_ source: RealtimeVoiceServiceSource) -> String {
         switch source {
         case .text:
-            NSLocalizedString("CHAT_TEXT_SERVICE", value: "Text service", comment: "Label for text generation status in realtime voice mode")
+            NSLocalizedString("CHAT_TEXT_SERVICE", value: "Text server", comment: "Label for text generation status in realtime voice mode")
         case .voice:
-            NSLocalizedString("VOICE_SERVICE", value: "Voice service", comment: "Label for speech generation status in realtime voice mode")
+            NSLocalizedString("VOICE_SERVICE", value: "Voice server", comment: "Label for speech generation status in realtime voice mode")
         }
     }
 

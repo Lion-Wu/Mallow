@@ -13,6 +13,11 @@ final class SettingsPresetApplyController {
     typealias ApplyOperation = @MainActor (TTSPresetApplyRequest, @escaping StatusPublisher) async -> Void
 
     var onStatusChange: ((TTSPresetApplyStatus) -> Void)?
+    var connectionReporter: @MainActor @Sendable (ServerConnectionObservation) -> Void = { _ in } {
+        didSet { coordinator.connectionReporter = connectionReporter }
+    }
+
+    private let coordinator: TTSPresetApplyCoordinator
 
     private let applyOperation: ApplyOperation
     private(set) var status: TTSPresetApplyStatus
@@ -23,6 +28,7 @@ final class SettingsPresetApplyController {
         applyOperation: ApplyOperation? = nil
     ) {
         let coordinator = TTSPresetApplyCoordinator(initialStatus: initialStatus)
+        self.coordinator = coordinator
         self.status = initialStatus
         self.applyOperation = applyOperation ?? { request, publish in
             await coordinator.apply(request, publish: publish)

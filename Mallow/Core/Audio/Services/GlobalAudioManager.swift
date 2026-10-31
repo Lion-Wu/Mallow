@@ -211,6 +211,7 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
     // MARK: - Config
     private let ttsSettingsSnapshotProvider: @MainActor () -> TTSSettingsSnapshot
     private let noticePublisher: any AppNoticePublishing
+    var connectionReporter: @Sendable (ServerConnectionObservation) -> Void = { _ in }
     var playbackNoticeDismissTask: Task<Void, Never>?
     var mediaType: String = "wav"
     var currentTTSConfiguration: TTSSynthesisConfiguration?
@@ -390,7 +391,7 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
         } else if currentTTSConfiguration?.provider == .appleSpeech {
             title = NSLocalizedString("VOICE_SPEECH_UNAVAILABLE", value: "Apple Speech unavailable", comment: "Shown when Apple's built-in speech synthesis fails")
         } else {
-            title = NSLocalizedString("VOICE_TTS_SERVER_UNAVAILABLE", value: "TTS server unavailable", comment: "Shown when the TTS server cannot be reached or replied with an error")
+            title = NSLocalizedString("VOICE_TTS_SERVER_UNAVAILABLE", value: "Voice server unavailable", comment: "Shown when the TTS server cannot be reached or replied with an error")
         }
         noticePublisher.publish(
             title: title,
@@ -428,13 +429,13 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
         let code = URLError.Code(rawValue: error.code)
         switch code {
         case .cannotConnectToHost, .cannotFindHost:
-            return String(format: NSLocalizedString("VOICE_TTS_CONNECTION_FAILED", value: "Unable to connect to the TTS server at %@", comment: "Shown when the TTS host cannot be reached"), address)
+            return String(format: NSLocalizedString("VOICE_TTS_CONNECTION_FAILED", value: "Unable to connect to the voice server at %@", comment: "Shown when the TTS host cannot be reached"), address)
         case .notConnectedToInternet:
-            return NSLocalizedString("VOICE_TTS_OFFLINE", value: "No internet connection for TTS requests.", comment: "Shown when the device is offline and TTS cannot be reached")
+            return NSLocalizedString("VOICE_TTS_OFFLINE", value: "No internet connection for voice server requests.", comment: "Shown when the device is offline and TTS cannot be reached")
         case .networkConnectionLost:
-            return NSLocalizedString("VOICE_TTS_CONNECTION_LOST", value: "Connection to the TTS server was lost during playback.", comment: "Shown when the TTS stream drops mid-playback")
+            return NSLocalizedString("VOICE_TTS_CONNECTION_LOST", value: "Connection to the voice server was lost during playback.", comment: "Shown when the TTS stream drops mid-playback")
         case .timedOut:
-            return NSLocalizedString("VOICE_TTS_TIMEOUT", value: "The TTS server did not respond in time.", comment: "Shown when the TTS request times out")
+            return NSLocalizedString("VOICE_TTS_TIMEOUT", value: "The voice server did not respond in time.", comment: "Shown when the TTS request times out")
         default:
             return error.localizedDescription
         }

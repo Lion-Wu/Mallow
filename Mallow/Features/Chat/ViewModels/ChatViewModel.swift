@@ -165,7 +165,13 @@ final class ChatViewModel: ObservableObject {
         let resolvedRuntimeConfiguration = ChatRuntimeConfigurationResolver(settingsManager: settingsManager)
         self.runtimeConfigurationResolver = resolvedRuntimeConfiguration
         let initialChatConfiguration = resolvedRuntimeConfiguration.currentConfiguration()
-        let resolvedChatServiceFactory = chatServiceFactory ?? { ChatService(configurationProvider: $0) }
+        let resolvedChatServiceFactory = chatServiceFactory ?? { configuration in
+            ChatService(configurationProvider: configuration, connectionReporter: { observation in
+                DispatchQueue.main.async {
+                    reachability.record(observation, for: .chat)
+                }
+            })
+        }
         self.textRequestRuntime = ChatTextRequestRuntime(
             configuration: initialChatConfiguration,
             service: chatService,

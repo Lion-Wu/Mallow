@@ -56,7 +56,7 @@ nonisolated enum DataBackupMerge {
         var sessions = Dictionary(uniqueKeysWithValues: current.sessions.map { ($0.id, $0) })
         for session in incoming.sessions { sessions[session.id] = session }
         merged.sessions = sessions.values.sorted { $0.id.uuidString < $1.id.uuidString }
-        merged.chatServers = merge(current.chatServers, incoming.chatServers, id: \.id, category: String(localized: "DATA_CHAT_SERVER_PRESETS", defaultValue: "Chat Server Presets"), name: { $0.name })
+        merged.chatServers = merge(current.chatServers, incoming.chatServers, id: \.id, category: String(localized: "DATA_CHAT_SERVER_PRESETS", defaultValue: "Text Server Presets"), name: { $0.name })
         merged.voiceServers = merge(current.voiceServers, incoming.voiceServers, id: \.id, category: String(localized: "DATA_VOICE_SERVER_PRESETS", defaultValue: "Voice Server Presets"), name: { $0.name })
         merged.voicePresets = merge(current.voicePresets, incoming.voicePresets, id: \.id, category: String(localized: "DATA_VOICE_PRESETS", defaultValue: "Voice Presets"), name: { $0.name })
         merged.prompts = merge(current.prompts, incoming.prompts, id: \.id, category: String(localized: "DATA_SYSTEM_PROMPT_PRESETS", defaultValue: "System Prompt Presets"), name: { $0.name })

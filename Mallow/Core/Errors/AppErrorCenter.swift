@@ -12,6 +12,8 @@ import Combine
 struct AppErrorNotice: Identifiable, Equatable {
     enum Category: String {
         case textModel
+        case chatConnection
+        case ttsConnection
         case modelCatalog
         case tts
         case realtimeVoice
@@ -207,6 +209,10 @@ final class AppErrorCenter: ObservableObject, AppNoticePublishing {
 
     private func defaultTitle(for category: AppErrorNotice.Category) -> String {
         switch category {
+        case .chatConnection:
+            return NSLocalizedString("CHAT_SERVER_UNREACHABLE", value: "Text server unreachable", comment: "Shown when the LLM endpoint cannot be reached")
+        case .ttsConnection:
+            return NSLocalizedString("VOICE_TTS_SERVER_UNREACHABLE", value: "Voice server unreachable", comment: "Shown when the TTS endpoint cannot be reached")
         case .textModel:
             return NSLocalizedString("CHAT_TEXT_GENERATION_ISSUE", value: "Text Generation Issue", comment: "Fallback title when the LLM/text server is unavailable")
         case .modelCatalog:

@@ -8,7 +8,7 @@
 import Foundation
 
 extension MallowOverlayViewModel {
-    func beginConnectivityPreflight() {
+    func beginConnectivityPreflight(force: Bool = false) {
         cancelConnectivityTask()
 
         let attemptID = UUID()
@@ -23,7 +23,11 @@ extension MallowOverlayViewModel {
                 }
             }
 
-            await self.reachabilityMonitor.checkAll(snapshot: self.settingsManager.serverReachabilitySnapshot)
+            await self.reachabilityMonitor.checkAll(
+                snapshot: self.settingsManager.serverReachabilitySnapshot, force: force
+            )
+
+            guard !Task.isCancelled else { return }
 
             guard self.isPresented else { return }
             guard self.connectivityAttemptID == attemptID else { return }
@@ -61,7 +65,7 @@ extension MallowOverlayViewModel {
         closeAudioIfVoiceWorkIsActive()
 
         state = .connecting
-        beginConnectivityPreflight()
+        beginConnectivityPreflight(force: true)
     }
 
     func connectivityErrorMessage(chatOK: Bool?, ttsOK: Bool?) -> String {
@@ -74,10 +78,10 @@ extension MallowOverlayViewModel {
         }
 
         if chatOK == false && ttsOK == false {
-            return NSLocalizedString("VOICE_CHAT_SERVERS_CONNECTION_FAILED", value: "Unable to connect to the chat and voice servers.", comment: "Shown when both chat and voice servers are unreachable")
+            return NSLocalizedString("VOICE_CHAT_SERVERS_CONNECTION_FAILED", value: "Unable to connect to the text and voice servers.", comment: "Shown when both chat and voice servers are unreachable")
         }
         if chatOK == false {
-            return NSLocalizedString("CHAT_SERVER_CONNECTION_FAILED", value: "Unable to connect to the chat server.", comment: "Shown when the chat server is unreachable for realtime voice mode")
+            return NSLocalizedString("CHAT_SERVER_CONNECTION_FAILED", value: "Unable to connect to the text server.", comment: "Shown when the chat server is unreachable for realtime voice mode")
         }
         if ttsOK == false {
             return NSLocalizedString("VOICE_SERVER_CONNECTION_FAILED", value: "Unable to connect to the voice server.", comment: "Shown when the voice server is unreachable for realtime voice mode")

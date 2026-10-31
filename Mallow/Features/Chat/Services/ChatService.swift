@@ -11,6 +11,7 @@ final class ChatService: NSObject, @unchecked Sendable {
     @MainActor private var requestPreparation: Task<Void, Never>?
     @MainActor private var preparationID = UUID()
 
+    let connectionReporter: @Sendable (ServerConnectionObservation) -> Void
     let configurationProvider: ChatServiceConfiguring
     private let endpointResolver: ChatEndpointResolving
     private let requestPayloadProjector: ChatRequestPayloadProjecting
@@ -114,8 +115,10 @@ final class ChatService: NSObject, @unchecked Sendable {
         responseTextExtractor: ChatResponseTextExtracting = ChatResponseTextExtractor(),
         bufferedResponseParser: ChatBufferedResponseParsing? = nil,
         streamPayloadExtractor: ChatStreamPayloadExtracting? = nil,
-        toolExecutor: ChatToolExecuting = ChatToolExecutor()
+        toolExecutor: ChatToolExecuting = ChatToolExecutor(),
+        connectionReporter: @escaping @Sendable (ServerConnectionObservation) -> Void = { _ in }
     ) {
+        self.connectionReporter = connectionReporter
         self.configurationProvider = configurationProvider
         self.endpointResolver = endpointResolver
         self.requestPayloadProjector = requestPayloadProjector

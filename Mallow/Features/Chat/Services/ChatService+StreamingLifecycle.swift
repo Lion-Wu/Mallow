@@ -247,6 +247,11 @@ extension ChatService {
     }
 
     func failCurrentStream(with error: Error) {
+        if let error = error as? URLError, activeStreamRequest != nil {
+            connectionReporter(ServerConnectionObservation(
+                baseURL: configurationProvider.apiBaseURL, errorCode: error.code
+            ))
+        }
         finishGenerationRound(outcome: "error")
         isCancelled = true
         updateLongWaitNotice(nil)

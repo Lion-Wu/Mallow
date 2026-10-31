@@ -309,7 +309,7 @@ nonisolated enum StartupDataRecovery {
         }
 
         try recover("AppSettings", title: String(localized: "SETTINGS_TITLE", defaultValue: "Settings"), make: AppSettingsStore.recover)
-        try recover("ChatServerPreset", title: String(localized: "DATA_CHAT_SERVER_PRESETS", defaultValue: "Chat Server Presets"), make: recoverChatServer)
+        try recover("ChatServerPreset", title: String(localized: "DATA_CHAT_SERVER_PRESETS", defaultValue: "Text Server Presets"), make: recoverChatServer)
         try recover("VoiceServerPreset", title: String(localized: "DATA_VOICE_SERVER_PRESETS", defaultValue: "Voice Server Presets"), make: recoverVoiceServer)
         try recover("VoicePreset", title: String(localized: "DATA_VOICE_PRESETS", defaultValue: "Voice Presets"), make: recoverVoice)
         try recover("SystemPromptPreset", title: String(localized: "DATA_SYSTEM_PROMPT_PRESETS", defaultValue: "System Prompt Presets"), make: recoverPrompt)

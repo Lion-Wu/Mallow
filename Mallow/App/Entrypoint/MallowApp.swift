@@ -53,8 +53,9 @@ struct MallowApp: App {
         .defaultSize(width: 1400, height: 900)
         .windowResizability(.contentMinSize)
         #endif
-        .onChange(of: scenePhase) { _, newPhase in
+        .onChange(of: scenePhase, initial: true) { _, newPhase in
             appEnvironment.updatePersistenceMode(for: newPhase)
+            appEnvironment.updateConnectionMonitoring(for: newPhase)
         }
 
         #if os(macOS)

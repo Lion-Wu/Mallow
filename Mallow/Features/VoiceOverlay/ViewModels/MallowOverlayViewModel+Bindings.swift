@@ -82,8 +82,8 @@ extension MallowOverlayViewModel {
                 guard let self else { return }
                 guard self.isPresented else { return }
                 guard !(chatOK == true && ttsOK == true) else { return }
-                // Active requests own their retry and recovery state. A periodic
-                // reachability probe must not interrupt buffered speech or cancel
+                // Active requests own their retry and recovery state. A separate
+                // connection observation must not interrupt buffered speech or cancel
                 // an in-flight text/TTS request.
                 guard !self.currentVoiceWorkSnapshot().hasVoiceWork else { return }
                 if chatOK == false || ttsOK == false {
@@ -172,12 +172,12 @@ extension MallowOverlayViewModel {
                     switch notice {
                     case .awaitingFirstToken:
                         message = NSLocalizedString(
-                            "CHAT_LOADING_RESPONSE_NOT_STARTED", value: "Connected, but the text service has not started responding. You can keep waiting or retry.",
+                            "CHAT_LOADING_RESPONSE_NOT_STARTED", value: "Connected, but the text server has not started responding. You can keep waiting or retry.",
                             comment: "Shown in realtime voice mode when text generation has no first token"
                         )
                     case .awaitingNextToken:
                         message = NSLocalizedString(
-                            "CHAT_LOADING_RESPONSE_DELAYED", value: "Connected, but the text service has not returned anything new. You can keep waiting or retry.",
+                            "CHAT_LOADING_RESPONSE_DELAYED", value: "Connected, but the text server has not returned anything new. You can keep waiting or retry.",
                             comment: "Shown in realtime voice mode when text generation stalls between tokens"
                         )
                     }

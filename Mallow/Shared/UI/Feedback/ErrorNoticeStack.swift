@@ -10,8 +10,8 @@ import SwiftUI
 private extension AppErrorNotice {
     var iconName: String {
         switch category {
-        case .textModel, .modelCatalog: return "network.slash"
-        case .tts: return "waveform.badge.exclamationmark"
+        case .textModel, .modelCatalog, .chatConnection: return "network.slash"
+        case .tts, .ttsConnection: return "waveform.badge.exclamationmark"
         case .realtimeVoice: return "mic.slash"
         case .dataSaving: return "exclamationmark.triangle.fill"
         }
@@ -19,8 +19,8 @@ private extension AppErrorNotice {
 
     var tint: Color {
         switch category {
-        case .textModel, .modelCatalog: return .orange
-        case .tts: return .red
+        case .textModel, .modelCatalog, .chatConnection: return .orange
+        case .tts, .ttsConnection: return .red
         case .realtimeVoice: return .pink
         case .dataSaving: return .red
         }
@@ -136,7 +136,7 @@ struct ErrorNoticeStack: View {
         ),
         AppErrorNotice(
             id: UUID(),
-            title: "TTS server unreachable",
+            title: "Voice server unreachable",
             message: "Could not connect to http://localhost:9880",
             category: .tts,
             timestamp: Date(),

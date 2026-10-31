@@ -104,6 +104,7 @@ enum TTSPresetApplyError: LocalizedError, Sendable {
 
 struct TTSPresetApplyService: Sendable {
     typealias RetryStateHandler = @Sendable (TTSPresetApplyRetryStatus?) async -> Void
+    typealias ConnectionReporter = @Sendable (ServerConnectionObservation) async -> Void
 
     static let defaultRetryPolicy = NetworkRetryPolicy(
         maxAttempts: 4,
@@ -143,15 +144,17 @@ struct TTSPresetApplyService: Sendable {
 
     func apply(
         _ request: TTSPresetApplyRequest,
+        connectionReporter: ConnectionReporter? = nil,
         onRetryStateChange: RetryStateHandler? = nil
     ) async throws {
-        try await applyStage(.gptWeights, request: request, onRetryStateChange: onRetryStateChange)
-        try await applyStage(.sovitsWeights, request: request, onRetryStateChange: onRetryStateChange)
+        try await applyStage(.gptWeights, request: request, connectionReporter: connectionReporter, onRetryStateChange: onRetryStateChange)
+        try await applyStage(.sovitsWeights, request: request, connectionReporter: connectionReporter, onRetryStateChange: onRetryStateChange)
     }
 
     private func applyStage(
         _ stage: TTSPresetApplyStage,
         request: TTSPresetApplyRequest,
+        connectionReporter: ConnectionReporter?,
         onRetryStateChange: RetryStateHandler?
     ) async throws {
         guard let url = endpointURL(for: request, stage: stage) else {
@@ -159,7 +162,10 @@ struct TTSPresetApplyService: Sendable {
         }
 
         do {
-            _ = try await fetchWithRetry(url, onRetryStateChange: onRetryStateChange)
+            _ = try await fetchWithRetry(
+                url, baseURL: request.serverAddress,
+                connectionReporter: connectionReporter, onRetryStateChange: onRetryStateChange
+            )
             await onRetryStateChange?(nil)
         } catch let statusError as HTTPStatusError {
             throw TTSPresetApplyError.requestFailed(
@@ -178,6 +184,8 @@ struct TTSPresetApplyService: Sendable {
 
     private func fetchWithRetry(
         _ url: URL,
+        baseURL: String,
+        connectionReporter: ConnectionReporter?,
         onRetryStateChange: RetryStateHandler?
     ) async throws -> Data {
         try await NetworkRetry.run(
@@ -193,7 +201,19 @@ struct TTSPresetApplyService: Sendable {
                     url: url,
                     timeoutInterval: NetworkRequestTimeouts.standardResponse
                 )
-                let (data, resp) = try await NetworkSessions.standard.data(for: request)
+                let data: Data
+                let resp: URLResponse
+                do {
+                    (data, resp) = try await NetworkSessions.standard.data(for: request)
+                } catch {
+                    if let error = error as? URLError {
+                        await connectionReporter?(ServerConnectionObservation(baseURL: baseURL, errorCode: error.code))
+                    }
+                    throw error
+                }
+                if resp is HTTPURLResponse {
+                    await connectionReporter?(ServerConnectionObservation(baseURL: baseURL))
+                }
                 if let http = resp as? HTTPURLResponse,
                    !(200...299).contains(http.statusCode) {
                     let preview = String(data: data, encoding: .utf8)?

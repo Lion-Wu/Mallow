@@ -42,7 +42,7 @@ extension GlobalAudioManager {
             )
         }
         return String(
-            format: NSLocalizedString("VOICE_TTS_URL_INVALID", value: "Unable to construct TTS URL from %@", comment: "Shown when the TTS endpoint URL cannot be built"),
+            format: NSLocalizedString("VOICE_TTS_URL_INVALID", value: "Unable to construct voice server URL from %@", comment: "Shown when the TTS endpoint URL cannot be built"),
             snapshot.serverAddress
         )
     }
@@ -140,6 +140,7 @@ extension GlobalAudioManager {
             generationID: genAtRequest,
             advanceSequenceOnSuccess: advanceSequenceOnSuccess
         )
+        let connectionReporter = connectionReporter
         let transport = NetworkDataRequest(
             id: requestID,
             request: request,
@@ -158,8 +159,17 @@ extension GlobalAudioManager {
                         )
                     )
                 }
+            },
+            onResponse: { response in
+                guard response is HTTPURLResponse else { return }
+                connectionReporter(ServerConnectionObservation(baseURL: configuration.serverAddress))
             }
         ) { [weak self] data, resp, error in
+            if let error = error as? URLError {
+                connectionReporter(ServerConnectionObservation(
+                    baseURL: configuration.serverAddress, errorCode: error.code
+                ))
+            }
             guard let self = self else { return }
             DispatchQueue.main.async {
                 guard self.activeDataRequests[index]?.id == requestID else { return }

@@ -4892,120 +4892,118 @@
     },
     "CHAT_LOADING_RESPONSE_DELAYED" : {
       "comment" : "Shown in realtime voice mode when text generation stalls between tokens",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تم إنشاء الاتصال، لكن خدمة النص لم تُرجع محتوى جديدًا منذ مدة. يمكنك الاستمرار في الانتظار أو إعادة المحاولة."
+            "value" : "تم إنشاء الاتصال، لكن خادم النص لم يُرجع محتوى جديدًا منذ مدة. يمكنك الاستمرار في الانتظار أو إعادة المحاولة."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Verbindung steht, aber der Textdienst hat längere Zeit keine neuen Inhalte geliefert. Sie können weiter warten oder es erneut versuchen."
+            "value" : "Die Verbindung steht, aber der Textserver hat längere Zeit keine neuen Inhalte geliefert. Sie können weiter warten oder es erneut versuchen."
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Connected, but the text service has not returned anything new. You can keep waiting or retry."
+            "state" : "translated",
+            "value" : "Connected, but the text server has not returned anything new. You can keep waiting or retry."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La conexión está establecida, pero el servicio de texto lleva un tiempo sin devolver contenido nuevo. Puedes seguir esperando o reintentar."
+            "value" : "La conexión está establecida, pero el servidor de texto lleva un tiempo sin devolver contenido nuevo. Puedes seguir esperando o reintentar."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La connexion est établie, mais le service de texte n’a rien renvoyé de nouveau depuis un moment. Vous pouvez patienter ou réessayer."
+            "value" : "La connexion est établie, mais le serveur de texte n’a rien renvoyé de nouveau depuis un moment. Vous pouvez patienter ou réessayer."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "接続は確立されていますが、テキストサービスから新しい内容が長時間返されていません。待機を続けるか、再試行できます。"
+            "value" : "接続は確立されていますが、テキストサーバーから新しい内容が長時間返されていません。待機を続けるか、再試行できます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "연결은 설정되었지만 텍스트 서비스가 오랫동안 새 내용을 반환하지 않았습니다. 계속 기다리거나 다시 시도할 수 있습니다."
+            "value" : "연결은 설정되었지만 텍스트 서버가 오랫동안 새 내용을 반환하지 않았습니다. 계속 기다리거나 다시 시도할 수 있습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "连接已建立，但文本服务长时间没有返回新内容。您可以继续等待或重试。"
+            "value" : "连接已建立，但文本服务器长时间没有返回新内容。您可以继续等待或重试。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "連線已建立，但文字服務長時間沒有傳回新內容。您可以繼續等待或重試。"
+            "value" : "連線已建立，但文字伺服器長時間沒有傳回新內容。您可以繼續等待或重試。"
           }
         }
       }
     },
     "CHAT_LOADING_RESPONSE_NOT_STARTED" : {
       "comment" : "Shown in realtime voice mode when text generation has no first token",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تم إنشاء الاتصال، لكن خدمة النص لم تبدأ بالاستجابة بعد. يمكنك الاستمرار في الانتظار أو إعادة المحاولة."
+            "value" : "تم إنشاء الاتصال، لكن خادم النص لم يبدأ بالاستجابة بعد. يمكنك الاستمرار في الانتظار أو إعادة المحاولة."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Verbindung steht, aber der Textdienst hat noch nicht geantwortet. Sie können weiter warten oder es erneut versuchen."
+            "value" : "Die Verbindung steht, aber der Textserver hat noch nicht geantwortet. Sie können weiter warten oder es erneut versuchen."
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Connected, but the text service has not started responding. You can keep waiting or retry."
+            "state" : "translated",
+            "value" : "Connected, but the text server has not started responding. You can keep waiting or retry."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La conexión está establecida, pero el servicio de texto aún no ha empezado a responder. Puedes seguir esperando o reintentar."
+            "value" : "La conexión está establecida, pero el servidor de texto aún no ha empezado a responder. Puedes seguir esperando o reintentar."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La connexion est établie, mais le service de texte n’a pas encore commencé à répondre. Vous pouvez patienter ou réessayer."
+            "value" : "La connexion est établie, mais le serveur de texte n’a pas encore commencé à répondre. Vous pouvez patienter ou réessayer."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "接続は確立されていますが、テキストサービスはまだ応答を開始していません。待機を続けるか、再試行できます。"
+            "value" : "接続は確立されていますが、テキストサーバーはまだ応答を開始していません。待機を続けるか、再試行できます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "연결은 설정되었지만 텍스트 서비스가 아직 응답을 시작하지 않았습니다. 계속 기다리거나 다시 시도할 수 있습니다."
+            "value" : "연결은 설정되었지만 텍스트 서버가 아직 응답을 시작하지 않았습니다. 계속 기다리거나 다시 시도할 수 있습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "连接已建立，但文本服务尚未开始响应。您可以继续等待或重试。"
+            "value" : "连接已建立，但文本服务器尚未开始响应。您可以继续等待或重试。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "連線已建立，但文字服務尚未開始回應。您可以繼續等待或重試。"
+            "value" : "連線已建立，但文字伺服器尚未開始回應。您可以繼續等待或重試。"
           }
         }
       }
@@ -5660,120 +5658,118 @@
     },
     "CHAT_SERVER_CONNECTION_FAILED" : {
       "comment" : "Shown when the chat server is unreachable for realtime voice mode",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تعذر الاتصال بخادم الدردشة."
+            "value" : "تعذر الاتصال بخادم النص."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verbindung zum Chat-Server nicht möglich."
+            "value" : "Verbindung zum Textserver nicht möglich."
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Unable to connect to the chat server."
+            "state" : "translated",
+            "value" : "Unable to connect to the text server."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se puede conectar al servidor de chat."
+            "value" : "No se puede conectar al servidor de texto."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible de se connecter au serveur de chat."
+            "value" : "Impossible de se connecter au serveur de texte."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "チャットサーバーに接続できません。"
+            "value" : "テキストサーバーに接続できません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "채팅 서버에 연결할 수 없습니다."
+            "value" : "텍스트 서버에 연결할 수 없습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无法连接到聊天服务。"
+            "value" : "无法连接到文本服务器。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法連線至聊天服務。"
+            "value" : "無法連線至文字伺服器。"
           }
         }
       }
     },
     "CHAT_SERVER_HTTP_ERROR" : {
       "comment" : "Displayed when the chat server returns an error",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "استجاب خادم الدردشة بالحالة %d."
+            "value" : "استجاب خادم النص بالحالة %d."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Der Chat-Server hat mit Status %d geantwortet."
+            "value" : "Der Textserver hat mit Status %d geantwortet."
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Chat server responded with status %d."
+            "state" : "translated",
+            "value" : "Text server responded with status %d."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El servidor de chat respondió con el estado %d."
+            "value" : "El servidor de texto respondió con el estado %d."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le serveur de chat a répondu avec le statut %d."
+            "value" : "Le serveur de texte a répondu avec le statut %d."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "チャットサーバーがステータス %d を返しました。"
+            "value" : "テキストサーバーがステータス %d を返しました。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "채팅 서버가 상태 %d로 응답했습니다."
+            "value" : "텍스트 서버가 상태 %d로 응답했습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "聊天服务器返回状态码 %d。"
+            "value" : "文本服务器返回状态码 %d。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "聊天伺服器回應狀態碼 %d。"
+            "value" : "文字伺服器回應狀態碼 %d。"
           }
         }
       }
@@ -6133,60 +6129,59 @@
     },
     "CHAT_TEXT_SERVICE" : {
       "comment" : "Label for text generation status in realtime voice mode",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "خدمة النص"
+            "value" : "خادم النص"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Textdienst"
+            "value" : "Textserver"
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Text service"
+            "state" : "translated",
+            "value" : "Text server"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Servicio de texto"
+            "value" : "Servidor de texto"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Service de texte"
+            "value" : "Serveur de texte"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "テキストサービス"
+            "value" : "テキストサーバー"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "텍스트 서비스"
+            "value" : "텍스트 서버"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "文本服务"
+            "value" : "文本服务器"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "文字服務"
+            "value" : "文字伺服器"
           }
         }
       }
@@ -12115,60 +12110,59 @@
       }
     },
     "DATA_CHAT_SERVER_PRESETS" : {
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "إعدادات خادم الدردشة المسبقة"
+            "value" : "إعدادات خادم النص المسبقة"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chatserver-Voreinstellungen"
+            "value" : "Textserver-Voreinstellungen"
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Chat Server Presets"
+            "state" : "translated",
+            "value" : "Text Server Presets"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preajustes del servidor de chat"
+            "value" : "Preajustes del servidor de texto"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Préréglages du serveur de chat"
+            "value" : "Préréglages du serveur de texte"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "チャットサーバープリセット"
+            "value" : "テキストサーバープリセット"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "채팅 서버 프리셋"
+            "value" : "텍스트 서버 프리셋"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "聊天服务器预设"
+            "value" : "文本服务器预设"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "聊天伺服器預設"
+            "value" : "文字伺服器預設"
           }
         }
       }
@@ -29218,55 +29212,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "خادم الدردشة"
+            "value" : "خادم النص"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chat-Server"
+            "value" : "Textserver"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chat Server"
+            "value" : "Text Server"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Servidor de chat"
+            "value" : "Servidor de texto"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Serveur de chat"
+            "value" : "Serveur de texte"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "チャットサーバー"
+            "value" : "テキストサーバー"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "채팅 서버"
+            "value" : "텍스트 서버"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "聊天服务器"
+            "value" : "文本服务器"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "聊天伺服器"
+            "value" : "文字伺服器"
           }
         }
       }
@@ -44215,60 +44209,59 @@
     },
     "VOICE_CHAT_SERVERS_CONNECTION_FAILED" : {
       "comment" : "Shown when both chat and voice servers are unreachable",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تعذر الاتصال بخادمي الدردشة والصوت."
+            "value" : "تعذر الاتصال بخادمي النص والصوت."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verbindung zu Chat- und Sprachservern nicht möglich."
+            "value" : "Verbindung zu Text- und Sprachservern nicht möglich."
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Unable to connect to the chat and voice servers."
+            "state" : "translated",
+            "value" : "Unable to connect to the text and voice servers."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se puede conectar a los servidores de chat y voz."
+            "value" : "No se puede conectar a los servidores de texto y voz."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible de se connecter aux serveurs de chat et de voix."
+            "value" : "Impossible de se connecter aux serveurs de texte et de voix."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "チャットサーバーと音声サーバーに接続できません。"
+            "value" : "テキストサーバーと音声サーバーに接続できません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "채팅 서버와 음성 서버에 연결할 수 없습니다."
+            "value" : "텍스트 서버와 음성 서버에 연결할 수 없습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无法连接到聊天服务和语音服务。"
+            "value" : "无法连接到文本服务器和语音服务器。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法連線至聊天服務與語音服務。"
+            "value" : "無法連線至文字伺服器與語音伺服器。"
           }
         }
       }
@@ -46163,13 +46156,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无法连接到语音服务。"
+            "value" : "无法连接到语音服务器。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法連線至語音服務。"
+            "value" : "無法連線至語音伺服器。"
           }
         }
       }
@@ -46236,60 +46229,59 @@
     },
     "VOICE_SERVICE" : {
       "comment" : "Label for speech generation status in realtime voice mode",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "خدمة الصوت"
+            "value" : "خادم الصوت"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sprachdienst"
+            "value" : "Sprachserver"
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Voice service"
+            "state" : "translated",
+            "value" : "Voice server"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Servicio de voz"
+            "value" : "Servidor de voz"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Service vocal"
+            "value" : "Serveur vocal"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "音声サービス"
+            "value" : "音声サーバー"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "음성 서비스"
+            "value" : "음성 서버"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "语音服务"
+            "value" : "语音服务器"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "語音服務"
+            "value" : "語音伺服器"
           }
         }
       }
@@ -47354,660 +47346,649 @@
     },
     "VOICE_TTS_CONNECTION_FAILED" : {
       "comment" : "Shown when the TTS host cannot be reached",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تعذر الاتصال بخادم TTS على %@"
+            "value" : "تعذر الاتصال بخادم الصوت على %@"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verbindung zum TTS-Server unter %@ nicht möglich"
+            "value" : "Verbindung zum Sprachserver unter %@ nicht möglich"
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Unable to connect to the TTS server at %@"
+            "state" : "translated",
+            "value" : "Unable to connect to the voice server at %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se puede conectar al servidor TTS en %@"
+            "value" : "No se puede conectar al servidor de voz en %@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible de se connecter au serveur TTS à l’adresse %@"
+            "value" : "Impossible de se connecter au serveur vocal à l’adresse %@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ のTTSサーバーに接続できませんでした"
+            "value" : "%@ の音声サーバーに接続できませんでした"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@의 TTS 서버에 연결할 수 없습니다"
+            "value" : "%@의 음성 서버에 연결할 수 없습니다"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无法连接位于 %@ 的 TTS 服务器"
+            "value" : "无法连接位于 %@ 的语音服务器"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法連線位於 %@ 的 TTS 伺服器"
+            "value" : "無法連線位於 %@ 的語音伺服器"
           }
         }
       }
     },
     "VOICE_TTS_CONNECTION_LOST" : {
       "comment" : "Shown when the TTS stream drops mid-playback",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "انقطع الاتصال بخادم TTS أثناء التشغيل."
+            "value" : "انقطع الاتصال بخادم الصوت أثناء التشغيل."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Verbindung zum TTS-Server wurde während der Wiedergabe unterbrochen."
+            "value" : "Die Verbindung zum Sprachserver wurde während der Wiedergabe unterbrochen."
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Connection to the TTS server was lost during playback."
+            "state" : "translated",
+            "value" : "Connection to the voice server was lost during playback."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La conexión con el servidor TTS se perdió durante la reproducción."
+            "value" : "La conexión con el servidor de voz se perdió durante la reproducción."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La connexion au serveur TTS a été perdue pendant la lecture."
+            "value" : "La connexion au serveur vocal a été perdue pendant la lecture."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "再生中にTTSサーバーとの接続が切れました。"
+            "value" : "再生中に音声サーバーとの接続が切れました。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "재생 중 TTS 서버와의 연결이 끊어졌습니다."
+            "value" : "재생 중 음성 서버와의 연결이 끊어졌습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "播放过程中与 TTS 服务器的连接中断。"
+            "value" : "播放过程中与语音服务器的连接中断。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "播放過程中與 TTS 伺服器的連線中斷。"
+            "value" : "播放過程中與語音伺服器的連線中斷。"
           }
         }
       }
     },
     "VOICE_TTS_HTTP_ERROR" : {
       "comment" : "Shown when the TTS server returns a non-success status",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "خطأ في خادم TTS: %d"
+            "value" : "خطأ في خادم الصوت: %d"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS-Serverfehler: %d"
+            "value" : "Sprachserverfehler: %d"
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "TTS server error: %d"
+            "state" : "translated",
+            "value" : "Voice server error: %d"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Error del servidor TTS: %d"
+            "value" : "Error del servidor de voz: %d"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erreur du serveur TTS : %d"
+            "value" : "Erreur du serveur vocal : %d"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS サーバーエラー: %d"
+            "value" : "音声サーバーエラー: %d"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 서버 오류: %d"
+            "value" : "음성 서버 오류: %d"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 服务器错误：%d"
+            "value" : "语音服务器错误：%d"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 伺服器錯誤：%d"
+            "value" : "語音伺服器錯誤：%d"
           }
         }
       }
     },
     "VOICE_TTS_HTTP_ERROR_DETAIL" : {
       "comment" : "Shown when the TTS server returns a non-success status plus body",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "خطأ في خادم TTS: %d (%@)"
+            "value" : "خطأ في خادم الصوت: %d (%@)"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS-Serverfehler: %d (%@)"
+            "value" : "Sprachserverfehler: %d (%@)"
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "TTS server error: %1$d (%2$@)"
+            "state" : "translated",
+            "value" : "Voice server error: %1$d (%2$@)"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Error del servidor TTS: %d (%@)"
+            "value" : "Error del servidor de voz: %d (%@)"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erreur du serveur TTS : %d (%@)"
+            "value" : "Erreur du serveur vocal : %d (%@)"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS サーバーエラー: %d (%@)"
+            "value" : "音声サーバーエラー: %d (%@)"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 서버 오류: %d (%@)"
+            "value" : "음성 서버 오류: %d (%@)"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 服务器错误：%d（%@）"
+            "value" : "语音服务器错误：%d（%@）"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 伺服器錯誤：%d（%@）"
+            "value" : "語音伺服器錯誤：%d（%@）"
           }
         }
       }
     },
     "VOICE_TTS_OFFLINE" : {
       "comment" : "Shown when the device is offline and TTS cannot be reached",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "لا يوجد اتصال بالإنترنت لطلبات TTS."
+            "value" : "لا يوجد اتصال بالإنترنت لطلبات خادم الصوت."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keine Internetverbindung für TTS-Anfragen."
+            "value" : "Keine Internetverbindung für Anfragen an den Sprachserver."
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "No internet connection for TTS requests."
+            "state" : "translated",
+            "value" : "No internet connection for voice server requests."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No hay conexión a internet para las solicitudes de TTS."
+            "value" : "No hay conexión a internet para las solicitudes al servidor de voz."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucune connexion Internet pour les requêtes TTS."
+            "value" : "Aucune connexion Internet pour les requêtes au serveur vocal."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTSリクエストに必要なインターネット接続がありません。"
+            "value" : "音声サーバーへのリクエストに必要なインターネット接続がありません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 요청에 사용할 인터넷 연결이 없습니다."
+            "value" : "음성 서버 요청에 사용할 인터넷 연결이 없습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 请求没有可用的网络连接。"
+            "value" : "语音服务器请求没有可用的网络连接。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 請求沒有可用的網路連線。"
+            "value" : "語音伺服器請求沒有可用的網路連線。"
           }
         }
       }
     },
     "VOICE_TTS_RESPONSE_NOT_AUDIO" : {
       "comment" : "Shown when TTS returns a non-audio MIME type",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "لم تكن استجابة TTS بيانات صوتية."
+            "value" : "لم تكن استجابة خادم الصوت بيانات صوتية."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die TTS-Antwort war keine Audiodatei."
+            "value" : "Die Antwort des Sprachservers war keine Audiodatei."
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "TTS response was not audio data."
+            "state" : "translated",
+            "value" : "Voice server response was not audio data."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La respuesta de TTS no era un dato de audio."
+            "value" : "La respuesta del servidor de voz no era un dato de audio."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La réponse TTS n’était pas une donnée audio."
+            "value" : "La réponse du serveur vocal n’était pas une donnée audio."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTSの応答が音声データではありませんでした。"
+            "value" : "音声サーバーの応答が音声データではありませんでした。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 응답이 오디오 데이터가 아니었습니다."
+            "value" : "음성 서버 응답이 오디오 데이터가 아니었습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 响应不是音频数据。"
+            "value" : "语音服务器响应不是音频数据。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 回應不是音訊資料。"
+            "value" : "語音伺服器回應不是音訊資料。"
           }
         }
       }
     },
     "VOICE_TTS_RESPONSE_NOT_AUDIO_DETAIL" : {
       "comment" : "Shown when TTS returns non-audio body",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "لم تكن استجابة TTS صوتًا: %@"
+            "value" : "لم تكن استجابة خادم الصوت صوتًا: %@"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die TTS-Antwort war kein Audio: %@"
+            "value" : "Die Antwort des Sprachservers war kein Audio: %@"
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "TTS response was not audio: %@"
+            "state" : "translated",
+            "value" : "Voice server response was not audio: %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La respuesta de TTS no era audio: %@"
+            "value" : "La respuesta del servidor de voz no era audio: %@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La réponse TTS n’était pas un audio : %@"
+            "value" : "La réponse du serveur vocal n’était pas un audio : %@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTSの応答が音声ではありません: %@"
+            "value" : "音声サーバーの応答が音声ではありません: %@"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 응답이 오디오가 아니었습니다: %@"
+            "value" : "음성 서버 응답이 오디오가 아니었습니다: %@"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 响应不是音频：%@"
+            "value" : "语音服务器响应不是音频：%@"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 回應不是音訊：%@"
+            "value" : "語音伺服器回應不是音訊：%@"
           }
         }
       }
     },
     "VOICE_TTS_SERVER_UNAVAILABLE" : {
       "comment" : "Shown when the TTS server cannot be reached or replied with an error",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "خادم TTS غير متاح"
+            "value" : "خادم الصوت غير متاح"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS-Server nicht verfügbar"
+            "value" : "Sprachserver nicht verfügbar"
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "TTS server unavailable"
+            "state" : "translated",
+            "value" : "Voice server unavailable"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Servidor TTS no disponible"
+            "value" : "Servidor de voz no disponible"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Serveur TTS indisponible"
+            "value" : "Serveur vocal indisponible"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS サーバーを利用できません"
+            "value" : "音声サーバーを利用できません"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 서버를 사용할 수 없습니다"
+            "value" : "음성 서버를 사용할 수 없습니다"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 服务器不可用"
+            "value" : "语音服务器不可用"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 伺服器不可用"
+            "value" : "語音伺服器不可用"
           }
         }
       }
     },
     "VOICE_TTS_SERVER_UNREACHABLE" : {
       "comment" : "Shown when the TTS endpoint cannot be reached",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "لا يمكن الوصول إلى خادم TTS"
+            "value" : "لا يمكن الوصول إلى خادم الصوت"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS-Server nicht erreichbar"
+            "value" : "Sprachserver nicht erreichbar"
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "TTS server unreachable"
+            "state" : "translated",
+            "value" : "Voice server unreachable"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se puede acceder al servidor TTS"
+            "value" : "No se puede acceder al servidor de voz"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Serveur TTS inaccessible"
+            "value" : "Serveur vocal inaccessible"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS サーバーに接続できません"
+            "value" : "音声サーバーに接続できません"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 서버에 연결할 수 없습니다"
+            "value" : "음성 서버에 연결할 수 없습니다"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无法连接 TTS 服务器"
+            "value" : "无法连接语音服务器"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法連線 TTS 伺服器"
+            "value" : "無法連線語音伺服器"
           }
         }
       }
     },
     "VOICE_TTS_TIMEOUT" : {
       "comment" : "Shown when the TTS request times out",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "لم يستجب خادم TTS في الوقت المناسب."
+            "value" : "لم يستجب خادم الصوت في الوقت المناسب."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Der TTS-Server hat nicht rechtzeitig geantwortet."
+            "value" : "Der Sprachserver hat nicht rechtzeitig geantwortet."
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "The TTS server did not respond in time."
+            "state" : "translated",
+            "value" : "The voice server did not respond in time."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El servidor TTS no respondió a tiempo."
+            "value" : "El servidor de voz no respondió a tiempo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le serveur TTS n’a pas répondu à temps."
+            "value" : "Le serveur vocal n’a pas répondu à temps."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTSサーバーの応答がタイムアウトしました。"
+            "value" : "音声サーバーの応答がタイムアウトしました。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 서버가 제때 응답하지 않았습니다."
+            "value" : "음성 서버가 제때 응답하지 않았습니다."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 服务器未及时响应。"
+            "value" : "语音服务器未及时响应。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS 伺服器未及時回應。"
+            "value" : "語音伺服器未及時回應。"
           }
         }
       }
     },
     "VOICE_TTS_URL_INVALID" : {
       "comment" : "Shown when the TTS endpoint URL cannot be built",
-      "extractionState" : "extracted_with_value",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تعذر إنشاء عنوان URL لـ TTS من %@"
+            "value" : "تعذر إنشاء عنوان URL لخادم الصوت من %@"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "TTS-URL konnte aus %@ nicht erstellt werden"
+            "value" : "URL des Sprachservers konnte aus %@ nicht erstellt werden"
           }
         },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "Unable to construct TTS URL from %@"
+            "state" : "translated",
+            "value" : "Unable to construct voice server URL from %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se pudo construir la URL de TTS a partir de %@"
+            "value" : "No se pudo construir la URL del servidor de voz a partir de %@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible de construire l’URL TTS à partir de %@"
+            "value" : "Impossible de construire l’URL du serveur vocal à partir de %@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ から TTS URL を生成できませんでした"
+            "value" : "%@ から 音声サーバーの URL を生成できませんでした"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@에서 TTS URL을 구성할 수 없습니다"
+            "value" : "%@에서 음성 서버 URL을 구성할 수 없습니다"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无法从 %@ 构造 TTS URL"
+            "value" : "无法从 %@ 构造语音服务器 URL"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法從 %@ 建立 TTS URL"
+            "value" : "無法從 %@ 建立語音伺服器 URL"
           }
         }
       }

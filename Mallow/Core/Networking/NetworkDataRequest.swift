@@ -18,6 +18,7 @@ final class NetworkDataRequest: NSObject, URLSessionDataDelegate, @unchecked Sen
     private let task: URLSessionDataTask
     private let queue: DispatchQueue
     private let onLongWait: @Sendable () -> Void
+    private let onResponse: @Sendable (URLResponse) -> Void
     private var completion: (@Sendable (Data, URLResponse?, Error?) -> Void)?
     private var data = Data()
     private lazy var waitMonitor = NetworkRequestWaitMonitor(
@@ -36,12 +37,14 @@ final class NetworkDataRequest: NSObject, URLSessionDataDelegate, @unchecked Sen
         session: URLSession,
         queue: DispatchQueue,
         onLongWait: @escaping @Sendable () -> Void,
+        onResponse: @escaping @Sendable (URLResponse) -> Void = { _ in },
         completion: @escaping @Sendable (Data, URLResponse?, Error?) -> Void
     ) {
         self.id = id
         self.task = session.dataTask(with: request)
         self.queue = queue
         self.onLongWait = onLongWait
+        self.onResponse = onResponse
         self.completion = completion
         super.init()
         task.delegate = self
@@ -80,7 +83,10 @@ final class NetworkDataRequest: NSObject, URLSessionDataDelegate, @unchecked Sen
         didReceive response: URLResponse,
         completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
     ) {
-        waitMonitor.markConnectionEstablished()
+        if completion != nil {
+            waitMonitor.markConnectionEstablished()
+            onResponse(response)
+        }
         completionHandler(completion == nil ? .cancel : .allow)
     }
 

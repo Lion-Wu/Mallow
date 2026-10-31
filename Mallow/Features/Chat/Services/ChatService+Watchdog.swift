@@ -16,6 +16,9 @@ extension ChatService {
             onConnectionTimeout: { [weak self] in
                 guard let self, !self.isCancelled,
                       self.activeStreamRequest?.task === requestTask else { return }
+                self.connectionReporter(ServerConnectionObservation(
+                    baseURL: self.configurationProvider.apiBaseURL, errorCode: .timedOut
+                ))
                 self.failCurrentStream(with: ChatNetworkError.timeout(NSLocalizedString(
                     "NETWORK_TIMEOUT", value: "Connection timed out", comment: "Shown when connecting to the chat server takes too long"
                 )))

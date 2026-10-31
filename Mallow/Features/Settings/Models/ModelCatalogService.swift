@@ -34,13 +34,16 @@ enum ModelCatalogPaginationError: LocalizedError, Equatable {
 
 struct DefaultModelCatalogService: ModelCatalogFetching, Sendable {
     private let dataLoader: ModelCatalogDataLoader
+    private let onConnectionResult: (@Sendable (URLError.Code?) async -> Void)?
 
     init(
         dataLoader: @escaping ModelCatalogDataLoader = { request in
             try await NetworkSessions.standard.data(for: request)
-        }
+        },
+        onConnectionResult: (@Sendable (URLError.Code?) async -> Void)? = nil
     ) {
         self.dataLoader = dataLoader
+        self.onConnectionResult = onConnectionResult
     }
 
     func fetchModels(
@@ -64,7 +67,16 @@ struct DefaultModelCatalogService: ModelCatalogFetching, Sendable {
                 policy: retryPolicy,
                 onRetry: onRetry,
                 operation: {
-                    let (data, response) = try await dataLoader(immutableRequest)
+                    let data: Data
+                    let response: URLResponse
+                    do {
+                        (data, response) = try await dataLoader(immutableRequest)
+                    } catch {
+                        if let error = error as? URLError { await onConnectionResult?(error.code) }
+                        throw error
+                    }
+                    // HTTP errors and malformed catalogs still prove that the server responded.
+                    if response is HTTPURLResponse { await onConnectionResult?(nil) }
                     if let http = response as? HTTPURLResponse,
                        !(200...299).contains(http.statusCode) {
                         let preview = String(data: data, encoding: .utf8)?
@@ -194,7 +206,7 @@ enum ModelCatalogFetchError: Error {
 }
 
 struct ModelCatalogFetchCoordinator {
-    private let modelCatalogService: ModelCatalogFetching
+    private let modelCatalogService: ModelCatalogFetching?
 
     static let retryPolicy = NetworkRetryPolicy(
         maxAttempts: 4,
@@ -204,7 +216,7 @@ struct ModelCatalogFetchCoordinator {
         jitterRatio: 0.2
     )
 
-    init(modelCatalogService: ModelCatalogFetching = DefaultModelCatalogService()) {
+    init(modelCatalogService: ModelCatalogFetching? = nil) {
         self.modelCatalogService = modelCatalogService
     }
 
@@ -238,6 +250,7 @@ struct ModelCatalogFetchCoordinator {
         initialRetryPolicy: NetworkRetryPolicy,
         probeRetryPolicy: NetworkRetryPolicy,
         onCandidateStart: (@Sendable () async -> Void)? = nil,
+        onConnectionResult: (@Sendable (URLError.Code?) async -> Void)? = nil,
         onRetry: (@Sendable (
             _ candidate: ChatAPIEndpointCandidate,
             _ nextAttempt: Int,
@@ -245,6 +258,9 @@ struct ModelCatalogFetchCoordinator {
             _ error: Error
         ) async -> Void)?
     ) async throws -> ModelCatalogFetchResult {
+        let modelCatalogService = modelCatalogService ?? DefaultModelCatalogService(
+            onConnectionResult: onConnectionResult
+        )
         var lastError: Error?
 
         var requests: [URLRequest] = []

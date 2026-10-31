@@ -110,6 +110,17 @@ final class AppEnvironment: ObservableObject {
             errorCenter: self.errorCenter
         )
 #endif
+        self.settingsManager.modelCatalogController.connectionReporter = { [reachabilityMonitor = self.reachabilityMonitor] observation in
+            reachabilityMonitor.record(observation, for: .chat)
+        }
+        self.settingsManager.presetApplyController.connectionReporter = { [reachabilityMonitor = self.reachabilityMonitor] observation in
+            reachabilityMonitor.record(observation, for: .tts)
+        }
+        self.audioManager.connectionReporter = { [reachabilityMonitor = self.reachabilityMonitor] observation in
+            DispatchQueue.main.async {
+                reachabilityMonitor.record(observation, for: .tts)
+            }
+        }
         realtimeVoiceLockCoordinator.start()
         keepAwakeCoordinator.start()
     }
@@ -314,6 +325,16 @@ final class AppEnvironment: ObservableObject {
         sessionsModelContext = nil
         settingsModelContext = nil
         boundModelContainer = nil
+    }
+
+    func updateConnectionMonitoring(for scenePhase: ScenePhase) {
+        let active = scenePhase == .active
+        reachabilityMonitor.setActive(active)
+        if !active {
+            voiceOverlayViewModel.cancelConnectivityTask()
+        } else if voiceOverlayViewModel.isPresented, voiceOverlayViewModel.state == .connecting {
+            voiceOverlayViewModel.beginConnectivityPreflight()
+        }
     }
 
     func updatePersistenceMode(for scenePhase: ScenePhase) {

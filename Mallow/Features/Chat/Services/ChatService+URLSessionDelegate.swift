@@ -20,6 +20,7 @@ extension ChatService {
         }
         markConnectionEstablishedIfNeeded()
         if let http = response as? HTTPURLResponse {
+            connectionReporter(ServerConnectionObservation(baseURL: configurationProvider.apiBaseURL))
             httpStatusCode = http.statusCode
             if var round = pendingResponseMetadata.generationRound {
                 round.providerFields["http_status"] = .number(Double(http.statusCode))
