@@ -143,11 +143,30 @@ struct AboutView: View {
                 }
                 Text(LocalizedStringResource("ABOUT_OPEN_SOURCE_DESCRIPTION", defaultValue: "\(ApplicationInformation.name) is open source software, released under the MIT License."))
                     .fixedSize(horizontal: false, vertical: true)
-                if let url = URL(string: "https://github.com/Lion-Wu/Mallow") {
-                    Link(destination: url) {
-                        Label("ABOUT_ACTION_VIEW_SOURCE", systemImage: "arrow.up.right")
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 20) {
+                        applicationLinks
+                    }
+                    .fixedSize(horizontal: true, vertical: false)
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        applicationLinks
                     }
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var applicationLinks: some View {
+        if let url = URL(string: "https://github.com/Lion-Wu/Mallow") {
+            Link(destination: url) {
+                Label("ABOUT_ACTION_VIEW_SOURCE", systemImage: "arrow.up.right")
+            }
+        }
+        if let url = URL(string: "https://lionwu.com/mallow/privacy") {
+            Link(destination: url) {
+                Label("ABOUT_ACTION_PRIVACY_POLICY", systemImage: "arrow.up.right")
             }
         }
     }
