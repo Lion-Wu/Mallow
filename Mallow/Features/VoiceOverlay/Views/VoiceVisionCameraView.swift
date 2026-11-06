@@ -11,16 +11,7 @@ struct VoiceVisionCameraView: View {
         ZStack {
             Color.black
 
-            Group {
-                #if os(iOS)
-                VoiceVisionCameraPreview(session: controller.session) { orientation in
-                    controller.updateVideoOrientation(orientation)
-                }
-                #else
-                VoiceVisionCameraPreview(session: controller.session)
-                #endif
-            }
-            .opacity(controller.isPreviewVisible ? 1 : 0.001)
+            VoiceVisionCameraPreview(controller: controller)
 
             if let statusMessage = controller.statusMessage {
                 VStack(spacing: 14) {

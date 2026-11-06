@@ -10,27 +10,22 @@ import AppKit
 
 #if os(iOS)
 struct VoiceVisionCameraPreview: UIViewRepresentable {
-    let session: AVCaptureSession
-    let onVideoOrientationChange: (VoiceVisionVideoOrientation) -> Void
+    let controller: VoiceVisionCameraController
 
     func makeUIView(context: Context) -> VoiceVisionPreviewView {
         let view = VoiceVisionPreviewView()
-        view.onVideoOrientationChange = onVideoOrientationChange
-        view.setSession(session)
+        view.connect(controller: controller)
         return view
     }
 
     func updateUIView(_ uiView: VoiceVisionPreviewView, context: Context) {
-        uiView.onVideoOrientationChange = onVideoOrientationChange
-        uiView.setSession(session)
-        uiView.updateVideoOrientation()
+        uiView.controller?.refreshPreviewRotation()
     }
 }
 
 final class VoiceVisionPreviewView: UIView {
     private let previewLayer = AVCaptureVideoPreviewLayer()
-    var onVideoOrientationChange: ((VoiceVisionVideoOrientation) -> Void)?
-    private var lastVideoOrientation: VoiceVisionVideoOrientation?
+    private(set) weak var controller: VoiceVisionCameraController?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -45,29 +40,18 @@ final class VoiceVisionPreviewView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         previewLayer.frame = bounds
-        updateVideoOrientation()
+        controller?.refreshPreviewRotation()
     }
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
-        updateVideoOrientation()
+        guard window != nil else { return }
+        controller?.connectPreview(previewLayer)
     }
 
-    func setSession(_ session: AVCaptureSession) {
-        if previewLayer.session !== session {
-            previewLayer.session = session
-        }
-        updateVideoOrientation()
-    }
-
-    func updateVideoOrientation() {
-        let orientation = VoiceVisionVideoOrientation(interfaceOrientation: window?.windowScene?.interfaceOrientation)
-        guard let connection = previewLayer.connection else {
-            publishVideoOrientationIfNeeded(orientation)
-            return
-        }
-        connection.applyVoiceVisionOrientation(orientation)
-        publishVideoOrientationIfNeeded(orientation)
+    func connect(controller: VoiceVisionCameraController) {
+        self.controller = controller
+        controller.connectPreview(previewLayer)
     }
 
     private func configure() {
@@ -75,30 +59,25 @@ final class VoiceVisionPreviewView: UIView {
         layer.addSublayer(previewLayer)
         previewLayer.videoGravity = .resizeAspectFill
     }
-
-    private func publishVideoOrientationIfNeeded(_ orientation: VoiceVisionVideoOrientation) {
-        guard lastVideoOrientation != orientation else { return }
-        lastVideoOrientation = orientation
-        onVideoOrientationChange?(orientation)
-    }
 }
 #elseif os(macOS)
 struct VoiceVisionCameraPreview: NSViewRepresentable {
-    let session: AVCaptureSession
+    let controller: VoiceVisionCameraController
 
     func makeNSView(context: Context) -> VoiceVisionPreviewView {
         let view = VoiceVisionPreviewView()
-        view.setSession(session)
+        view.connect(controller: controller)
         return view
     }
 
     func updateNSView(_ nsView: VoiceVisionPreviewView, context: Context) {
-        nsView.setSession(session)
+        nsView.controller?.refreshPreviewRotation()
     }
 }
 
 final class VoiceVisionPreviewView: NSView {
     private let previewLayer = AVCaptureVideoPreviewLayer()
+    private(set) weak var controller: VoiceVisionCameraController?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -113,12 +92,18 @@ final class VoiceVisionPreviewView: NSView {
     override func layout() {
         super.layout()
         previewLayer.frame = bounds
+        controller?.refreshPreviewRotation()
     }
 
-    func setSession(_ session: AVCaptureSession) {
-        if previewLayer.session !== session {
-            previewLayer.session = session
-        }
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard window != nil else { return }
+        controller?.connectPreview(previewLayer)
+    }
+
+    func connect(controller: VoiceVisionCameraController) {
+        self.controller = controller
+        controller.connectPreview(previewLayer)
     }
 
     private func configure() {

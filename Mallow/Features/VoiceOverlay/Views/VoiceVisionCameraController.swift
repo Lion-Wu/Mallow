@@ -29,9 +29,8 @@ final class VoiceVisionCameraController: NSObject, ObservableObject, @unchecked 
     private var currentInput: AVCaptureDeviceInput?
     private var currentPosition: AVCaptureDevice.Position = .back
     private var availableDevices: [AVCaptureDevice] = []
-#if os(iOS)
-    private var videoOrientation: VoiceVisionVideoOrientation = .portrait
-#endif
+    private let orientation = VoiceVisionVideoOrientation()
+    private var captureRotation: (angle: CGFloat, deviceID: String)?
     private var isConfigured = false
     private var isSamplingActive = false
     private var isFrameEncodingInFlight = false
@@ -133,16 +132,30 @@ final class VoiceVisionCameraController: NSObject, ObservableObject, @unchecked 
         }
     }
 
-#if os(iOS)
-    func updateVideoOrientation(_ orientation: VoiceVisionVideoOrientation) {
+    @MainActor
+    func connectPreview(_ previewLayer: AVCaptureVideoPreviewLayer) {
+        orientation.onCaptureRotationChange = { [weak self] angle, deviceID in
+            self?.updateCaptureRotation(angle, deviceID: deviceID)
+        }
+        if previewLayer.session !== session {
+            previewLayer.session = session
+        }
+        orientation.setPreviewLayer(previewLayer)
+    }
+
+    @MainActor
+    func refreshPreviewRotation() {
+        orientation.applyPreviewRotation()
+    }
+
+    private func updateCaptureRotation(_ angle: CGFloat, deviceID: String) {
         sessionQueue.async { [weak self] in
             guard let self else { return }
-            guard self.videoOrientation != orientation else { return }
-            self.videoOrientation = orientation
+            guard self.currentInput?.device.uniqueID == deviceID else { return }
+            self.captureRotation = (angle, deviceID)
             self.configureVideoOutputConnection()
         }
     }
-#endif
 
     func toggleFlash() {
         sessionQueue.async { [weak self] in
@@ -247,7 +260,7 @@ final class VoiceVisionCameraController: NSObject, ObservableObject, @unchecked 
         guard session.canAddOutput(videoOutput) else { throw VoiceVisionCameraError.unableToAddOutput }
         session.addOutput(videoOutput)
         videoOutput.setSampleBufferDelegate(self, queue: sampleQueue)
-        configureVideoOutputConnection()
+        configureCameraConnections()
         isConfigured = true
     }
 
@@ -267,19 +280,36 @@ final class VoiceVisionCameraController: NSObject, ObservableObject, @unchecked 
             currentInput = newInput
             currentPosition = device.position
             updateSelectedCamera(id: device.uniqueID)
-            configureVideoOutputConnection()
+            configureCameraConnections()
             resetVisualHistory()
         } else if let currentInput {
             session.addInput(currentInput)
+            configureCameraConnections()
             throw VoiceVisionCameraError.unableToAddInput
         }
     }
 
+    private func configureCameraConnections() {
+        guard let device = currentInput?.device else { return }
+        // Keep input, preview rotation/mirroring and sample rotation in one session
+        // transaction. Main-thread entry points only enqueue work on sessionQueue.
+        let angle = DispatchQueue.main.sync {
+            orientation.setDevice(device)
+        }
+        captureRotation = (angle, device.uniqueID)
+        configureVideoOutputConnection()
+    }
+
     private func configureVideoOutputConnection() {
         guard let connection = videoOutput.connection(with: .video) else { return }
+        if let rotation = captureRotation,
+           rotation.deviceID == currentInput?.device.uniqueID,
+           connection.isVideoRotationAngleSupported(rotation.angle) {
+            connection.videoRotationAngle = rotation.angle
+        }
 #if os(iOS)
-        connection.applyVoiceVisionOrientation(videoOrientation)
         if connection.isVideoMirroringSupported {
+            connection.automaticallyAdjustsVideoMirroring = false
             connection.isVideoMirrored = currentPosition == .front
         }
 #endif
