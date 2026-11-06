@@ -134,9 +134,6 @@ struct RealtimeVoiceOverlayView: View {
                     }
                 }
         }
-        .onDisappear {
-            viewModel.handleViewDisappear()
-        }
 #if os(visionOS)
         .ornament(attachmentAnchor: .scene(.bottom), contentAlignment: .center) {
             overlayControlStrip

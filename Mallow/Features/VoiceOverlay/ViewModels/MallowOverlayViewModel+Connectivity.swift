@@ -37,7 +37,6 @@ extension MallowOverlayViewModel {
 
             if chatOK == true && ttsOK == true {
                 self.autoResumeEnabled = true
-                self.state = .listening
                 self.startListening()
             } else {
                 self.handleError(self.connectivityErrorMessage(chatOK: chatOK, ttsOK: ttsOK))

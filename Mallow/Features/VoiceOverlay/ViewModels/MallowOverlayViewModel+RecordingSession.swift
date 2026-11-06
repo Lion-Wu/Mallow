@@ -86,6 +86,7 @@ extension MallowOverlayViewModel {
                 self.markVisionCaptureSpeechDetected()
             }
         )
+        guard !Task.isCancelled, isPresented else { return }
         if let error = speechInputManager.lastError, !error.isEmpty {
             handleError(error)
         }
@@ -215,6 +216,7 @@ extension MallowOverlayViewModel {
     }
 
     func handleRecordingChange(_ isRecording: Bool) {
+        guard isPresented, isRecording == speechInputManager.isRecording else { return }
         if case .error = state { return }
         if isRecording {
             beginVisionCaptureUtteranceIfNeeded()

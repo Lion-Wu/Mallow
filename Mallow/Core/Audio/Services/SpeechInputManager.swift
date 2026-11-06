@@ -60,186 +60,160 @@ final class SpeechInputManager: NSObject, ObservableObject {
     /// True while the system permission prompt may be on-screen and we're awaiting user input.
     @Published private(set) var isRequestingPermissions: Bool = false
 
-    // MARK: - Session bookkeeping
-    private var currentSessionID: UUID?
-    private var lastStableText: String = ""
-    private var currentOnFinal: (@MainActor (String) -> Void)?
+    // MARK: - Session ownership
+    @MainActor
+    private final class RecordingSession {
+        let id = UUID()
+        let onFinal: @MainActor (String) -> Void
+        var lastStableText = ""
+        var startTask: Task<Void, Never>?
+        var stopTask: Task<Void, Never>?
+        var finalizeOnStop = false
 
-    // All AVAudioEngine/SFSpeech objects are managed serially by the worker actor.
+        init(onFinal: @escaping @MainActor (String) -> Void) {
+            self.onFinal = onFinal
+        }
+    }
+
+    private var currentSession: RecordingSession?
     private let worker = SpeechRecognizerWorker()
 
     // MARK: - API
 
-    /// Starts realtime dictation.
+    /// Starts realtime dictation after the previous session has released its resources.
     func startRecording(language: DictationLanguage? = nil,
                         onPartial: @escaping @MainActor (String) -> Void,
-                        onFinal:   @escaping @MainActor (String) -> Void,
+                        onFinal: @escaping @MainActor (String) -> Void,
                         onSpeechActivityStarted: @escaping @MainActor () -> Void = {}) async {
-        lastError = nil
-
-        // Stop any active recording before starting a new session.
-        if isRecording || currentSessionID != nil {
-            await worker.stop()
-            isRecording = false
-            currentSessionID = nil
-            currentOnFinal   = nil
-            lastStableText   = ""
-            inputMotionAudioSource.reset()
-        }
-
-        isRequestingPermissions = true
-        let permissionOK = await requestPermissions()
-        isRequestingPermissions = false
-
-        // If the calling task was cancelled (e.g. user released long-press or dismissed the overlay),
-        // don't surface permission errors or continue bootstrapping speech recognition.
         guard !Task.isCancelled else { return }
+        let previousStop = currentSession.map { stopSession($0, finalize: false) }
+        let session = RecordingSession(onFinal: onFinal)
+        currentSession = session
+        lastError = nil
+        let locale = (language ?? currentLanguage).locale
 
-        guard permissionOK else {
-            lastError = NSLocalizedString("VOICE_RECOGNITION_PERMISSION_DENIED", value: "Speech recognition or microphone permission not granted", comment: "Shown when the app lacks microphone or speech recognition access")
-            return
-        }
-
-        let newID = UUID()
-        currentSessionID = newID
-        lastStableText   = ""
-        currentOnFinal   = onFinal
-        inputMotionAudioSource.reset()
-
-        let pickLang = language ?? currentLanguage
-
-        // Ensure `@Sendable` closures hop back to the main actor before touching state.
-        let partialWrapper: @Sendable (String) -> Void = { [weak self] text in
-            Task { @MainActor in
-                guard let self else { return }
-                guard self.currentSessionID == newID else { return }
-                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { return }
-                self.lastStableText = trimmed
-                onPartial(trimmed)
-            }
-        }
-
-        let finalWrapper: @Sendable (String) -> Void = { [weak self] text in
-            Task { @MainActor in
-                guard let self else { return }
-                guard self.currentSessionID == newID else { return }
-                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                self.lastStableText = trimmed
-                onFinal(trimmed)
-                // Session ends once non-empty text has been produced.
-                self.isRecording       = false
-                self.currentSessionID  = nil
-                self.currentOnFinal    = nil
-                self.inputMotionAudioSource.reset()
-            }
-        }
-
-        let speechActivityStartedWrapper: @Sendable () -> Void = { [weak self] in
-            Task { @MainActor in
-                guard let self else { return }
-                guard self.currentSessionID == newID else { return }
-                onSpeechActivityStarted()
-            }
-        }
-
-        let errorWrapper: @Sendable (String) -> Void = { [weak self] message in
-            Task { @MainActor in
-                guard let self else { return }
-                guard self.currentSessionID == newID else { return }
-                let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { return }
-                self.lastError = trimmed
-                self.isRecording       = false
-                self.currentSessionID  = nil
-                self.currentOnFinal    = nil
-                self.lastStableText    = ""
-                self.inputMotionAudioSource.reset()
-            }
-        }
-
-        do {
-            guard !Task.isCancelled else {
-                if self.currentSessionID == newID {
-                    await worker.stop()
-                    isRecording = false
-                    currentSessionID = nil
-                    currentOnFinal   = nil
-                    lastStableText   = ""
-                    inputMotionAudioSource.reset()
-                }
-                return
-            }
-
-            try await worker.start(
-                locale: pickLang.locale,
-                onPartial: partialWrapper,
-                onFinal:   finalWrapper,
-                onSpeechActivityStarted: speechActivityStartedWrapper,
-                motionAudioSource: inputMotionAudioSource,
-                onError:   errorWrapper
-            )
-            guard !Task.isCancelled, self.currentSessionID == newID else {
-                // Start completed after the caller already stopped/cancelled. Ensure we don't leave
-                // the audio engine running or publish `isRecording = true` for a dead session.
-                if self.currentSessionID == newID {
-                    await worker.stop()
-                    isRecording = false
-                    currentSessionID = nil
-                    currentOnFinal   = nil
-                    lastStableText   = ""
-                    inputMotionAudioSource.reset()
-                }
-                return
-            }
-            isRecording = true
-        } catch {
-            lastError = error.localizedDescription
-            await worker.stop()
+        let startTask = Task { [self] in
+            await previousStop?.value
+            guard acceptsCallbacks(for: session), !Task.isCancelled else { return }
             isRecording = false
-            currentSessionID = nil
-            currentOnFinal   = nil
             inputMotionAudioSource.reset()
+            isRequestingPermissions = true
+            let permissionOK = await requestPermissions()
+            guard acceptsCallbacks(for: session), !Task.isCancelled else { return }
+            isRequestingPermissions = false
+            guard permissionOK else {
+                lastError = NSLocalizedString("VOICE_RECOGNITION_PERMISSION_DENIED", value: "Speech recognition or microphone permission not granted", comment: "Shown when the app lacks microphone or speech recognition access")
+                stopSession(session, finalize: false)
+                return
+            }
+
+            do {
+                try await worker.start(
+                    sessionID: session.id,
+                    locale: locale,
+                    onPartial: { [weak self] text in
+                        Task { @MainActor in
+                            guard let self, self.acceptsCallbacks(for: session) else { return }
+                            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !trimmed.isEmpty else { return }
+                            session.lastStableText = trimmed
+                            onPartial(trimmed)
+                        }
+                    },
+                    onFinal: { [weak self] text in
+                        Task { @MainActor in
+                            guard let self, self.acceptsCallbacks(for: session) else { return }
+                            session.lastStableText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                            self.stopSession(session, finalize: true)
+                        }
+                    },
+                    onSpeechActivityStarted: { [weak self] in
+                        Task { @MainActor in
+                            guard let self, self.acceptsCallbacks(for: session) else { return }
+                            onSpeechActivityStarted()
+                        }
+                    },
+                    motionAudioSource: inputMotionAudioSource,
+                    onError: { [weak self] message in
+                        Task { @MainActor in
+                            guard let self, self.acceptsCallbacks(for: session) else { return }
+                            let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !trimmed.isEmpty else { return }
+                            self.lastError = trimmed
+                            self.stopSession(session, finalize: false)
+                        }
+                    }
+                )
+                guard acceptsCallbacks(for: session), !Task.isCancelled else { return }
+                isRecording = true
+            } catch {
+                guard acceptsCallbacks(for: session), !Task.isCancelled else { return }
+                if !(error is CancellationError) {
+                    lastError = error.localizedDescription
+                }
+                stopSession(session, finalize: false)
+            }
+        }
+        session.startTask = startTask
+
+        await withTaskCancellationHandler {
+            await startTask.value
+        } onCancel: {
+            startTask.cancel()
+        }
+        session.startTask = nil
+        if Task.isCancelled {
+            await stopSession(session, finalize: false).value
+        } else {
+            await session.stopTask?.value
         }
     }
 
-    /// Ends recording proactively (safe to call from any thread).
-    nonisolated func stopRecording(finalize: Bool = true) {
-        Task { @MainActor [weak self] in
-            guard let self else { return }
+    func stopRecording(finalize: Bool = true) {
+        guard let session = currentSession else { return }
+        stopSession(session, finalize: finalize)
+    }
 
-            let capturedID = self.currentSessionID
-            let capturedFinal = self.currentOnFinal
+    private func acceptsCallbacks(for session: RecordingSession) -> Bool {
+        currentSession === session && session.stopTask == nil
+    }
 
-            await self.worker.stop()
-
-            // Allow any pending main-actor updates from the recognition callbacks to land.
-            await Task.yield()
-
-            let stableText = self.lastStableText.trimmingCharacters(in: .whitespacesAndNewlines)
-            let workerText = await self.worker.lastNonEmptyTextSnapshot()
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            let bestText: String = {
-                if stableText.isEmpty { return workerText }
-                if workerText.isEmpty { return stableText }
-                // Prefer the longer transcript in case the UI state lagged behind.
-                return (workerText.count > stableText.count) ? workerText : stableText
-            }()
-
-            if finalize,
-               let capturedFinal,
-               let capturedID,
-               !bestText.isEmpty,
-               self.currentSessionID == capturedID {
-                capturedFinal(bestText)
-            }
-
-            self.isRecording      = false
-            self.currentSessionID = nil
-            self.currentOnFinal   = nil
-            self.lastStableText   = ""
-            self.inputMotionAudioSource.reset()
+    /// A session owns one teardown task, which waits for startup before releasing the microphone.
+    @discardableResult
+    private func stopSession(_ session: RecordingSession, finalize: Bool) -> Task<Void, Never> {
+        if let stopTask = session.stopTask {
+            if !finalize { session.finalizeOnStop = false }
+            return stopTask
         }
+        session.finalizeOnStop = finalize
+        let startTask = session.startTask
+        startTask?.cancel()
+        if currentSession === session {
+            isRequestingPermissions = false
+        }
+
+        let stopTask = Task { [weak self, worker] in
+            await startTask?.value
+            let workerText = await worker.stop(sessionID: session.id)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let self, self.currentSession === session else { return }
+            let stableText = session.lastStableText
+            let bestText = workerText.count > stableText.count ? workerText : stableText
+            if session.finalizeOnStop, !bestText.isEmpty {
+                session.onFinal(bestText)
+            }
+            self.clearSession(ifCurrent: session)
+        }
+        session.stopTask = stopTask
+        return stopTask
+    }
+
+    private func clearSession(ifCurrent session: RecordingSession) {
+        guard currentSession === session else { return }
+        currentSession = nil
+        isRequestingPermissions = false
+        isRecording = false
+        inputMotionAudioSource.reset()
     }
 
     /// Toggles "hold-to-talk" behaviour for the active recording session.

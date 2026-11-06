@@ -130,10 +130,10 @@ final class MallowOverlayViewModel: ObservableObject {
         realtimeAssistantSnapshot = nil
         textServiceStatus = nil
         voiceServiceStatus = nil
+        state = .connecting
         withAnimation(overlayAnimation) {
             isPresented = true
         }
-        state = .connecting
         beginConnectivityPreflight()
     }
 
@@ -160,14 +160,6 @@ final class MallowOverlayViewModel: ObservableObject {
         outputMotionAudioSource.store(.silent)
         cleanupSession()
         activeChatSession = nil
-    }
-
-    func handleViewDisappear() {
-        cancelStartTasks()
-        stopLoadingWatchdog()
-        speechInputManager.setHoldToSpeakActive(false)
-        cancelConnectivityTask()
-        cleanupSession()
     }
 
     func handleCircleTap() {

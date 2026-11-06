@@ -127,6 +127,9 @@ private final class SpeechRecognitionAudioSessionController: @unchecked Sendable
 actor SpeechRecognizerWorker {
 
     // MARK: - Internal objects
+    private var sessionID: UUID?
+    private var isChangingSession = false
+    private var sessionWaiters: [CheckedContinuation<Void, Never>] = []
     private var audioEngine = AVAudioEngine()
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
@@ -191,10 +194,6 @@ actor SpeechRecognizerWorker {
     /// Prefix transcript accumulated across internal restarts while hold-to-talk is active.
     private var holdToSpeakAccumulatedText = ""
 
-    func lastNonEmptyTextSnapshot() -> String {
-        lastNonEmptyText
-    }
-
     enum SpeechError: LocalizedError {
         case recognizerUnavailable
         case engineStartFailed(String)
@@ -211,17 +210,41 @@ actor SpeechRecognizerWorker {
 
     // MARK: - Public
 
-    func start(locale: Locale,
+    func start(sessionID: UUID,
+               locale: Locale,
                onPartial: @Sendable @escaping (String) -> Void,
                onFinal: @Sendable @escaping (String) -> Void,
                onSpeechActivityStarted: @Sendable @escaping () -> Void,
                motionAudioSource: VoiceMicrophoneAudioSource,
                onError: @Sendable @escaping (String) -> Void) async throws {
-        // Stop any existing session before starting a new one.
-        if audioEngine.isRunning || tapInstalled || request != nil || task != nil {
-            await stop()
+        await acquireSessionAccess()
+        defer { releaseSessionAccess() }
+        try Task.checkCancellation()
+        if self.sessionID != nil {
+            await stopSession()
         }
+        try Task.checkCancellation()
+        self.sessionID = sessionID
+        do {
+            try await startSession(
+                locale: locale, onPartial: onPartial, onFinal: onFinal,
+                onSpeechActivityStarted: onSpeechActivityStarted,
+                motionAudioSource: motionAudioSource, onError: onError
+            )
+        } catch {
+            await stopSession()
+            throw error
+        }
+    }
 
+    private func startSession(
+        locale: Locale,
+        onPartial: @Sendable @escaping (String) -> Void,
+        onFinal: @Sendable @escaping (String) -> Void,
+        onSpeechActivityStarted: @Sendable @escaping () -> Void,
+        motionAudioSource: VoiceMicrophoneAudioSource,
+        onError: @Sendable @escaping (String) -> Void
+    ) async throws {
         onPartialHandler = onPartial
         onFinalHandler = onFinal
         onSpeechActivityStartedHandler = onSpeechActivityStarted
@@ -253,10 +276,12 @@ actor SpeechRecognizerWorker {
         try await audioSessionController.activateForRecognition()
         #endif
 
+        try Task.checkCancellation()
+
         // A long-lived engine can retain the client format of an input device that has
         // since disconnected. Build the I/O graph from the current route for each session.
         audioEngine = AVAudioEngine()
-        try await makeNewRequestAndTap()
+        try makeNewRequestAndTap()
 
         audioEngine.prepare()
         do {
@@ -274,7 +299,36 @@ actor SpeechRecognizerWorker {
     }
 
     /// Stops recognition and releases resources.
-    func stop() async {
+    @discardableResult
+    func stop(sessionID: UUID? = nil) async -> String {
+        let expectedID = sessionID ?? self.sessionID
+        await acquireSessionAccess()
+        defer { releaseSessionAccess() }
+        guard let expectedID, self.sessionID == expectedID else { return "" }
+        let transcript = lastNonEmptyText
+        await stopSession()
+        return transcript
+    }
+
+    // An actor protects individual synchronous sections. This gate also keeps an
+    // audio-session activation/deactivation exclusive across its suspension points.
+    private func acquireSessionAccess() async {
+        if isChangingSession {
+            await withCheckedContinuation { sessionWaiters.append($0) }
+        } else {
+            isChangingSession = true
+        }
+    }
+
+    private func releaseSessionAccess() {
+        if sessionWaiters.isEmpty {
+            isChangingSession = false
+        } else {
+            sessionWaiters.removeFirst().resume()
+        }
+    }
+
+    private func stopSession() async {
         isStopping = true
         recognitionTaskGeneration &+= 1
 
@@ -297,6 +351,7 @@ actor SpeechRecognizerWorker {
         await audioSessionController.deactivateAfterRecognition()
         #endif
 
+        sessionID = nil
         recognizer = nil
         onPartialHandler = nil
         onFinalHandler = nil
@@ -321,7 +376,7 @@ actor SpeechRecognizerWorker {
 
     // MARK: - Internal setup helpers
 
-    private func makeNewRequestAndTap() async throws {
+    private func makeNewRequestAndTap() throws {
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
         request.taskHint = .dictation
@@ -435,7 +490,7 @@ actor SpeechRecognizerWorker {
         }
 
         do {
-            try await makeNewRequestAndTap()
+            try makeNewRequestAndTap()
             if !audioEngine.isRunning {
                 audioEngine.prepare()
                 try audioEngine.start()

@@ -6,6 +6,10 @@
 //
 
 import Foundation
+import Combine
+#if os(macOS)
+import AppKit
+#endif
 import CryptoKit
 import SwiftUI
 import SwiftData
@@ -44,6 +48,10 @@ final class AppEnvironment: ObservableObject {
     private var settingsModelContext: ModelContext?
     private var sessionsModelContext: ModelContext?
     private var didStart = false
+    private var connectionMonitoringActive: Bool?
+#if os(macOS)
+    private var applicationActivitySubscriptions: Set<AnyCancellable> = []
+#endif
 
     init(
         audioManager: GlobalAudioManager? = nil,
@@ -109,6 +117,15 @@ final class AppEnvironment: ObservableObject {
             overlayViewModel: self.voiceOverlayViewModel,
             errorCenter: self.errorCenter
         )
+        Publishers.Merge(
+            NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification).map { _ in true },
+            NotificationCenter.default.publisher(for: NSApplication.willResignActiveNotification).map { _ in false }
+        )
+        .receive(on: RunLoop.main)
+        .sink { [weak self] active in
+            self?.updateConnectionMonitoring(isActive: active)
+        }
+        .store(in: &applicationActivitySubscriptions)
 #endif
         self.settingsManager.modelCatalogController.connectionReporter = { [reachabilityMonitor = self.reachabilityMonitor] observation in
             reachabilityMonitor.record(observation, for: .chat)
@@ -328,11 +345,23 @@ final class AppEnvironment: ObservableObject {
     }
 
     func updateConnectionMonitoring(for scenePhase: ScenePhase) {
-        let active = scenePhase == .active
+#if os(macOS)
+        // The voice window is an AppKit window, outside SwiftUI's scene tracking.
+        updateConnectionMonitoring(isActive: NSApp.isActive)
+#else
+        updateConnectionMonitoring(isActive: scenePhase == .active)
+#endif
+    }
+
+    private func updateConnectionMonitoring(isActive active: Bool) {
+        guard connectionMonitoringActive != active else { return }
+        connectionMonitoringActive = active
         reachabilityMonitor.setActive(active)
         if !active {
             voiceOverlayViewModel.cancelConnectivityTask()
-        } else if voiceOverlayViewModel.isPresented, voiceOverlayViewModel.state == .connecting {
+        } else if voiceOverlayViewModel.isPresented,
+                  voiceOverlayViewModel.state == .connecting,
+                  !voiceOverlayViewModel.isStartingRecording {
             voiceOverlayViewModel.beginConnectivityPreflight()
         }
     }
