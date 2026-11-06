@@ -2231,6 +2231,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Mallow/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Mallow;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Read and create calendar events when you ask the assistant to work with your schedule.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Read and create calendar events when you ask the assistant to work with your schedule.";
@@ -2298,6 +2299,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Mallow/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Mallow;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Read and create calendar events when you ask the assistant to work with your schedule.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Read and create calendar events when you ask the assistant to work with your schedule.";
