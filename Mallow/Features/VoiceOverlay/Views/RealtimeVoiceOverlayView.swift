@@ -80,11 +80,6 @@ struct RealtimeVoiceOverlayView: View {
     }
 #endif
 
-    private var overlayControlPickerMaxWidth: CGFloat {
-        if isVisionSceneStyle { return 360 }
-        return usesCompactVisionCaptureControls ? 252 : 320
-    }
-
     private var overlayControlHorizontalPadding: CGFloat {
         if isVisionSceneStyle { return 20 }
         return usesCompactVisionCaptureControls ? 10 : 16
@@ -93,10 +88,6 @@ struct RealtimeVoiceOverlayView: View {
     private var overlayControlVerticalPadding: CGFloat {
         if isVisionSceneStyle { return 14 }
         return usesCompactVisionCaptureControls ? 7 : 12
-    }
-
-    private var overlayCameraButtonSize: CGFloat {
-        usesCompactVisionCaptureControls ? 34 : 38
     }
 
     private var overlayControlCornerRadius: CGFloat {
@@ -509,53 +500,79 @@ struct RealtimeVoiceOverlayView: View {
     }
 
     private var overlayControlStrip: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: usesCompactVisionCaptureControls ? 8 : 10) {
-                Picker("", selection: Binding(
-                    get: { viewModel.selectedLanguage },
-                    set: { viewModel.updateLanguage($0) }
-                )) {
-                    ForEach(viewModel.availableLanguages) { language in
-                        Text(language.defaultDisplayName).tag(language)
-                    }
+        HStack(spacing: 12) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    languageLabel
+                    languagePicker
                 }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: overlayControlPickerMaxWidth)
+                .fixedSize(horizontal: true, vertical: false)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    languageLabel
+                    languagePicker
+                }
+            }
+            .frame(minHeight: 44)
 
 #if os(iOS) || os(macOS)
-                if viewModel.isVisionCaptureAvailable {
-                    Button {
+            if viewModel.isVisionCaptureAvailable {
+                Rectangle()
+                    .fill(.separator)
+                    .frame(width: 1, height: 24)
+                    .accessibilityHidden(true)
+
+                Button {
 #if os(iOS)
-                        AppHaptics.trigger(.selection)
+                    AppHaptics.trigger(.selection)
 #endif
-                        if viewModel.isVisionCapturePresented {
-                            viewModel.dismissVisionCapture()
-                        } else {
-                            viewModel.presentVisionCapture()
-                        }
-                    } label: {
-                        Image(systemName: viewModel.isVisionCapturePresented ? "camera.viewfinder" : "camera.fill")
-                            .font(.system(size: 17, weight: .semibold))
-                            .frame(width: overlayCameraButtonSize, height: overlayCameraButtonSize)
-                            .contentShape(Circle())
+                    if viewModel.isVisionCapturePresented {
+                        viewModel.dismissVisionCapture()
+                    } else {
+                        viewModel.presentVisionCapture()
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(ChatTheme.accent)
-                    .accessibilityLabel(Text(viewModel.isVisionCapturePresented
-                        ? LocalizedStringKey("CAMERA_ACTION_CLOSE_VISION")
-                        : LocalizedStringKey("CAMERA_ACTION_OPEN_VISION")))
+                } label: {
+                    Image(systemName: viewModel.isVisionCapturePresented ? "camera.viewfinder" : "camera.fill")
+                        .font(.system(size: 17, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Circle())
                 }
-#endif
+                .buttonStyle(.plain)
+                .foregroundStyle(ChatTheme.accent)
+                .accessibilityLabel(Text(viewModel.isVisionCapturePresented
+                    ? LocalizedStringKey("CAMERA_ACTION_CLOSE_VISION")
+                    : LocalizedStringKey("CAMERA_ACTION_OPEN_VISION")))
             }
-            .padding(.horizontal, overlayControlHorizontalPadding)
-            .padding(.vertical, overlayControlVerticalPadding)
-#if os(visionOS)
-            .glassBackgroundEffect(in: Capsule(style: .continuous), displayMode: .always)
-#else
-            .appChromedContainer(cornerRadius: overlayControlCornerRadius, shadowOpacity: 0.32)
 #endif
         }
+        .padding(.horizontal, overlayControlHorizontalPadding)
+        .padding(.vertical, overlayControlVerticalPadding)
+#if os(visionOS)
+        .glassBackgroundEffect(in: Capsule(style: .continuous), displayMode: .always)
+#else
+        .appChromedContainer(cornerRadius: overlayControlCornerRadius, shadowOpacity: 0.32)
+#endif
         .frame(maxWidth: .infinity)
+    }
+
+    private var languageLabel: some View {
+        Text("VOICE_INPUT_LANGUAGE")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .accessibilityHidden(true)
+    }
+
+    private var languagePicker: some View {
+        Picker("VOICE_INPUT_LANGUAGE", selection: Binding(
+            get: { viewModel.selectedLanguage },
+            set: { viewModel.updateLanguage($0) }
+        )) {
+            ForEach(viewModel.availableLanguages) { language in
+                Text(language.defaultDisplayName).tag(language)
+            }
+        }
+        .pickerStyle(.menu)
+        .labelsHidden()
     }
 
     @ViewBuilder

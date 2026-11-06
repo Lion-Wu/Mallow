@@ -96,6 +96,7 @@ final class RealtimeVoiceWindowController: NSObject, NSWindowDelegate {
 
         let root = RealtimeVoiceOverlayView(viewModel: overlayViewModel)
             .environmentObject(errorCenter)
+            .frame(minWidth: 480, minHeight: 480)
 
         let hosting = NSHostingController(rootView: root)
         let window = NSWindow(contentViewController: hosting)
@@ -103,6 +104,7 @@ final class RealtimeVoiceWindowController: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.styleMask.insert(.fullSizeContentView)
         window.delegate = self
+        window.setContentSize(NSSize(width: 640, height: 560))
         window.setFrameAutosaveName("RealtimeVoiceOverlayWindow")
 
         overlayWindow = window
