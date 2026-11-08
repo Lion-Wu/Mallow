@@ -328,19 +328,12 @@ extension GlobalAudioManager {
                 return isBuffering ? currentTime : nil
             }()
 
-            let didStart = playAudioChunk(
+            playAudioChunk(
                 at: index,
                 fromTime: resumeTime,
                 shouldPlay: shouldAutoplay
             )
 
-            if isRealtimeMode {
-                isPlaybackRequested = shouldAutoplay
-                isAudioPlaying = shouldAutoplay && didStart
-                isLoading = shouldAutoplay && !didStart
-            } else {
-                isLoading = false
-            }
             seekTime = nil
         }
 

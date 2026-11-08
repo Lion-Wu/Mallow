@@ -222,7 +222,7 @@ extension GlobalAudioManager {
 
                         p.stop()
                         let resumeGlobal = max(segStart, self.currentTime)
-                        _ = self.playAudioChunk(at: self.currentPlayingIndex,
+                        self.playAudioChunk(at: self.currentPlayingIndex,
                                                 fromTime: resumeGlobal,
                                                 shouldPlay: self.isAudioPlaying)
                         self.lastProgressTimestamp = Date()

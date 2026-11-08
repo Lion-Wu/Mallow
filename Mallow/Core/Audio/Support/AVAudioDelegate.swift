@@ -68,7 +68,7 @@ extension GlobalAudioManager {
                 self.prepareNextAudioChunk(at: self.currentPlayingIndex + 1)
             } else {
                 if let chunkOpt = self.audioChunks[safe: self.currentPlayingIndex], let _ = chunkOpt {
-                    _ = self.playAudioChunk(at: self.currentPlayingIndex,
+                    self.playAudioChunk(at: self.currentPlayingIndex,
                                             fromTime: self.startTime(forSegment: self.currentPlayingIndex),
                                             shouldPlay: self.isPlaybackRequested)
                 } else {

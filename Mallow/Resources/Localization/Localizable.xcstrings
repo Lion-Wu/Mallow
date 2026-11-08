@@ -46701,6 +46701,66 @@
         }
       }
     },
+    "VOICE_SPEECH_SYNTHESIS_FAILED" : {
+      "comment" : "The system speech synthesizer ended the request unexpectedly",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تعذّر على النطق من Apple إكمال توليد الكلام."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Apple-Sprachausgabe konnte die Sprachsynthese nicht abschließen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Speech could not complete speech synthesis."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La voz de Apple no pudo completar la síntesis de voz."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La voix Apple n’a pas pu terminer la synthèse vocale."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple音声は音声合成を完了できませんでした。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple 음성에서 음성 합성을 완료하지 못했습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple 语音未能完成语音合成。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple 語音未能完成語音合成。"
+          }
+        }
+      }
+    },
     "VOICE_SPEECH_UNAVAILABLE" : {
       "comment" : "Shown when Apple's built-in speech synthesis fails",
       "extractionState" : "extracted_with_value",

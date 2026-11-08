@@ -9,7 +9,6 @@ import SwiftUI
 
 struct VoiceMotionControlPlacement {
     let bounds: Anchor<CGRect>
-    let visualScale: CGFloat
 }
 
 struct VoiceMotionControlPlacementPreferenceKey: PreferenceKey {
@@ -26,26 +25,18 @@ struct VoiceMotionControlPlacementPreferenceKey: PreferenceKey {
 struct RealtimeVoiceControlCircle: View {
     nonisolated static let standardFrameSize: CGFloat = 280
 
-    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
-    @Environment(\.colorScheme) private var colorScheme
-
     @ObservedObject var viewModel: MallowOverlayViewModel
     let motionController: VoiceMotionController
-    var displayStyle: RealtimeVoiceOverlayView.DisplayStyle = .standard
-    var externalPulseToken: UUID?
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
 
     @State private var isCirclePressed = false
-    @State private var isCircleHoldActive = false
     @State private var didTriggerCircleLongPress = false
     @State private var shouldSuppressCircleTapOnEnd = false
     @State private var circleGestureCancelled = false
     @State private var circlePressOrigin: CGPoint?
     @State private var pressedCircleBaseSize: CGFloat?
     @State private var longPressTriggerTask: Task<Void, Never>?
-    @State private var interactionPulse: CGFloat = 1
 
-    private let circlePressInAnimation = Animation.easeOut(duration: 0.12)
-    private let circlePressOutAnimation = Animation.easeOut(duration: 0.15)
     private let circleLongPressDuration = 0.38
     private let circleLongPressMaximumDistance: CGFloat = 42
 
@@ -88,43 +79,12 @@ struct RealtimeVoiceControlCircle: View {
         return String(localized: "VOICE_ACCESSIBILITY_CONTROL_HINT", defaultValue: "Double-tap to control realtime voice. Use the Hold to talk action for push-to-talk.")
     }
 
-    private var defaultBaseSize: CGFloat {
-        #if os(iOS) || os(macOS)
-        if viewModel.isVisionCapturePresented {
-            return 86
-        }
-        #endif
-        return isVisionSceneStyle ? 264 : 224
-    }
-
-    private var listeningBaseSize: CGFloat {
-        #if os(iOS) || os(macOS)
-        if viewModel.isVisionCapturePresented {
-            return 108
-        }
-        #endif
-        return isVisionSceneStyle ? 328 : Self.standardFrameSize
-    }
-
-    private var isVisionSceneStyle: Bool {
-        #if os(visionOS)
-        displayStyle == .visionScene
-        #else
-        false
-        #endif
-    }
-
-    private var circleControlFrameSize: CGFloat {
-        listeningBaseSize
-    }
-
     private var currentInteractionDiameter: CGFloat {
         pressedCircleBaseSize ?? interactionDiameter(for: viewModel.state)
     }
 
     private var circlePressScale: CGFloat {
-        if isCircleHoldActive { return 1.10 }
-        return isCirclePressed ? 1.015 : 1
+        accessibilityReduceMotion ? 1 : (isCirclePressed ? 1.06 : 1)
     }
 
     var body: some View {
@@ -134,17 +94,20 @@ struct RealtimeVoiceControlCircle: View {
                 .frame(width: currentInteractionDiameter, height: currentInteractionDiameter)
                 .contentShape(Circle())
                 .highPriorityGesture(circlePressGesture)
-                .scaleEffect(interactionPulse * circlePressScale)
         }
-        .frame(width: circleControlFrameSize, height: circleControlFrameSize)
-        .anchorPreference(
-            key: VoiceMotionControlPlacementPreferenceKey.self,
-            value: .bounds
-        ) {
-            VoiceMotionControlPlacement(
-                bounds: $0,
-                visualScale: interactionPulse * circlePressScale
-            )
+        .frame(width: Self.standardFrameSize, height: Self.standardFrameSize)
+        .background {
+            // Keep one fixed-resolution Metal surface. SwiftUI's compositor moves
+            // and scales it with the layout, without refeeding geometry.
+            VoiceMotionSurface(controller: motionController)
+                .frame(width: Self.standardFrameSize * 1.5, height: Self.standardFrameSize * 1.5)
+                .scaleEffect(circlePressScale)
+                .animation(
+                    accessibilityReduceMotion ? nil : .smooth(duration: 0.24),
+                    value: circlePressScale
+                )
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("VOICE_ACCESSIBILITY_CONTROL")
@@ -157,23 +120,11 @@ struct RealtimeVoiceControlCircle: View {
         .accessibilityAction(named: Text("VOICE_ACTION_HOLD_TO_TALK")) {
             viewModel.performHoldToTalkAccessibilityAction()
         }
-        .onAppear {
-            configureMotion()
-        }
         .onDisappear {
             teardown()
         }
         .onChange(of: viewModel.state) { oldState, newState in
             handleStateChange(from: oldState, to: newState)
-        }
-        .onChange(of: externalPulseToken) { _, _ in
-            animateInteractionPulse()
-        }
-        .onChange(of: accessibilityReduceMotion) { _, isEnabled in
-            motionController.isReducedMotionEnabled = isEnabled
-        }
-        .onChange(of: colorScheme) { _, _ in
-            updateMotionAccent()
         }
         #if os(iOS) || os(macOS)
         .onChange(of: viewModel.isVisionCapturePresented) { _, _ in
@@ -192,41 +143,9 @@ struct RealtimeVoiceControlCircle: View {
             }
     }
 
-    private func configureMotion() {
-        motionController.isReducedMotionEnabled = accessibilityReduceMotion
-        updateMotionAccent()
-        motionController.setAudioLevels(.silent)
-        motionController.setState(motionState(for: viewModel.state), immediate: true)
-        updateMotionAudioSource(for: viewModel.state)
-    }
-
     private func teardown() {
         cancelPendingLongPressTrigger()
         resetInteractionState()
-        motionController.setAudioSource(nil)
-        motionController.setAudioLevels(.silent)
-    }
-
-    private func updateMotionAccent() {
-        let channel: Float = colorScheme == .dark ? 1 : 0
-        motionController.setAccentSRGB(red: channel, green: channel, blue: channel)
-    }
-
-    private func motionState(
-        for state: MallowOverlayViewModel.OverlayState
-    ) -> VoiceMotionState {
-        switch state {
-        case .connecting:
-            .connecting
-        case .listening:
-            .listening
-        case .loading:
-            .thinking
-        case .speaking:
-            .speaking
-        case .error:
-            .error
-        }
     }
 
     private func interactionDiameter(
@@ -234,9 +153,9 @@ struct RealtimeVoiceControlCircle: View {
     ) -> CGFloat {
         switch state {
         case .listening:
-            listeningBaseSize
+            Self.standardFrameSize
         case .connecting, .speaking, .loading, .error:
-            defaultBaseSize
+            224
         }
     }
 
@@ -277,7 +196,6 @@ struct RealtimeVoiceControlCircle: View {
         endCirclePressVisualState()
 
         didTriggerCircleLongPress = false
-        isCircleHoldActive = false
         shouldSuppressCircleTapOnEnd = false
         circleGestureCancelled = false
         circlePressOrigin = nil
@@ -288,21 +206,15 @@ struct RealtimeVoiceControlCircle: View {
         pressedCircleBaseSize = currentInteractionDiameter
         circleGestureCancelled = false
         didTriggerCircleLongPress = false
-        isCircleHoldActive = false
         shouldSuppressCircleTapOnEnd = false
-        withAnimation(circlePressInAnimation) {
-            isCirclePressed = true
-        }
+        isCirclePressed = true
         schedulePendingLongPressTrigger()
     }
 
     private func endCirclePressVisualState() {
         guard isCirclePressed || pressedCircleBaseSize != nil else { return }
-        withAnimation(circlePressOutAnimation) {
-            isCirclePressed = false
-            isCircleHoldActive = false
-            pressedCircleBaseSize = nil
-        }
+        isCirclePressed = false
+        pressedCircleBaseSize = nil
     }
 
     private func schedulePendingLongPressTrigger() {
@@ -320,11 +232,6 @@ struct RealtimeVoiceControlCircle: View {
             guard !didTriggerCircleLongPress else { return }
             shouldSuppressCircleTapOnEnd = true
             didTriggerCircleLongPress = triggerLongPressAction(viewModel: viewModel)
-            if didTriggerCircleLongPress {
-                withAnimation(circlePressInAnimation) {
-                    isCircleHoldActive = true
-                }
-            }
         }
     }
 
@@ -342,7 +249,6 @@ struct RealtimeVoiceControlCircle: View {
         case .connecting, .loading:
             break
         }
-        animateInteractionPulse()
         viewModel.handleCircleTap()
     }
 
@@ -353,13 +259,6 @@ struct RealtimeVoiceControlCircle: View {
         AppHaptics.trigger(.selection)
         viewModel.handleCircleLongPressBegan()
         return true
-    }
-
-    private func animateInteractionPulse(strength: CGFloat = 1.025) {
-        interactionPulse = strength
-        withAnimation(.spring(response: 0.22, dampingFraction: 0.65)) {
-            interactionPulse = 1
-        }
     }
 
     private func handleStateChange(
@@ -385,35 +284,15 @@ struct RealtimeVoiceControlCircle: View {
                 break
             }
         }
-
-        motionController.setAudioSource(nil)
-        motionController.setAudioLevels(.silent)
-        motionController.setState(motionState(for: newState))
-        updateMotionAudioSource(for: newState)
-    }
-
-    private func updateMotionAudioSource(
-        for state: MallowOverlayViewModel.OverlayState
-    ) {
-        switch state {
-        case .listening:
-            motionController.setAudioSource(viewModel.inputMotionAudioSource)
-        case .speaking:
-            motionController.setAudioSource(viewModel.outputMotionAudioSource)
-        case .connecting, .loading, .error:
-            motionController.setAudioSource(nil)
-        }
     }
 
     private func resetInteractionState() {
         cancelPendingLongPressTrigger()
         isCirclePressed = false
-        isCircleHoldActive = false
         didTriggerCircleLongPress = false
         shouldSuppressCircleTapOnEnd = false
         circleGestureCancelled = false
         circlePressOrigin = nil
         pressedCircleBaseSize = nil
-        interactionPulse = 1
     }
 }

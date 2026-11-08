@@ -91,16 +91,13 @@ internal enum VoiceMotionLayout {
 
     static func sharedOrbitPhase(
         time: Float,
-        motionScale: Float,
         seed: Float = phaseSeed
     ) -> Float {
         let safeTime = time.isFinite ? max(0, time) : 0
-        let motion = motionScale.isFinite ? min(2, max(0, motionScale)) : 0
-        let primary = min(1, max(0, motion))
-        let boost = min(1, max(0, motion - 1))
-        let speed = 0.52 + (1.02 - 0.52) * primary + 0.16 * boost
-        let clockwisePhase = safeTime * speed
-            + 0.05 * sin(safeTime * 0.47 + 0.2) * motion
+        // Time is integrated by the controller, including motion preferences.
+        let clockwisePhase = safeTime * 0.68
+            + 0.16 * sin(safeTime * 0.63 + 0.2)
+            + 0.07 * sin(safeTime * 1.17 + 1.1)
         return wrapOrbitPhase(
             seed * Float.pi * 2 - clockwisePhase
         )
@@ -108,19 +105,42 @@ internal enum VoiceMotionLayout {
 
     static func thinkingAssignmentPoint(
         cellIndex: Int,
-        phase: Float
+        phase: Float,
+        time: Float = 0,
+        motionScale: Float = 0,
+        presence: Float = 1
     ) -> SIMD2<Float> {
         let index = ((cellIndex % morphCellCount) + morphCellCount) % morphCellCount
-        let angle = wrapOrbitPhase(phase)
-            + Float.pi * 2 * Float(index) / Float(morphCellCount)
-        return SIMD2(cos(angle), sin(angle))
+        let slot = Float.pi * 2 * Float(index) / Float(morphCellCount)
+        let activity = min(1.4, max(0, motionScale)) * min(1, max(0, presence))
+        // Keep the assignment on the same evolving orbit as thinkingCell in Metal.
+        let angle = wrapOrbitPhase(phase) + slot + activity * (
+            0.16 * sin(time * 0.91 + slot)
+                + 0.055 * sin(time * 1.37 - 2 * slot + 0.6)
+        )
+        let radial: Float = 0.109 + activity * (
+            0.014 * sin(time * 0.73 + slot + 0.35)
+                + 0.006 * sin(time * 1.31 - 2 * slot + 0.8)
+        )
+        return SIMD2(cos(angle), sin(angle)) * radial
     }
 
-    static func adaptiveSpeakingBarMapping(anchorPhase: Float) -> [Int] {
+    static func adaptiveSpeakingBarMapping(
+        anchorPhase: Float,
+        time: Float = 0,
+        motionScale: Float = 0,
+        presence: Float = 1
+    ) -> [Int] {
         let ordered = (0..<morphCellCount).map { index in
             AssignmentPoint(
                 index: index,
-                point: thinkingAssignmentPoint(cellIndex: index, phase: anchorPhase)
+                point: thinkingAssignmentPoint(
+                    cellIndex: index,
+                    phase: anchorPhase,
+                    time: time,
+                    motionScale: motionScale,
+                    presence: presence
+                )
             )
         }.sorted(by: comesBefore)
 
@@ -150,8 +170,18 @@ internal enum VoiceMotionLayout {
         return adaptiveSpeakingBarMapping(anchorPhase: anchorPhase)[index]
     }
 
-    static func speakingLayoutCode(anchorPhase: Float) -> Float {
-        let mapping = adaptiveSpeakingBarMapping(anchorPhase: anchorPhase)
+    static func speakingLayoutCode(
+        anchorPhase: Float,
+        time: Float = 0,
+        motionScale: Float = 0,
+        presence: Float = 1
+    ) -> Float {
+        let mapping = adaptiveSpeakingBarMapping(
+            anchorPhase: anchorPhase,
+            time: time,
+            motionScale: motionScale,
+            presence: presence
+        )
         var code: UInt32 = 0
         for cellIndex in 0..<morphCellCount {
             code |= UInt32(mapping[cellIndex]) << UInt32(cellIndex * 2)

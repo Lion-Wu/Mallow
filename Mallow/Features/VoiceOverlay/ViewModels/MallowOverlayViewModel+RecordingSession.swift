@@ -70,6 +70,13 @@ extension MallowOverlayViewModel {
     }
 
     func startRecordingSession() async {
+        guard !Task.isCancelled, isPresented, autoResumeEnabled,
+              !currentVoiceWorkSnapshot().blocksListeningStart else { return }
+        // Playback and recognition share the system audio session. The old
+        // playback release must finish before recognition can activate it.
+        _ = await audioManager.deactivateSystemPlaybackSession().value
+        guard !Task.isCancelled, isPresented, autoResumeEnabled,
+              !currentVoiceWorkSnapshot().blocksListeningStart else { return }
         resetVisionCaptureSpeechActivity()
         await speechInputManager.startRecording(
             language: selectedLanguage,

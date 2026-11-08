@@ -11,7 +11,6 @@ public final class VoiceMotionRenderer: NSObject, MTKViewDelegate {
     private let viewportLayoutLock = NSLock()
     private var viewportLayout = VoiceMotionViewportLayout.centered
     private var lastTimestamp: CFTimeInterval = 0
-    private var elapsedTime: Float = 0
 
     @MainActor
     public init(view: MTKView, controller: VoiceMotionController) throws {
@@ -76,7 +75,6 @@ public final class VoiceMotionRenderer: NSObject, MTKViewDelegate {
             let timestamp = CACurrentMediaTime()
             let delta = lastTimestamp == 0 ? 1.0 / 60.0 : min(0.1, max(0, timestamp - lastTimestamp))
             lastTimestamp = timestamp
-            elapsedTime += Float(delta)
             let snapshot = controller.advance(deltaTime: delta)
             let size = view.drawableSize
             viewportLayoutLock.lock()
@@ -84,7 +82,7 @@ public final class VoiceMotionRenderer: NSObject, MTKViewDelegate {
             viewportLayoutLock.unlock()
             var uniforms = VoiceMotionUniforms(
                 resolution: SIMD2(Float(size.width), Float(size.height)),
-                time: elapsedTime,
+                time: snapshot.time,
                 stateTime: snapshot.stateTime,
                 stateWeights: snapshot.stateWeights,
                 stateData: SIMD4(
@@ -94,6 +92,7 @@ public final class VoiceMotionRenderer: NSObject, MTKViewDelegate {
                     snapshot.errorApertureProgress
                 ),
                 audio: snapshot.audio.vector,
+                dynamics: snapshot.audioResponse,
                 accent: snapshot.appearance.accent,
                 controls: SIMD4(
                     snapshot.appearance.motionScale,
@@ -101,7 +100,8 @@ public final class VoiceMotionRenderer: NSObject, MTKViewDelegate {
                     VoiceMotionLayout.phaseSeed,
                     0
                 ),
-                layout: viewportLayout.shaderParameters
+                layout: viewportLayout.shaderParameters,
+                connectingInterval: snapshot.connectingInterval
             )
 
             commandBuffer.label = "Mallow Motion Frame"

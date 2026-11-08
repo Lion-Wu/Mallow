@@ -116,19 +116,24 @@ internal struct VoiceMotionUniforms {
     var stateWeights: SIMD4<Float>
     var stateData: SIMD4<Float>
     var audio: SIMD4<Float>
+    var dynamics: SIMD4<Float>
     var accent: SIMD4<Float>
     var controls: SIMD4<Float>
     var layout: SIMD4<Float>
+    var connectingInterval: SIMD2<Float>
 }
 
 public struct VoiceMotionSnapshot: Sendable {
     public let state: VoiceMotionState
+    internal let time: Float
     public let stateTime: Float
+    internal let connectingInterval: SIMD2<Float>
     public let stateWeights: SIMD4<Float>
     public let errorWeight: Float
     public let errorApertureProgress: Float
     internal let speakingLayoutAnchorPhase: Float
     internal let speakingLayoutCode: Float
     public let audio: VoiceAudioLevels
+    internal let audioResponse: SIMD4<Float>
     public let appearance: VoiceMotionAppearance
 }

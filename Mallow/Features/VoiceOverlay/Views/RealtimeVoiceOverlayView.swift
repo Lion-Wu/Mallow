@@ -16,6 +16,7 @@ struct RealtimeVoiceOverlayView: View {
     @ObservedObject var viewModel: MallowOverlayViewModel
     @EnvironmentObject var errorCenter: AppErrorCenter
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -25,7 +26,6 @@ struct RealtimeVoiceOverlayView: View {
     var onClose: () -> Void = {}
     var displayStyle: DisplayStyle = .standard
 
-    @State private var voiceControlPulseToken = UUID()
     @State private var bottomControlHeight: CGFloat = 0
     @State private var motionController = VoiceMotionController(
         initialState: .listening
@@ -107,29 +107,28 @@ struct RealtimeVoiceOverlayView: View {
 
     var body: some View {
         ZStack {
-            AppBackgroundView()
+            VoiceOverlayBackground()
             contentLayout
-                .backgroundPreferenceValue(
-                    VoiceMotionControlPlacementPreferenceKey.self
-                ) { placement in
+                // Layout supplies a destination, never a second animation's
+                // intermediate frames or the outgoing branch's old anchor.
+                .transaction {
+                    $0.animation = nil
+                    $0.disablesAnimations = true
+                }
+                .overlayPreferenceValue(VoiceMotionControlPlacementPreferenceKey.self) { placement in
                     GeometryReader { proxy in
                         if let placement {
-                            let controlFrame = proxy[placement.bounds]
-                            let viewportLayout = VoiceMotionLayout.viewportLayout(
-                                controlFrame: controlFrame,
-                                viewportSize: proxy.size,
-                                visualScale: placement.visualScale
+                            let frame = proxy[placement.bounds]
+                            RealtimeVoiceControlCircle(
+                                viewModel: viewModel,
+                                motionController: motionController
                             )
-                            VoiceMotionSurface(
-                                controller: motionController,
-                                viewportLayout: viewportLayout
+                            .scaleEffect(frame.width / RealtimeVoiceControlCircle.standardFrameSize)
+                            .position(x: frame.midX, y: frame.midY)
+                            .animation(
+                                accessibilityReduceMotion ? nil : stateAnimation,
+                                value: frame
                             )
-                            .frame(
-                                width: proxy.size.width,
-                                height: proxy.size.height
-                            )
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
                         }
                     }
                 }
@@ -158,6 +157,24 @@ struct RealtimeVoiceOverlayView: View {
         }
         .onPreferenceChange(VoiceOverlayBottomControlHeightPreferenceKey.self) { height in
             bottomControlHeight = height
+        }
+        .onAppear {
+            motionController.isReducedMotionEnabled = accessibilityReduceMotion
+            updateMotionAccent()
+            updateMotionState(immediate: true)
+        }
+        .onDisappear {
+            motionController.setAudioSource(nil)
+            motionController.setAudioLevels(.silent)
+        }
+        .onChange(of: viewModel.state) { _, _ in
+            updateMotionState()
+        }
+        .onChange(of: colorScheme) { _, _ in
+            updateMotionAccent()
+        }
+        .onChange(of: accessibilityReduceMotion) { _, enabled in
+            motionController.isReducedMotionEnabled = enabled
         }
     }
 
@@ -190,8 +207,6 @@ struct RealtimeVoiceOverlayView: View {
             centeredVoiceLayout
             #endif
         }
-        .animation(stateAnimation, value: viewModel.isVisionCapturePresented)
-        .animation(stateAnimation, value: shouldShowRealtimeAssistantPanel)
     }
 
     private var centeredVoiceLayout: some View {
@@ -234,7 +249,6 @@ struct RealtimeVoiceOverlayView: View {
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
-        .animation(stateAnimation, value: viewModel.state)
     }
 
 #if os(iOS) || os(macOS)
@@ -271,7 +285,6 @@ struct RealtimeVoiceOverlayView: View {
             }
             .padding(outerPadding)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .animation(stateAnimation, value: viewModel.state)
         }
     }
 
@@ -326,24 +339,57 @@ struct RealtimeVoiceOverlayView: View {
                     assistantStatusColumn(maxWidth: 620, maxHeight: 280)
                 }
             }
-            .animation(stateAnimation, value: viewModel.state)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .padding(.bottom, visionContentBottomInset)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(stateAnimation, value: viewModel.state)
         #else
         standardLayout
         #endif
     }
 
     private var voiceControl: some View {
-        RealtimeVoiceControlCircle(
-            viewModel: viewModel,
-            motionController: motionController,
-            displayStyle: displayStyle,
-            externalPulseToken: voiceControlPulseToken
-        )
+        Color.clear
+            .frame(width: voiceControlDiameter, height: voiceControlDiameter)
+            .anchorPreference(key: VoiceMotionControlPlacementPreferenceKey.self, value: .bounds) {
+                VoiceMotionControlPlacement(bounds: $0)
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    private var voiceControlDiameter: CGFloat {
+        #if os(iOS) || os(macOS)
+        if viewModel.isVisionCapturePresented { return 108 }
+        #endif
+        return isVisionSceneStyle ? 328 : RealtimeVoiceControlCircle.standardFrameSize
+    }
+
+    private func updateMotionAccent() {
+        let channel: Float = colorScheme == .dark ? 1 : 0
+        motionController.setAccentSRGB(red: channel, green: channel, blue: channel)
+    }
+
+    private func updateMotionState(immediate: Bool = false) {
+        let state: VoiceMotionState
+        switch viewModel.state {
+        case .connecting: state = .connecting
+        case .listening: state = .listening
+        case .loading: state = .thinking
+        case .speaking: state = .speaking
+        case .error: state = .error
+        }
+        motionController.setAudioSource(nil)
+        motionController.setAudioLevels(.silent)
+        motionController.setState(state, immediate: immediate)
+        switch viewModel.state {
+        case .listening:
+            motionController.setAudioSource(viewModel.inputMotionAudioSource)
+        case .speaking:
+            motionController.setAudioSource(viewModel.outputMotionAudioSource)
+        case .connecting, .loading, .error:
+            break
+        }
     }
 
     private func assistantStatusColumn(maxWidth: CGFloat, maxHeight: CGFloat) -> some View {
@@ -627,10 +673,18 @@ struct RealtimeVoiceOverlayView: View {
 
     private func triggerReconnectAction() {
         AppHaptics.trigger(.selection)
-        voiceControlPulseToken = UUID()
         viewModel.handleCircleTap()
     }
 
+}
+
+struct VoiceOverlayBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        (colorScheme == .dark ? Color.black : Color.white)
+            .ignoresSafeArea()
+    }
 }
 
 private struct VoiceOverlayBottomControlHeightPreferenceKey: PreferenceKey {

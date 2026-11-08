@@ -47,12 +47,19 @@ extension GlobalAudioManager {
             return
         }
 
-        guard activateSystemPlaybackSession() else { return }
+        let activation = activateSystemPlaybackSession()
 
         let streamingEnabled = configuration.usesStreamingSegments
         let worker = segmentationWorker
 
-        Task.detached(priority: .userInitiated) { [weak self] in
+        playbackStartupTask = Task { [weak self] in
+            let activated = await activation.value
+            guard let self, !Task.isCancelled,
+                  self.currentGenerationID == generationID else { return }
+            guard activated else {
+                self.playbackStartupTask = nil
+                return
+            }
             let segments: [String]
             if streamingEnabled {
                 segments = await worker.splitTextIntoMeaningfulSegments(text)
@@ -60,11 +67,9 @@ extension GlobalAudioManager {
                 segments = [text]
             }
 
-            await MainActor.run { [weak self] in
-                guard let self else { return }
-                guard self.currentGenerationID == generationID else { return }
-                self.prepareSegmentsForPlayback(segments)
-            }
+            guard !Task.isCancelled, self.currentGenerationID == generationID else { return }
+            self.playbackStartupTask = nil
+            self.prepareSegmentsForPlayback(segments)
         }
     }
 
@@ -105,7 +110,17 @@ extension GlobalAudioManager {
             return
         }
 
-        guard activateSystemPlaybackSession() else { return }
+        let generationID = currentGenerationID
+        let activation = activateSystemPlaybackSession()
+        playbackStartupTask = Task { [weak self] in
+            let activated = await activation.value
+            guard let self, !Task.isCancelled,
+                  self.currentGenerationID == generationID else { return }
+            self.playbackStartupTask = nil
+            guard activated else { return }
+            self.processRealtimeQueueIfNeeded()
+            self.concludeRealtimeIfIdle()
+        }
     }
 
     /// Appends a segment to be converted to speech. Realtime mode enqueues the work, while
@@ -151,14 +166,7 @@ extension GlobalAudioManager {
                 return
             }
             if currentPlayingIndex < audioChunks.count {
-                let didStart = playAudioChunk(at: currentPlayingIndex, fromTime: currentTime, shouldPlay: true)
-                if isRealtimeMode {
-                    isAudioPlaying = didStart
-                    isLoading = !didStart
-                } else {
-                    isAudioPlaying = didStart
-                    if didStart { isLoading = false }
-                }
+                playAudioChunk(at: currentPlayingIndex, fromTime: currentTime, shouldPlay: true)
             } else {
                 isBuffering = true
                 startStallWatchdog()
@@ -196,6 +204,7 @@ extension GlobalAudioManager {
         } else {
             newT = max(0, time)
         }
+        cancelPlaybackPreparation()
         currentTime = newT
 
         if playbackFinished() {
@@ -213,7 +222,7 @@ extension GlobalAudioManager {
         }
 
         if let chunkOpt = audioChunks[safe: target], let _ = chunkOpt {
-            _ = playAudioChunk(at: target, fromTime: newT, shouldPlay: shouldPlay)
+            playAudioChunk(at: target, fromTime: newT, shouldPlay: shouldPlay)
         } else {
             isBuffering = shouldPlay
             isSeeking = true
@@ -253,6 +262,9 @@ extension GlobalAudioManager {
     func resetPlayer(releasingAudioSession: Bool = true) {
         // Invalidate every producer before clearing the slots it can write into.
         currentGenerationID = UUID()
+        playbackStartupTask?.cancel()
+        playbackStartupTask = nil
+        cancelPlaybackPreparation()
         activeDataRequests.values.forEach { $0.cancel() }
         activeDataRequests.removeAll()
         ttsRequestIssue = nil
@@ -270,8 +282,6 @@ extension GlobalAudioManager {
 
         audioPlayer?.stop()
         audioPlayer = nil
-        nextAudioPlayer?.stop()
-        nextAudioPlayer = nil
 
         stopAudioTimer()
         stopStallWatchdog()
@@ -325,48 +335,61 @@ extension GlobalAudioManager {
         sendNextSegment()
     }
 
-    /// Activates the output session before synthesis begins so the first decoded
-    /// audio chunk can start immediately instead of paying the route startup cost.
-    func activateSystemPlaybackSession() -> Bool {
-        #if os(iOS) || os(visionOS)
-        let session = AVAudioSession.sharedInstance()
-        do {
-            try session.setCategory(.playback, mode: .default, options: [])
-            try session.setActive(true, options: [])
-            ownsSystemPlaybackSession = true
-            return true
-        } catch {
-            currentTTSConfiguration = nil
-            isRealtimeMode = false
-            isLoading = false
-            isPlaybackRequested = false
-            isAudioPlaying = false
-            refreshPlaybackLoadState()
-            deactivateSystemPlaybackSession()
-            let message = String(
-                format: NSLocalizedString(
-                    "AUDIO_SESSION_SETUP_FAILED", value: "Unable to set up audio session: %@",
-                    comment: "Shown when the playback audio session cannot be activated"
-                ),
-                error.localizedDescription
-            )
-            surfaceTTSNotice(message, autoDismiss: 12)
-            return false
+    /// Session transitions form one ordered chain, including close/restart while
+    /// an asynchronous activation is still in progress.
+    @discardableResult
+    func activateSystemPlaybackSession() -> Task<Bool, Never> {
+        let previous = playbackSessionTask
+        let generationID = currentGenerationID
+        let operation = Task { [weak self] in
+            _ = await previous?.value
+            guard let self, self.currentGenerationID == generationID else { return false }
+            do {
+                try await self.playbackWorker.activateSession()
+                self.ownsSystemPlaybackSession = true
+                return true
+            } catch {
+                // Cleanup belongs to this operation, before any later session
+                // transition can run or hand the session over to recording.
+                await self.releaseSystemPlaybackSession()
+                guard self.currentGenerationID == generationID else { return false }
+                self.currentTTSConfiguration = nil
+                self.isRealtimeMode = false
+                self.isLoading = false
+                self.isPlaybackRequested = false
+                self.isAudioPlaying = false
+                self.refreshPlaybackLoadState()
+                let message = String(
+                    format: NSLocalizedString(
+                        "AUDIO_SESSION_SETUP_FAILED", value: "Unable to set up audio session: %@",
+                        comment: "Shown when the playback audio session cannot be activated"
+                    ),
+                    error.localizedDescription
+                )
+                self.surfaceTTSNotice(message, autoDismiss: 12)
+                return false
+            }
         }
-        #else
-        return true
-        #endif
+        playbackSessionTask = operation
+        return operation
     }
 
-    func deactivateSystemPlaybackSession() {
-        #if os(iOS) || os(visionOS)
-        guard ownsSystemPlaybackSession else { return }
+    @discardableResult
+    func deactivateSystemPlaybackSession() -> Task<Bool, Never> {
+        let previous = playbackSessionTask
+        let operation = Task { [weak self] in
+            _ = await previous?.value
+            await self?.releaseSystemPlaybackSession()
+            return false
+        }
+        playbackSessionTask = operation
+        return operation
+    }
 
+    private func releaseSystemPlaybackSession() async {
+        guard ownsSystemPlaybackSession else { return }
         do {
-            try AVAudioSession.sharedInstance().setActive(
-                false,
-                options: .notifyOthersOnDeactivation
-            )
+            guard try await playbackWorker.deactivateSession() else { return }
             ownsSystemPlaybackSession = false
         } catch {
             Logger(
@@ -376,6 +399,5 @@ extension GlobalAudioManager {
                 "Failed to deactivate playback audio session: \(error.localizedDescription, privacy: .public)"
             )
         }
-        #endif
     }
 }

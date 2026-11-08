@@ -59,10 +59,9 @@ extension GlobalAudioManager {
         isSeeking = false
         seekTime = nil
 
+        cancelPlaybackPreparation()
         audioPlayer?.stop()
         audioPlayer = nil
-        nextAudioPlayer?.stop()
-        nextAudioPlayer = nil
 
         stopAudioTimer()
         stopStallWatchdog()
@@ -70,21 +69,48 @@ extension GlobalAudioManager {
     }
 
     // MARK: - Prepare/Play
+    func cancelPlaybackPreparation() {
+        playbackPreparationTask?.cancel()
+        playbackPreparationTask = nil
+        nextPlaybackPreparationTask?.cancel()
+        nextPlaybackPreparationTask = nil
+        nextAudioPlayer?.stop()
+        nextAudioPlayer = nil
+    }
+
     func prepareNextAudioChunk(at index: Int) {
-        guard let chunkOpt = audioChunks[safe: index], let data = chunkOpt else { return }
-        if let p = try? AVAudioPlayer(data: data) {
-            p.delegate = self
-            p.prepareToPlay()
-            nextAudioPlayer = p
+        nextPlaybackPreparationTask?.cancel()
+        nextPlaybackPreparationTask = nil
+        guard index == currentPlayingIndex + 1,
+              let chunkOpt = audioChunks[safe: index], let data = chunkOpt else { return }
+        let generationID = currentGenerationID
+        let activation = playbackSessionTask
+        nextPlaybackPreparationTask = Task { [weak self] in
+            guard await activation?.value == true,
+                  let self, !Task.isCancelled,
+                  self.currentGenerationID == generationID else { return }
+            do {
+                let player = try await self.playbackWorker.preparePlayer(data: data)
+                guard !Task.isCancelled, self.currentGenerationID == generationID,
+                      index == self.currentPlayingIndex + 1 else { return }
+                player.delegate = self
+                self.nextAudioPlayer = player
+                self.nextPlaybackPreparationTask = nil
+            } catch {
+                // Prefetch is optional. The current segment reports preparation
+                // failures through the normal playback path when it is requested.
+                guard !Task.isCancelled, self.currentGenerationID == generationID else { return }
+                self.nextPlaybackPreparationTask = nil
+            }
         }
     }
 
-    @discardableResult
-    func playAudioChunk(at index: Int, fromTime t: TimeInterval? = nil, shouldPlay: Bool = true) -> Bool {
+    func playAudioChunk(at index: Int, fromTime t: TimeInterval? = nil, shouldPlay: Bool = true) {
+        cancelPlaybackPreparation()
         guard index >= 0, index < audioChunks.count else {
             if !shouldPlay { isPlaybackRequested = false }
             isBuffering = false
-            return false
+            return
         }
         guard let chunkOpt = audioChunks[safe: index], let data = chunkOpt else {
             isBuffering = shouldPlay
@@ -93,84 +119,126 @@ extension GlobalAudioManager {
             isPlaybackRequested = shouldPlay
             isAudioPlaying = false
             if isRealtimeMode { isLoading = shouldPlay }
-            return false
+            return
+        }
+        guard !playbackFinished() else {
+            finishPlayback()
+            return
         }
 
-        do {
-            if playbackFinished() {
-                finishPlayback()
-                return false
+        audioPlayer?.stop()
+        audioPlayer = nil
+        currentPlayingIndex = index
+        isPlaybackRequested = shouldPlay
+        isAudioPlaying = false
+        isBuffering = shouldPlay
+        isLoading = shouldPlay
+        stopAudioTimer()
+        startStallWatchdog()
+
+        let generationID = currentGenerationID
+        let activation = activateSystemPlaybackSession()
+        playbackPreparationTask = Task { [weak self] in
+            let activated = await activation.value
+            guard let self, !Task.isCancelled,
+                  self.currentGenerationID == generationID else { return }
+            guard activated else {
+                self.playbackPreparationTask = nil
+                return
             }
-
-            let p = try AVAudioPlayer(data: data)
-            p.delegate = self
-            p.prepareToPlay()
-            audioPlayer?.stop()
-            audioPlayer = p
-
-            let segStart = startTime(forSegment: index)
-
-            let localTime: TimeInterval
-            if let global = t {
-                let mapped = max(0, global - segStart)
-                localTime = min(max(0, mapped), max(0, p.duration))
-            } else {
-                localTime = 0
-            }
-
-            let atSegmentEnd = localTime >= max(0, p.duration - endEpsilon)
-            let atGlobalEnd = playbackFinished(at: segStart + localTime)
-            if atSegmentEnd && atGlobalEnd {
-                finishPlayback()
-                return false
-            }
-
-            p.currentTime = localTime
-
-            currentPlayingIndex = index
-            isBuffering = false
-            isSeeking = false
-
-            if shouldPlay {
-                guard activateSystemPlaybackSession() else { return false }
-                isPlaybackRequested = true
-                if playbackFinished(at: segStart + p.currentTime) {
-                    finishPlayback()
-                    return false
+            do {
+                let player = try await self.playbackWorker.preparePlayer(data: data)
+                guard !Task.isCancelled, self.currentGenerationID == generationID else { return }
+                self.playbackPreparationTask = nil
+                player.delegate = self
+                let segStart = self.startTime(forSegment: index)
+                let localTime = min(max(0, (t ?? segStart) - segStart), max(0, player.duration))
+                if localTime >= max(0, player.duration - self.endEpsilon),
+                   self.playbackFinished(at: segStart + localTime) {
+                    self.finishPlayback()
+                    return
                 }
-                let didPlay = p.play() || p.play()
-                guard didPlay else {
-                    isBuffering = true
-                    isAudioPlaying = false
-                    if isRealtimeMode { isLoading = true }
-                    startStallWatchdog()
-                    return false
-                }
-                startAudioTimer()
-                startStallWatchdog()
-                isAudioPlaying = true
-                if isRealtimeMode { isLoading = false }
-            } else {
-                isPlaybackRequested = false
-                isAudioPlaying = false
-                stopAudioTimer()
-                startStallWatchdog()
-            }
+                player.currentTime = localTime
+                self.audioPlayer = player
+                self.isSeeking = false
+                self.isBuffering = false
+                self.isLoading = false
 
-            prepareNextAudioChunk(at: index + 1)
-            return true
-        } catch {
-            let message = String(format: NSLocalizedString("AUDIO_ERROR_PLAYBACK_START", value: "Failed to start audio playback: %@", comment: "Shown when AVAudioPlayer fails to start"), error.localizedDescription)
-            self.surfaceTTSIssue(message, autoDismiss: 12)
-            isBuffering = true
-            startStallWatchdog()
-            isPlaybackRequested = shouldPlay
-            isAudioPlaying = false
-            if isRealtimeMode {
-                isLoading = shouldPlay
+                if shouldPlay && self.isPlaybackRequested {
+                    guard player.play() else {
+                        self.isBuffering = true
+                        self.isAudioPlaying = false
+                        if self.isRealtimeMode { self.isLoading = true }
+                        return
+                    }
+                    self.startAudioTimer()
+                    self.isAudioPlaying = true
+                }
+                self.prepareNextAudioChunk(at: index + 1)
+            } catch {
+                guard !Task.isCancelled, self.currentGenerationID == generationID else { return }
+                self.playbackPreparationTask = nil
+                let message = String(format: NSLocalizedString("AUDIO_ERROR_PLAYBACK_START", value: "Failed to start audio playback: %@", comment: "Shown when AVAudioPlayer fails to start"), error.localizedDescription)
+                self.surfaceTTSIssue(message, autoDismiss: 12)
+                self.isBuffering = self.isPlaybackRequested
+                self.isAudioPlaying = false
+                self.isLoading = self.isPlaybackRequested
             }
-            return false
         }
     }
+}
 
+/// Prepares each player away from the UI, then transfers its sole ownership to
+/// the main actor. No player is accessed concurrently by both actors.
+actor AudioPlaybackWorker {
+    func preparePlayer(data: Data) throws -> sending AVAudioPlayer {
+        try Task.checkCancellation()
+        let player = try AVAudioPlayer(data: data)
+        guard player.prepareToPlay() else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        try Task.checkCancellation()
+        return player
+    }
+
+    func activateSession() async throws {
+        #if os(iOS) || os(visionOS)
+        let session = AVAudioSession.sharedInstance()
+        let needsConfiguration = session.category != .playback
+            || session.mode != .default || !session.categoryOptions.isEmpty
+        if needsConfiguration {
+            try session.setCategory(.playback, mode: .default, options: [])
+        }
+        if #available(iOS 27.0, visionOS 27.0, *) {
+            guard try await session.activate(options: []) else {
+                throw ActivationError.rejected
+            }
+        } else {
+            try session.setActive(true, options: [])
+        }
+        #endif
+    }
+
+    func deactivateSession() async throws -> Bool {
+        #if os(iOS) || os(visionOS)
+        let session = AVAudioSession.sharedInstance()
+        if #available(iOS 27.0, visionOS 27.0, *) {
+            return try await session.deactivate(options: .notifyOthersOnDeactivation)
+        } else {
+            try session.setActive(false, options: .notifyOthersOnDeactivation)
+        }
+        #endif
+        return true
+    }
+
+    private enum ActivationError: LocalizedError {
+        case rejected
+
+        var errorDescription: String? {
+            NSLocalizedString(
+                "AUDIO_SESSION_NOT_ACTIVATED", value: "The system did not activate the audio session.",
+                comment: "Speech recognition audio-session activation error"
+            )
+        }
+    }
 }

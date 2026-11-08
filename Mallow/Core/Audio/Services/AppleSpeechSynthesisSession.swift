@@ -15,6 +15,7 @@ enum AppleSpeechSynthesisError: LocalizedError, Equatable, Sendable {
     case unexpectedBuffer
     case audioFileFailure
     case emptyAudio
+    case synthesisFailed
 
     var errorDescription: String? {
         switch self {
@@ -30,6 +31,8 @@ enum AppleSpeechSynthesisError: LocalizedError, Equatable, Sendable {
             return NSLocalizedString("VOICE_SPEECH_AUDIO_PREPARATION_FAILED", value: "Apple Speech audio could not be prepared for playback.", comment: "Apple speech audio file conversion failed")
         case .emptyAudio:
             return NSLocalizedString("VOICE_SPEECH_NO_AUDIO", value: "Apple Speech did not produce any audio.", comment: "Apple speech synthesis returned no audio frames")
+        case .synthesisFailed:
+            return NSLocalizedString("VOICE_SPEECH_SYNTHESIS_FAILED", value: "Apple Speech could not complete speech synthesis.", comment: "The system speech synthesizer ended the request unexpectedly")
         }
     }
 
@@ -37,7 +40,7 @@ enum AppleSpeechSynthesisError: LocalizedError, Equatable, Sendable {
         switch self {
         case .cancelled:
             return .fatal
-        case .emptyText, .voiceUnavailable:
+        case .emptyText, .voiceUnavailable, .synthesisFailed:
             return .fatal
         case .unexpectedBuffer, .audioFileFailure, .emptyAudio:
             return .transient
@@ -47,7 +50,7 @@ enum AppleSpeechSynthesisError: LocalizedError, Equatable, Sendable {
 
 /// Owns one `AVSpeechSynthesizer.write` operation and converts its PCM buffers into
 /// a self-contained CAF payload that the existing audio queue can play and seek.
-final class AppleSpeechSynthesisSession: @unchecked Sendable {
+final class AppleSpeechSynthesisSession: NSObject, AVSpeechSynthesizerDelegate, @unchecked Sendable {
     typealias Completion = @MainActor @Sendable (Result<Data, AppleSpeechSynthesisError>) -> Void
 
     private let lock = NSLock()
@@ -55,7 +58,6 @@ final class AppleSpeechSynthesisSession: @unchecked Sendable {
     private let completion: Completion
     private var synthesizer: AVSpeechSynthesizer?
     private var audioFile: AVAudioFile?
-    private var audioFileSettings: [String: Any] = [:]
     private var isCompleted = false
     private var wroteAudioFrames = false
 
@@ -64,6 +66,7 @@ final class AppleSpeechSynthesisSession: @unchecked Sendable {
         self.temporaryURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("Mallow-AppleSpeech-\(UUID().uuidString)")
             .appendingPathExtension("caf")
+        super.init()
     }
 
     static func start(
@@ -82,8 +85,9 @@ final class AppleSpeechSynthesisSession: @unchecked Sendable {
         let activeSynthesizer = synthesizer
         lock.unlock()
 
-        _ = activeSynthesizer?.stopSpeaking(at: .immediate)
+        // Claim user cancellation before stopSpeaking can call the delegate.
         finish(with: .failure(.cancelled))
+        _ = activeSynthesizer?.stopSpeaking(at: .immediate)
     }
 
     private func start(
@@ -122,14 +126,24 @@ final class AppleSpeechSynthesisSession: @unchecked Sendable {
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
 
         let newSynthesizer = AVSpeechSynthesizer()
+        newSynthesizer.delegate = self
         lock.lock()
         synthesizer = newSynthesizer
-        audioFileSettings = voice.audioFileSettings
         lock.unlock()
 
         newSynthesizer.write(utterance) { [weak self] buffer in
             self?.consume(buffer)
         }
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        // A terminal speech event also closes requests that return no final PCM
+        // buffer, so a failed system synthesis cannot leave the queue in flight.
+        finishFromAudioFile()
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        finish(with: .failure(.synthesisFailed))
     }
 
     private func consume(_ buffer: AVAudioBuffer) {
@@ -148,9 +162,13 @@ final class AppleSpeechSynthesisSession: @unchecked Sendable {
         if !isCompleted {
             do {
                 if audioFile == nil {
+                    // A system fallback voice can return a different format than the selected voice.
+                    let format = pcmBuffer.format
                     audioFile = try AVAudioFile(
                         forWriting: temporaryURL,
-                        settings: audioFileSettings
+                        settings: format.settings,
+                        commonFormat: format.commonFormat,
+                        interleaved: format.isInterleaved
                     )
                 }
                 try audioFile?.write(from: pcmBuffer)

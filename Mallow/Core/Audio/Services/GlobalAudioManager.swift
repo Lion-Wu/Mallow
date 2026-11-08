@@ -175,6 +175,11 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
     // MARK: - Players & Timers
     var audioPlayer: AVAudioPlayer?
     var nextAudioPlayer: AVAudioPlayer?
+    let playbackWorker = AudioPlaybackWorker()
+    var playbackSessionTask: Task<Bool, Never>?
+    var playbackStartupTask: Task<Void, Never>?
+    var playbackPreparationTask: Task<Void, Never>?
+    var nextPlaybackPreparationTask: Task<Void, Never>?
     var audioDisplayDriver: AudioDisplayLinkDriver?
 
     // Watchdog
@@ -303,13 +308,15 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
     }
 
     func hasActiveRealtimeSynthesisWork() -> Bool {
-        !inFlightIndexes.isEmpty ||
+        playbackStartupTask != nil ||
+            !inFlightIndexes.isEmpty ||
             !ttsRetryTasks.isEmpty ||
             ttsRequestIssue != nil
     }
 
     func hasPendingTTSSynthesisWork() -> Bool {
-        !inFlightIndexes.isEmpty ||
+        playbackStartupTask != nil ||
+            !inFlightIndexes.isEmpty ||
             !ttsRetryTasks.isEmpty ||
             ttsRequestIssue != nil ||
             (isRealtimeMode && !realtimeRequestQueue.isEmpty)
@@ -339,7 +346,7 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
     }
 
     func processRealtimeQueueIfNeeded() {
-        guard isRealtimeMode else { return }
+        guard isRealtimeMode, playbackStartupTask == nil else { return }
         guard ttsRequestIssue == nil else { return }
         guard inFlightIndexes.isEmpty else { return }
         guard ttsRetryTasks.isEmpty else { return }
