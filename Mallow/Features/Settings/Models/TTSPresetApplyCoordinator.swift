@@ -72,6 +72,7 @@ final class TTSPresetApplyCoordinator {
     private let presetApplyService: TTSPresetApplyService
     private let now: @Sendable () -> Date
     private(set) var status: TTSPresetApplyStatus
+    private var generation = UUID()
 
     init(
         presetApplyService: TTSPresetApplyService = TTSPresetApplyService(),
@@ -88,6 +89,7 @@ final class TTSPresetApplyCoordinator {
         publish: @escaping StatusPublisher
     ) async {
         guard !status.isApplying else { return }
+        let generation = generation
         update(status.starting(), publish: publish)
 
         do {
@@ -96,19 +98,27 @@ final class TTSPresetApplyCoordinator {
                 await report(observation)
             }) { [weak self] retryStatus in
                 await MainActor.run {
-                    guard let self else { return }
+                    guard let self, self.generation == generation else { return }
                     self.update(self.status.updatingRetry(retryStatus), publish: publish)
                 }
             }
         } catch let applyError as TTSPresetApplyError {
+            guard self.generation == generation else { return }
             update(status.recordingFailure(applyError.settingsMessage, at: now()), publish: publish)
             return
         } catch {
+            guard self.generation == generation else { return }
             update(status.recordingFailure(error.localizedDescription, at: now()), publish: publish)
             return
         }
 
+        guard self.generation == generation else { return }
         update(status.recordingSuccess(at: now()), publish: publish)
+    }
+
+    func reset() {
+        generation = UUID()
+        status = .idle
     }
 
     private func update(_ nextStatus: TTSPresetApplyStatus, publish: StatusPublisher) {

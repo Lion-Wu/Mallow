@@ -29,6 +29,9 @@ struct MallowApp: App {
             appEnvironment?.quiescePersistentStore()
             startupCoordinator?.reportPersistentStoreReadFailure(error)
         }
+        startupCoordinator.onWillClearAllAppData = { [weak appEnvironment] in
+            appEnvironment?.prepareForClearingAllAppData()
+        }
         startupCoordinator.onWillResetPersistentStore = { [weak appEnvironment] in
             appEnvironment?.quiescePersistentStore()
         }

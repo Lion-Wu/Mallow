@@ -139,6 +139,56 @@ nonisolated enum StartupPersistentStore {
     }
 }
 
+/// One destructive operation shared by Settings and startup recovery.
+/// The marker keeps an interrupted reset from reopening partially erased data.
+nonisolated enum AppDataReset {
+    private static var markerURL: URL {
+        StartupPersistentStore.defaultURL.deletingLastPathComponent()
+            .appendingPathComponent("clear-app-data.pending")
+    }
+
+    static var isPending: Bool { FileManager.default.fileExists(atPath: markerURL.path) }
+
+    static func begin() throws {
+        // Never recursively delete a developer's shared Library or Documents.
+        guard DataStorageInspector.hasPrivateContainer else { throw CocoaError(.fileWriteNoPermission) }
+        try Data().write(to: markerURL, options: .atomic)
+    }
+
+    static func complete() async throws {
+        guard DataStorageInspector.hasPrivateContainer, isPending else {
+            throw CocoaError(.fileWriteNoPermission)
+        }
+        let manager = FileManager.default
+        let identifier = Bundle.main.bundleIdentifier ?? "Mallow"
+        try KeychainStore.deleteAll(service: identifier)
+        UserDefaults.standard.removePersistentDomain(forName: identifier)
+        // CFNetwork owns its backing files. Wait for its cookies, caches and
+        // credentials to be cleared before reopening the application.
+        await URLSession.shared.reset()
+
+        let storeDirectory = StartupPersistentStore.defaultURL.deletingLastPathComponent()
+        // Keep our in-progress marker and the live ownership lock's inode.
+        try clearContents(of: storeDirectory, keeping: [markerURL.lastPathComponent, PersistentStoreOwnership.fileName])
+        let documents = try manager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+        try clearContents(of: documents)
+        try clearContents(of: manager.temporaryDirectory)
+        try manager.removeItem(at: markerURL)
+    }
+
+    /// Only call this for directories owned by the application, never Library.
+    static func clearContents(of directory: URL, keeping names: Set<String> = []) throws {
+        let manager = FileManager.default
+        guard manager.fileExists(atPath: directory.path) else { return }
+        for item in try manager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+            where !names.contains(item.lastPathComponent) {
+            // FileManager removes a directory's complete contents, including
+            // hidden files, and removes symbolic links without following them.
+            try manager.removeItem(at: item)
+        }
+    }
+}
+
 nonisolated enum StartupDataRecovery {
     static func prepare(sourceURL: URL, temporaryDirectory: URL = FileManager.default.temporaryDirectory, allowSourceSidecarCreation: Bool = false) throws -> DataRecoveryPlan {
         let id = UUID()

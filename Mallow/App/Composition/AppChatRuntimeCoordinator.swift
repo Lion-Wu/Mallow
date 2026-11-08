@@ -28,6 +28,8 @@ final class AppChatRuntimeCoordinator {
     private var cancellables: Set<AnyCancellable> = []
     private var reachabilityTask: Task<Void, Never>?
     private var didStart = false
+    private var generation = UUID()
+    private var launchTask: Task<Void, Never>?
 
     init(
         settingsManager: SettingsManager,
@@ -48,10 +50,22 @@ final class AppChatRuntimeCoordinator {
         startLaunchTasks()
     }
 
+    func stop() {
+        generation = UUID()
+        didStart = false
+        cancellables.removeAll()
+        reachabilityTask?.cancel()
+        reachabilityTask = nil
+        launchTask?.cancel()
+        launchTask = nil
+        reachabilityMonitor.stopMonitoring()
+    }
+
     private func startLaunchTasks() {
         // The startup catalog request also establishes the text server's connection state.
         settingsManager.fetchAvailableChatModels()
-        Task { [settingsManager, reachabilityMonitor] in
+        launchTask = Task { [settingsManager, reachabilityMonitor] in
+            guard !Task.isCancelled else { return }
             let snapshot = settingsManager.serverReachabilitySnapshot
             guard snapshot.requiresTTSNetworkService else { return }
             if settingsManager.selectedPresetApplyRequest() != nil {
@@ -97,9 +111,12 @@ final class AppChatRuntimeCoordinator {
             }
             .removeDuplicates()
             .dropFirst()
-            .sink { [settingsManager] _ in
-                Task { [settingsManager] in
-                    settingsManager.fetchAvailableChatModels()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                let generation = self.generation
+                Task { [weak self] in
+                    guard let self, self.didStart, self.generation == generation else { return }
+                    self.settingsManager.fetchAvailableChatModels()
                 }
             }
             .store(in: &cancellables)

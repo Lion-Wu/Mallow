@@ -168,6 +168,16 @@ final class SettingsModelCatalogController {
         self.noticePublisher = noticePublisher
     }
 
+    func cancel() {
+        activeRequestID = UUID()
+        task?.cancel()
+        task = nil
+        modelWaitNoticeTask?.cancel()
+        modelWaitNoticeTask = nil
+        requestedCatalog = nil
+        noticePublisher.clear(category: .modelCatalog)
+    }
+
     func fetch(
         request: SettingsModelCatalogRequest,
         currentState: SettingsModelCatalogState,

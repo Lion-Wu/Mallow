@@ -26,6 +26,7 @@ final class StartupDataCoordinator: ObservableObject {
 
     @Published private(set) var launchState: LaunchState = .loading
     @Published private(set) var isResettingStore = false
+    @Published var resetError: String?
     @Published private(set) var isExporting = false
     @Published private(set) var isScanningRecovery = false
     @Published private(set) var recoveryPlan: DataRecoveryPlan?
@@ -39,6 +40,7 @@ final class StartupDataCoordinator: ObservableObject {
     private let ownershipDirectory: URL?
     private var storeOwnership: PersistentStoreOwnership?
     var onWillResetPersistentStore: (() -> Void)?
+    var onWillClearAllAppData: (() -> Void)?
 
     init(prepareContainer: @escaping ContainerPreparer = { _ in }) {
         self.containerFactory = Self.makeContainer
@@ -66,22 +68,36 @@ final class StartupDataCoordinator: ObservableObject {
     }
 
     func resetDataAndRetry() {
-        guard case .failed = launchState else { return }
         guard !isResettingStore, !isRecoveryActive, !isExporting else { return }
-        onWillResetPersistentStore?()
+        let container: ModelContainer?
+        switch launchState {
+        case .ready(let current): container = current
+        case .failed: container = nil
+        case .loading, .unavailable: return
+        }
+        do { try AppDataReset.begin() }
+        catch {
+            resetError = Self.formatErrorMessage(error)
+            return
+        }
+        resetError = nil
         isResettingStore = true
-        let operationID = UUID()
-        activeOperationID = operationID
+        activeOperationID = UUID()
+        onWillClearAllAppData?()
+        onWillResetPersistentStore?()
+        container?.mainContext.autosaveEnabled = false
+        container?.mainContext.rollback()
+        launchState = .loading
 
-        Task { [operationID] in
-            let result = await Self.resetPersistentStoreAsync()
-            guard activeOperationID == operationID else { return }
-
-            isResettingStore = false
-            switch result {
-            case .success:
+        Task {
+            do {
+                // Invalidate the live store before removing any of its files.
+                try container?.erase()
+                try await Self.resetPersistentStoreAsync().get()
+                isResettingStore = false
                 beginPersistentContainerLoad()
-            case .failure(let error):
+            } catch {
+                isResettingStore = false
                 let template = String(localized: "RECOVERY_RESET_FAILED", defaultValue: "Reset data failed.\n%@")
                 launchState = .failed(String.localizedStringWithFormat(template, Self.formatErrorMessage(error)))
             }
@@ -89,7 +105,7 @@ final class StartupDataCoordinator: ObservableObject {
     }
 
     func exportData() async throws -> RawDataExport {
-        guard case .failed = launchState, !isResettingStore, !isRecoveryActive, !isExporting else {
+        guard case .failed = launchState, !AppDataReset.isPending, !isResettingStore, !isRecoveryActive, !isExporting else {
             throw CocoaError(.userCancelled)
         }
         onWillResetPersistentStore?()
@@ -124,7 +140,7 @@ final class StartupDataCoordinator: ObservableObject {
 
     func scanForRecoverableData() {
         guard !isResettingStore, !isRecoveryActive, !isExporting else { return }
-        guard case .failed = launchState else { return }
+        guard case .failed = launchState, !AppDataReset.isPending else { return }
         onWillResetPersistentStore?()
         recoveryError = nil
         importCleanupError = nil
@@ -239,11 +255,6 @@ final class StartupDataCoordinator: ObservableObject {
                 return
             }
         }
-        do { try DataImportTransaction.recoverInterruptedImport() }
-        catch {
-            launchState = .failed(Self.formatErrorMessage(error))
-            return
-        }
         launchState = .loading
         let operationID = UUID()
         activeOperationID = operationID
@@ -252,6 +263,20 @@ final class StartupDataCoordinator: ObservableObject {
 
         Task { [weak self] in
             defer { withExtendedLifetime(ownership) {} }
+            if AppDataReset.isPending {
+                let resetResult = await Self.resetPersistentStoreAsync()
+                guard let self, self.activeOperationID == operationID else { return }
+                if case .failure(let error) = resetResult {
+                    self.launchState = .failed(Self.formatErrorMessage(error))
+                    return
+                }
+            }
+            // Complete the confirmed reset before an import can restore old keys.
+            do { try DataImportTransaction.recoverInterruptedImport() }
+            catch {
+                self?.launchState = .failed(Self.formatErrorMessage(error))
+                return
+            }
             let result = await Self.makeContainerAsync(using: factory)
             guard let self, self.activeOperationID == operationID else { return }
             switch result {
@@ -286,18 +311,14 @@ final class StartupDataCoordinator: ObservableObject {
     }
 
     private static func resetPersistentStoreAsync() async -> Result<Void, Error> {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let result: Result<Void, Error>
-                do {
-                    try StartupPersistentStore.reset()
-                    result = .success(())
-                } catch {
-                    result = .failure(error)
-                }
-                continuation.resume(returning: result)
+        await Task.detached(priority: .userInitiated) {
+            do {
+                try await AppDataReset.complete()
+                return Result<Void, Error>.success(())
+            } catch {
+                return Result<Void, Error>.failure(error)
             }
-        }
+        }.value
     }
 
     private nonisolated static func formatErrorMessage(_ error: Error) -> String {
@@ -352,6 +373,7 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
                     isResetting: coordinator.isResettingStore,
                     isRecoveryActive: coordinator.isRecoveryActive,
                     isExporting: coordinator.isExporting,
+                    hasPendingReset: AppDataReset.isPending,
                     onExit: { coordinator.exitApplication() },
                     onReset: { coordinator.resetDataAndRetry() },
                     onRecover: {
@@ -381,6 +403,12 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
             }
             .frame(width: 1, height: 1)
         }
+        .alert("DATA_ACTION_CLEAR_APP_DATA", isPresented: Binding(
+            get: { coordinator.resetError != nil },
+            set: { if !$0 { coordinator.resetError = nil } }
+        )) {
+            Button("COMMON_ACTION_OK", role: .cancel) { coordinator.resetError = nil }
+        } message: { Text(coordinator.resetError ?? "") }
         .alert("DATA_EXPORT", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
             Button("COMMON_ACTION_OK", role: .cancel) { exportError = nil }
         } message: { Text(exportError ?? "") }
@@ -434,6 +462,7 @@ struct StartupDataErrorView: View {
     let isResetting: Bool
     var isRecoveryActive = false
     var isExporting = false
+    var hasPendingReset = false
     let onExit: () -> Void
     let onReset: () -> Void
     let onRecover: () -> Void
@@ -474,12 +503,12 @@ struct StartupDataErrorView: View {
             .appChromedContainer(cornerRadius: 28, shadowOpacity: 0.32)
             .padding(.horizontal, 24)
         }
-        .alert("RECOVERY_RESET_CONFIRMATION", isPresented: $isConfirmingReset) {
+        .alert("DATA_CLEAR_CONFIRMATION", isPresented: $isConfirmingReset) {
             Button("COMMON_ACTION_CANCEL", role: .cancel) {}
-            Button("RECOVERY_ACTION_RESET_CONTINUE", role: .destructive, action: onReset)
+            Button("DATA_ACTION_CLEAR_APP_DATA", role: .destructive, action: onReset)
                 .disabled(isResetting || isRecoveryActive || isExporting)
         } message: {
-            Text("DATA_RESTORE_OVERWRITE_WARNING")
+            Text("DATA_CLEAR_WARNING")
         }
     }
 
@@ -494,7 +523,7 @@ struct StartupDataErrorView: View {
         } label: {
             HStack(spacing: 8) {
                 if isResetting { ProgressView().controlSize(.small) }
-                Text(isResetting ? LocalizedStringKey("RECOVERY_RESETTING") : LocalizedStringKey("RECOVERY_ACTION_RESET_CONTINUE"))
+                Text(isResetting ? LocalizedStringKey("RECOVERY_RESETTING") : LocalizedStringKey("DATA_ACTION_CLEAR_APP_DATA"))
             }
         }
         .buttonStyle(.bordered)
@@ -512,11 +541,11 @@ struct StartupDataErrorView: View {
         .buttonStyle(.bordered)
         .accessibilityLabel(Text("DATA_ACTION_EXPORT"))
         .accessibilityValue(isExporting ? Text("COMMON_LOADING") : Text(""))
-        .disabled(isResetting || isRecoveryActive || isExporting)
+        .disabled(isResetting || isRecoveryActive || isExporting || hasPendingReset)
 
         Button("RECOVERY_ACTION_RECOVER", action: onRecover)
             .buttonStyle(.borderedProminent)
-            .disabled(isResetting || isRecoveryActive || isExporting)
+            .disabled(isResetting || isRecoveryActive || isExporting || hasPendingReset)
     }
 
 }

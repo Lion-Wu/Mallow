@@ -52,6 +52,22 @@ extension SettingsManager {
         return true
     }
 
+    func prepareForClearingAllAppData() {
+        modelCatalogController.cancel()
+        presetApplyController.reset()
+        pendingDeveloperModeEnabled = nil
+        pendingHapticFeedbackEnabled = nil
+        pendingAPIAdvancedSettings = nil
+        pendingToolUseSettings = nil
+        readyChatModelCatalog = nil
+        chatModelCatalogState = .empty
+        clearSettingsWriteFailure()
+        applyLoadedState(AppSettingsStore.loadedState(
+            from: AppSettings(), chatAPIKey: "",
+            defaultAPIAdvancedSettings: SettingsDefaults.apiAdvancedSettings
+        ))
+    }
+
     func detachPersistentStore() {
         isCoalescingPersistenceWrites = false
         persistence.discardBinding()

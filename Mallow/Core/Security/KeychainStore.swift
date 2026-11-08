@@ -20,6 +20,23 @@ struct KeychainStoreError: LocalizedError, Equatable {
 }
 
 enum KeychainStore {
+    /// Delete every app-owned password, including orphaned and legacy accounts.
+    static func deleteAll(service: String) throws {
+        var query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service
+        ]
+        #if os(macOS)
+        // The file-based keychain defaults to one match. The iOS data
+        // protection keychain deletes all matches and rejects this parameter.
+        query[kSecMatchLimit as String] = kSecMatchLimitAll
+        #endif
+        let status = SecItemDelete(query as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw KeychainStoreError(status: status)
+        }
+    }
+
     private static func baseQuery(service: String, account: String) -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,

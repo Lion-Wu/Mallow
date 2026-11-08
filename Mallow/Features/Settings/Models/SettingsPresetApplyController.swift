@@ -22,6 +22,8 @@ final class SettingsPresetApplyController {
     private let applyOperation: ApplyOperation
     private(set) var status: TTSPresetApplyStatus
     private var didApplyOnLaunch = false
+    private var generation = UUID()
+    private var activeTask: Task<Void, Never>?
 
     init(
         initialStatus: TTSPresetApplyStatus = .idle,
@@ -42,11 +44,29 @@ final class SettingsPresetApplyController {
     }
 
     func apply(_ request: TTSPresetApplyRequest?) async {
-        guard let request else { return }
+        guard let request, activeTask == nil else { return }
 
-        await applyOperation(request) { [weak self] status in
-            self?.update(status)
+        let generation = generation
+        let applyOperation = applyOperation
+        let task = Task { [weak self] in
+            guard !Task.isCancelled else { return }
+            await applyOperation(request) { [weak self] status in
+                guard let self, self.generation == generation else { return }
+                self.update(status)
+            }
         }
+        activeTask = task
+        await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+        if self.generation == generation { activeTask = nil }
+    }
+
+    func reset() {
+        generation = UUID()
+        activeTask?.cancel()
+        activeTask = nil
+        didApplyOnLaunch = false
+        coordinator.reset()
+        update(.idle)
     }
 
     private func update(_ nextStatus: TTSPresetApplyStatus) {

@@ -336,6 +336,18 @@ final class AppEnvironment: ObservableObject {
         }
     }
 
+    func prepareForClearingAllAppData() {
+        chatRuntimeCoordinator.stop()
+        didStart = false
+        quiescePersistentStore()
+        voiceOverlayViewModel.dismiss()
+        speechInputManager.stopRecording(finalize: false)
+        audioManager.resetPlayer()
+        settingsManager.prepareForClearingAllAppData()
+        MessageRenderCache.shared.clear()
+        errorCenter.clear()
+    }
+
     func quiescePersistentStore() {
         chatSessionsViewModel.detachPersistentStore()
         settingsManager.detachPersistentStore()

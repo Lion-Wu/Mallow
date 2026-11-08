@@ -7,6 +7,7 @@ struct DataManagementView: View {
     @EnvironmentObject private var coordinator: StartupDataCoordinator
     @StateObject private var model = DataManagementModel()
     @State private var showingImporter = false
+    @State private var confirmingClear = false
     let commitEdits: () -> Void
 
     var body: some View {
@@ -29,6 +30,12 @@ struct DataManagementView: View {
             model.refreshUsage()
         }
 
+        .alert("DATA_CLEAR_CONFIRMATION", isPresented: $confirmingClear) {
+            Button("COMMON_ACTION_CANCEL", role: .cancel) {}
+            Button("DATA_ACTION_CLEAR_APP_DATA", role: .destructive) {
+                coordinator.resetDataAndRetry()
+            }
+        } message: { Text("DATA_CLEAR_WARNING") }
         .fileImporter(isPresented: $showingImporter, allowedContentTypes: [.zip]) { result in
             switch result {
             case .success(let url): model.importBackup(url, environment: environment, commitEdits: commitEdits)
@@ -76,6 +83,8 @@ struct DataManagementView: View {
                     transferButtons
                 }
                 .controlSize(.large)
+                Divider()
+                clearDataButton.buttonStyle(.bordered).controlSize(.large)
             }
             .buttonStyle(.plain)
             .padding(24)
@@ -88,9 +97,20 @@ struct DataManagementView: View {
             Section("SETTINGS_CHAT_MANAGEMENT") { storageLinks }
             Section("DATA_MANAGEMENT") { maintenanceLinks }
             Section("DATA_BACKUP_AND_RESTORE") { transferButtons }
+            Section {
+                clearDataButton
+            }
         }
         .formStyle(.grouped)
         #endif
+    }
+
+    private var clearDataButton: some View {
+        Button(role: .destructive) { confirmingClear = true } label: {
+            Label("DATA_ACTION_CLEAR_APP_DATA", systemImage: "trash")
+        }
+        .tint(.red)
+        .foregroundStyle(.red)
     }
 
     private var storageOverview: some View {
