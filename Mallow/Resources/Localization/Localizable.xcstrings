@@ -16197,65 +16197,6 @@
         }
       }
     },
-    "DATA_RESTORE_OVERWRITE_WARNING" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "سيؤدي هذا إلى حذف المحادثات والرسائل والإعدادات والإعدادات المسبقة المحلية الحالية. لا يمكن التراجع عن هذا الإجراء."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dadurch werden deine aktuellen lokalen Chats, Nachrichten, Einstellungen und Voreinstellungen gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This will delete your current local chats, messages, settings, and presets. This action cannot be undone."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se eliminarán tus chats, mensajes, ajustes y preajustes locales actuales. Esta acción no se puede deshacer."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cette opération supprimera vos conversations, messages, réglages et préréglages locaux actuels. Cette action est irréversible."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "現在ローカルに保存されているチャット、メッセージ、設定、プリセットが削除されます。この操作は取り消せません。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "현재 로컬에 저장된 채팅, 메시지, 설정 및 프리셋이 삭제됩니다. 이 작업은 되돌릴 수 없습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "这将删除当前本地的聊天、消息、设置和预设。此操作无法撤销。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "這將刪除目前本機的聊天、訊息、設定和預設。此操作無法復原。"
-          }
-        }
-      }
-    },
     "DATA_SAVING_ISSUE" : {
       "comment" : "Fallback title when chat data cannot be saved",
       "extractionState" : "extracted_with_value",
@@ -26934,65 +26875,6 @@
         }
       }
     },
-    "RECOVERY_ACTION_RESET_CONTINUE" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "إعادة ضبط البيانات والمتابعة"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Daten zurücksetzen und fortfahren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset Data and Continue"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Restablecer datos y continuar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réinitialiser les données et continuer"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "データをリセットして続行"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "데이터 재설정 후 계속"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重置数据并继续"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重設資料並繼續"
-          }
-        }
-      }
-    },
     "RECOVERY_ACTION_RESTORE" : {
       "localizations" : {
         "ar" : {
@@ -27808,65 +27690,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "復原的訊息"
-          }
-        }
-      }
-    },
-    "RECOVERY_RESET_CONFIRMATION" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "إعادة تعيين البيانات؟"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Daten zurücksetzen?"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reset Data?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Restablecer los datos?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réinitialiser les données ?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "データをリセットしますか？"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "데이터를 초기화할까요?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重置数据？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "重置資料？"
           }
         }
       }
