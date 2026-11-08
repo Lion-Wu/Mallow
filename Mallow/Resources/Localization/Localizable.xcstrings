@@ -12575,64 +12575,6 @@
         }
       }
     },
-    "DATA_CLEAR_WARNING" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "سيتم حذف جميع المحادثات والمرفقات والإعدادات والإعدادات المسبقة ومفاتيح API وبيانات اعتماد التطبيق الأخرى في سلسلة المفاتيح والملفات المحلية وذاكرة التخزين المؤقت نهائيًا. سيعود التطبيق إلى حالته الأولية. لا يمكن التراجع عن هذا الإجراء."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle Chats, Anhänge, Einstellungen, Voreinstellungen, API-Schlüssel und anderen Schlüsselbund-Zugangsdaten der App sowie lokale Dateien und Caches werden dauerhaft gelöscht. Die App wird in ihren Ausgangszustand zurückgesetzt. Diese Aktion kann nicht rückgängig gemacht werden."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All chats, attachments, settings, presets, API keys and other app keychain credentials, local files, and caches will be permanently deleted. The app will return to its initial state. This action cannot be undone."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se eliminarán permanentemente todos los chats, archivos adjuntos, ajustes, preajustes, claves de API y otras credenciales de la app en el llavero, archivos locales y cachés. La app volverá a su estado inicial. Esta acción no se puede deshacer."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tous les chats, pièces jointes, réglages, préréglages, clés API et autres identifiants de l’app dans le trousseau, fichiers locaux et caches seront définitivement supprimés. L’app retrouvera son état initial. Cette action est irréversible."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "すべてのチャット、添付ファイル、設定、プリセット、APIキーおよびその他のアプリのキーチェーン認証情報、ローカルファイル、キャッシュが完全に削除され、アプリは初期状態に戻ります。この操作は取り消せません。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "모든 채팅, 첨부 파일, 설정, 프리셋, API 키 및 기타 앱 키체인 자격 증명, 로컬 파일과 캐시가 영구적으로 삭제됩니다. 앱이 초기 상태로 돌아갑니다. 이 작업은 취소할 수 없습니다."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有聊天、附件、设置、预设、API 密钥及其他应用钥匙串凭据、本地文件和缓存都将被永久删除，应用将恢复初始状态。此操作无法撤销。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有聊天、附件、設定、預設、API 金鑰及其他 App 鑰匙圈憑證、本機檔案和快取都將永久刪除，App 將恢復初始狀態。此操作無法復原。"
-          }
-        }
-      }
-    },
     "DATA_CLEAR_CONFIRMATION" : {
       "localizations" : {
         "ar" : {
@@ -12687,6 +12629,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "清除所有 App 資料？"
+          }
+        }
+      }
+    },
+    "DATA_CLEAR_WARNING" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سيتم حذف جميع المحادثات والمرفقات والإعدادات والإعدادات المسبقة ومفاتيح API وبيانات اعتماد التطبيق الأخرى في سلسلة المفاتيح والملفات المحلية وذاكرة التخزين المؤقت نهائيًا. سيعود التطبيق إلى حالته الأولية. لا يمكن التراجع عن هذا الإجراء."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Chats, Anhänge, Einstellungen, Voreinstellungen, API-Schlüssel und anderen Schlüsselbund-Zugangsdaten der App sowie lokale Dateien und Caches werden dauerhaft gelöscht. Die App wird in ihren Ausgangszustand zurückgesetzt. Diese Aktion kann nicht rückgängig gemacht werden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All chats, attachments, settings, presets, API keys and other app keychain credentials, local files, and caches will be permanently deleted. The app will return to its initial state. This action cannot be undone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se eliminarán permanentemente todos los chats, archivos adjuntos, ajustes, preajustes, claves de API y otras credenciales de la app en el llavero, archivos locales y cachés. La app volverá a su estado inicial. Esta acción no se puede deshacer."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous les chats, pièces jointes, réglages, préréglages, clés API et autres identifiants de l’app dans le trousseau, fichiers locaux et caches seront définitivement supprimés. L’app retrouvera son état initial. Cette action est irréversible."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべてのチャット、添付ファイル、設定、プリセット、APIキーおよびその他のアプリのキーチェーン認証情報、ローカルファイル、キャッシュが完全に削除され、アプリは初期状態に戻ります。この操作は取り消せません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모든 채팅, 첨부 파일, 설정, 프리셋, API 키 및 기타 앱 키체인 자격 증명, 로컬 파일과 캐시가 영구적으로 삭제됩니다. 앱이 초기 상태로 돌아갑니다. 이 작업은 취소할 수 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有聊天、附件、设置、预设、API 密钥及其他应用钥匙串凭据、本地文件和缓存都将被永久删除，应用将恢复初始状态。此操作无法撤销。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有聊天、附件、設定、預設、API 金鑰及其他 App 鑰匙圈憑證、本機檔案和快取都將永久刪除，App 將恢復初始狀態。此操作無法復原。"
           }
         }
       }
@@ -16198,6 +16198,7 @@
       }
     },
     "DATA_RESTORE_OVERWRITE_WARNING" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -26934,6 +26935,7 @@
       }
     },
     "RECOVERY_ACTION_RESET_CONTINUE" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -27811,6 +27813,7 @@
       }
     },
     "RECOVERY_RESET_CONFIRMATION" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -44677,6 +44680,65 @@
         }
       }
     },
+    "VOICE_INPUT_LANGUAGE" : {
+      "comment" : "Label for the speech recognition language picker in voice mode.",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لغة التعرف على الكلام"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erkennungssprache"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speech Language"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Idioma de reconocimiento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Langue de reconnaissance"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音声認識の言語"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "음성 인식 언어"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "识别语言"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "辨識語言"
+          }
+        }
+      }
+    },
     "VOICE_INPUT_UNSUPPORTED" : {
       "comment" : "Shown when speech input is unavailable",
       "extractionState" : "extracted_with_value",
@@ -44791,65 +44853,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "目前仍有其他任務正在執行。繼續將中斷它們並啟動語音模式。"
-          }
-        }
-      }
-    },
-    "VOICE_INPUT_LANGUAGE" : {
-      "comment" : "Label for the speech recognition language picker in voice mode.",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "لغة التعرف على الكلام"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erkennungssprache"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Speech Language"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Idioma de reconocimiento"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Langue de reconnaissance"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "音声認識の言語"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "음성 인식 언어"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "识别语言"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "辨識語言"
           }
         }
       }
