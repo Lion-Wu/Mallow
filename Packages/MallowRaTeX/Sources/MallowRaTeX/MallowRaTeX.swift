@@ -37,7 +37,7 @@ public struct MallowRaTeXColor: Hashable, Sendable {
 }
 
 public enum MallowRaTeXVersion {
-    public static let upstream = "0.1.13"
+    public static let upstream = "0.1.15"
 }
 
 public struct MallowRaTeXRenderConfiguration: Hashable, Sendable {

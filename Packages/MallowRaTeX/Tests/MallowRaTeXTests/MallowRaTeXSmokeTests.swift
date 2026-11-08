@@ -4,7 +4,7 @@ import Testing
 
 struct MallowRaTeXSmokeTests {
     @Test func reportsUpstreamWasmVersion() {
-        #expect(MallowRaTeXVersion.upstream == "0.1.13")
+        #expect(MallowRaTeXVersion.upstream == "0.1.15")
     }
 
     @Test func rendersSimpleInlineFormula() {

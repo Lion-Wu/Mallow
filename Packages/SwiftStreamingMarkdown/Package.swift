@@ -20,7 +20,7 @@ let package = Package(
     .package(url: "https://github.com/ordo-one/equatable", exact: "1.0.10"),
     .package(url: "https://github.com/swiftlang/swift-markdown.git", exact: "0.7.3"),
     .package(path: "../HighlightSwift"),
-    .package(url: "https://github.com/erweixin/RaTeX.git", exact: "0.1.13"),
+    .package(url: "https://github.com/erweixin/RaTeX.git", exact: "0.1.15"),
     .package(path: "../MallowRaTeX"),
     .package(url: "https://github.com/markiv/SwiftUI-Shimmer", exact: "1.5.1")
   ],

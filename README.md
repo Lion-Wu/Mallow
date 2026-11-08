@@ -83,7 +83,7 @@ Dependency versions are pinned in `Package.resolved`. Local packages live in `Pa
 
 - **SwiftStreamingMarkdown:** Adapted streaming Markdown renderer.
 - **HighlightSwift:** Code highlighting.
-- **MallowRaTeX:** Formula rendering for visionOS. iOS, iPadOS, and macOS use upstream RaTeX 0.1.13.
+- **MallowRaTeX:** Formula rendering for visionOS. iOS, iPadOS, and macOS use upstream RaTeX 0.1.15.
 
 ## Acknowledgments
 
