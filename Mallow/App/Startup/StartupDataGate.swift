@@ -335,6 +335,9 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
     @State private var isShowingCleanupError = false
     @State private var exportArchive: RawDataExport?
     @State private var exportError: String?
+    #if os(macOS)
+    @State private var exportDocument: DataBackupDocument?
+    #endif
 
     init(
         coordinator: StartupDataCoordinator,
@@ -383,8 +386,20 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
                     onExport: {
                         Task {
                             do {
-                                exportArchive = try await coordinator.exportData()
-                            } catch { exportError = error.localizedDescription }
+                                let archive = try await coordinator.exportData()
+                                exportArchive = archive
+                                #if os(macOS)
+                                exportDocument = try await Task.detached(priority: .userInitiated) {
+                                    DataBackupDocument(data: try Data(contentsOf: archive.url))
+                                }.value
+                                #endif
+                            } catch {
+                                #if os(macOS)
+                                finishMacExport(error: error)
+                                #else
+                                exportError = error.localizedDescription
+                                #endif
+                            }
                         }
                     }
                 )
@@ -393,6 +408,20 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
                     .id(ObjectIdentifier(container))
             }
         }
+        #if os(macOS)
+        .fileExporter(
+            isPresented: Binding(
+                get: { exportDocument != nil },
+                set: { if !$0 { finishMacExport() } }
+            ),
+            document: exportDocument,
+            contentType: .zip,
+            defaultFilename: exportArchive?.url.deletingPathExtension().lastPathComponent
+        ) { result in
+            if case .failure(let error) = result { finishMacExport(error: error) }
+            else { finishMacExport() }
+        }
+        #else
         .background {
             DataExportSharePresenter(url: exportArchive?.url) { _, error in
                 if let error {
@@ -403,6 +432,7 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
             }
             .frame(width: 1, height: 1)
         }
+        #endif
         .alert("DATA_ACTION_CLEAR_APP_DATA", isPresented: Binding(
             get: { coordinator.resetError != nil },
             set: { if !$0 { coordinator.resetError = nil } }
@@ -431,6 +461,17 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
             if oldValue != nil, newValue == nil { isShowingRecovery = false }
         }
     }
+
+    #if os(macOS)
+    private func finishMacExport(error: Error? = nil) {
+        if let error, (error as? CocoaError)?.code != .userCancelled {
+            exportError = error.localizedDescription
+        }
+        coordinator.finishExport(exportArchive)
+        exportArchive = nil
+        exportDocument = nil
+    }
+    #endif
 }
 
 /// Loading content shown inside the normal chat shell while the single
