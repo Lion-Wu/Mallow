@@ -61,10 +61,6 @@ enum AppHaptics {
         self.feedbackPolicy = feedbackPolicy
     }
 
-    static func resetFeedbackPolicy() {
-        feedbackPolicy = StaticHapticFeedbackPolicy.enabled
-    }
-
     static func trigger(_ event: AppHapticEvent) {
 #if os(iOS)
         guard feedbackPolicy.isHapticFeedbackEnabled else { return }

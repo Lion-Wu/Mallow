@@ -99,7 +99,7 @@ extension ChatService {
                     return
                 }
                 guard !isCancelled else { return }
-                if newFormatActive && sentThinkOpen && !sentThinkClose && !isLegacyThinkStream {
+                if newFormatActive && sentThinkOpen && !sentThinkClose {
                     emitDelta(thinkCloseLine, marksPrimaryOutput: false)
                     sentThinkClose = true
                 }
@@ -232,7 +232,6 @@ extension ChatService {
         activeStreamRequest?.task.cancel()
         activeStreamRequest = nil
         stopWatchdog()
-        isLegacyThinkStream = false
         sawAnyAssistantToken = false
         sawAnyPrimaryAssistantToken = false
         lmStudioSawAnyReasoningToken = false

@@ -253,7 +253,6 @@ extension GlobalAudioManager {
         isShowingAudioPlayer = false
         isLoading = false
         outputAudioLevels = .silent
-        outputLevel = 0
         isRealtimeMode = false
         realtimeFinalized = false
         realtimeRequestQueue.removeAll()
@@ -303,7 +302,6 @@ extension GlobalAudioManager {
         isPlaybackFullyLoaded = true
         errorMessage = nil
         outputAudioLevels = .silent
-        outputLevel = 0
 
         lastObservedPlaybackTime = 0
         lastProgressTimestamp = Date()

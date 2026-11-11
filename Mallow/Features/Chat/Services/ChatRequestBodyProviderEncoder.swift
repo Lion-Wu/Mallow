@@ -82,16 +82,6 @@ enum ChatRequestBodyProviderEncoder {
 
 }
 
-enum ChatRequestBodyEndpointClassifier {
-    static func isOpenAIResponsesEndpoint(_ url: URL) -> Bool {
-        let canonicalPath = url.path
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        return canonicalPath.hasSuffix("responses")
-    }
-}
-
 private struct OpenAICompatibleRequestBodyEncoder: ChatRequestBodyProviderEncoding {
     func makeBaseRequestBody(_ context: ChatRequestBodyEncodingContext) -> [String: Any] {
         if context.endpoint.style == .openAIResponses {

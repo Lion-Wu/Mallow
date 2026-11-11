@@ -109,24 +109,4 @@ enum VoiceServerPresetStore {
         return true
     }
 
-    static func updateSelectedServerAddress(
-        _ serverAddress: String,
-        selectedID: UUID?,
-        in presets: [VoiceServerPreset],
-        save: (String) -> Void
-    ) -> Bool {
-        guard let selectedID,
-              let preset = presets.first(where: { $0.id == selectedID }) else {
-            return false
-        }
-
-        let next = serverAddress.trimmingCharacters(in: .whitespacesAndNewlines)
-        let current = preset.serverAddress.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard next != current else { return false }
-
-        preset.serverAddress = serverAddress
-        preset.updatedAt = Date()
-        save("update voice server preset")
-        return true
-    }
 }

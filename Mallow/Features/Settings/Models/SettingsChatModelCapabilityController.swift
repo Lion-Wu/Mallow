@@ -141,13 +141,6 @@ final class SettingsChatModelCapabilityController {
         savePreferences()
     }
 
-    func toggleSelectedThinking(for modelIdentifier: String? = nil) {
-        var nextFacade = facade
-        guard nextFacade.toggleSelectedThinking(for: modelIdentifier) else { return }
-        setStore(nextFacade.store)
-        savePreferences()
-    }
-
     private var facade: ChatModelCapabilityFacade {
         let snapshot = context()
         return ChatModelCapabilityFacade(

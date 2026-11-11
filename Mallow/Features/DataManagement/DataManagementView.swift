@@ -694,7 +694,7 @@ struct DataImportPreviewView: View {
         if old.requestID != new.requestID || old.providerResponseID != new.providerResponseID || old.requestContextFingerprint != new.requestContextFingerprint || old.requestUsedPreviousResponseID != new.requestUsedPreviousResponseID || old.requestPreviousResponseID != new.requestPreviousResponseID {
             result.append(String(localized: "DATA_REQUEST_RESPONSE_RECORDS", defaultValue: "Request and Response Records"))
         }
-        if old.generationRounds != new.generationRounds || old.streamStartedAt != new.streamStartedAt || old.streamFirstTokenAt != new.streamFirstTokenAt || old.streamFirstTokenAtSource != new.streamFirstTokenAtSource || old.streamCompletedAt != new.streamCompletedAt || old.timeToFirstToken != new.timeToFirstToken || old.outputTokenCount != new.outputTokenCount || old.reasoningOutputTokenCount != new.reasoningOutputTokenCount || old.tokensPerSecond != new.tokensPerSecond || old.tokenCount != new.tokenCount || old.tokenCountSource != new.tokenCountSource || old.timeToFirstTokenSource != new.timeToFirstTokenSource || old.tokensPerSecondSource != new.tokensPerSecondSource || old.promptMessageCount != new.promptMessageCount || old.promptCharacterCount != new.promptCharacterCount {
+        if old.generationRounds != new.generationRounds || old.streamStartedAt != new.streamStartedAt || old.streamCompletedAt != new.streamCompletedAt {
             result.append(String(localized: "MESSAGE_GENERATION_STATISTICS", defaultValue: "Generation Statistics"))
         }
         if old.finishReason != new.finishReason || old.finishReasonSource != new.finishReasonSource || old.errorDescription != new.errorDescription || old.isActive != new.isActive {

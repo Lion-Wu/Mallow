@@ -6,7 +6,7 @@ final class ChatRequestPayloadProjectorTests: XCTestCase {
         let payload = try ChatRequestPayloadProjector().transformedMessagesForRequest(
             messages: [
                 ChatRequestSourceMessage(
-                    content: "<think>\nlegacy reasoning\n</think>\nlegacy body",
+                    content: "Display text that must not replace the structured body",
                     isUser: false,
                     assistantSegments: [
                         ChatAssistantSegment(kind: .reasoning, itemID: "r1", text: "structured reasoning"),

@@ -359,10 +359,6 @@ final class SettingsViewModel: ObservableObject {
             .first(where: ToolUseSettings.supportsProviderContinuationIDPreference)
     }
 
-    var isOpenAIResponsesStatefulEndpointAvailable: Bool {
-        openAIResponsesStatefulEndpoint != nil
-    }
-
     var currentOpenAIResponsesStatefulEndpointURL: String? {
         guard let endpoint = openAIResponsesStatefulEndpoint else { return nil }
         return ToolUseSettings.providerContinuationIDPreferenceKey(for: endpoint)

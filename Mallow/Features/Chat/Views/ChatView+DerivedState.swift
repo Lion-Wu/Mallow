@@ -11,7 +11,6 @@ extension ChatView {
     var layoutMetrics: ChatComposerLayoutMetrics {
         ChatComposerLayoutMetrics(
             textFieldHeight: textFieldHeight,
-            editingBannerHeight: editingBannerHeight,
             pendingAttachmentCount: viewModel.pendingImageAttachments.count,
             queuedDraftCount: viewModel.queuedDrafts.count,
             hasQueuedDrafts: viewModel.hasQueuedDrafts,

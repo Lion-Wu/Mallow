@@ -45,7 +45,6 @@ final class ChatService: NSObject, @unchecked Sendable {
     @MainActor var onStreamFinished: (@MainActor () -> Void)?
 
     // Reasoning / body state tracking
-    var isLegacyThinkStream = false
     var sawAnyAssistantToken = false
     var sawAnyPrimaryAssistantToken = false
     var lmStudioSawAnyReasoningToken = false

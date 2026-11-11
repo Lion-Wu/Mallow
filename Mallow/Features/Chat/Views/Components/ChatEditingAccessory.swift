@@ -44,10 +44,5 @@ struct ChatEditingAccessory: View {
             .padding(.bottom, 6)
             .padding(.horizontal, 12)
         }
-        .background(
-            GeometryReader { proxy in
-                Color.clear.preference(key: EditingBannerHeightKey.self, value: proxy.size.height)
-            }
-        )
     }
 }

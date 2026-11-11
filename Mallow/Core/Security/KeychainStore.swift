@@ -20,7 +20,7 @@ struct KeychainStoreError: LocalizedError, Equatable {
 }
 
 enum KeychainStore {
-    /// Delete every app-owned password, including orphaned and legacy accounts.
+    /// Delete every app-owned password, including orphaned accounts.
     static func deleteAll(service: String) throws {
         var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,

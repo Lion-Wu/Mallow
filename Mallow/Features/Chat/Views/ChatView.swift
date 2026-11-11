@@ -17,7 +17,6 @@ struct ChatView: View {
     @EnvironmentObject var settingsManager: SettingsManager
     @ObservedObject var viewModel: ChatViewModel
     @State var textFieldHeight: CGFloat = InputMetrics.defaultHeight
-    @State var editingBannerHeight: CGFloat = 0
     @State var availableMessageWidth: CGFloat = 680
     @FocusState var isInputFocused: Bool
 

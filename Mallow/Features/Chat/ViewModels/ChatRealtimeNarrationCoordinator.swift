@@ -19,10 +19,6 @@ final class ChatRealtimeNarrationCoordinator {
         self.audioManager = audioManager
     }
 
-    var shouldUseVoicePrompt: Bool {
-        isActive || audioManager.isRealtimeMode
-    }
-
     func prepareNextAssistant() {
         enableNextAssistant = true
     }

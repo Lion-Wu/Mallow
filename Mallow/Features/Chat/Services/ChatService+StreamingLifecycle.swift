@@ -42,7 +42,6 @@ extension ChatService {
     func resetStreamState() {
         beginNewStreamCallbackEpoch()
         cancelActiveToolExecution()
-        isLegacyThinkStream = false
         sawAnyAssistantToken = false
         sawAnyPrimaryAssistantToken = false
         lmStudioSawAnyReasoningToken = false

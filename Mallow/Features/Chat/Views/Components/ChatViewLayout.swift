@@ -144,7 +144,7 @@ struct ChatConversationLayout<MessageList: View, HydrationMask: View>: View {
     }
 }
 
-struct ChatViewChromeModifier<Composer: View, ScrollButton: View, ShadowShelf: View>: ViewModifier {
+struct ChatViewChromeModifier<Composer: View, ScrollButton: View>: ViewModifier {
     @State private var noticeStackHeight: CGFloat = 0
 
     let layoutMetrics: ChatComposerLayoutMetrics
@@ -154,7 +154,6 @@ struct ChatViewChromeModifier<Composer: View, ScrollButton: View, ShadowShelf: V
     let onDismissNotice: (AppErrorNotice) -> Void
     let composer: () -> Composer
     let scrollToBottomButton: () -> ScrollButton
-    let shadowShelf: () -> ShadowShelf
 
     func body(content: Content) -> some View {
         content
@@ -177,8 +176,6 @@ struct ChatViewChromeModifier<Composer: View, ScrollButton: View, ShadowShelf: V
 
     private var bottomChrome: some View {
         ZStack(alignment: .bottom) {
-            shadowShelf()
-
             VStack(spacing: 12) {
                 composer()
                     .frame(maxWidth: composerPanelMaxWidth(availableWidth: availableMessageWidth))
@@ -272,33 +269,16 @@ struct ChatViewChromeModifier<Composer: View, ScrollButton: View, ShadowShelf: V
     }
 }
 
-struct ChatComposerShadowShelf: View {
-    var body: some View {
-        EmptyView()
-    }
-}
-
 struct ChatViewLifecycleModifier: ViewModifier {
-    @Binding var editingBannerHeight: CGFloat
-
     let onAppear: () -> Void
     let onDisappear: () -> Void
 
     func body(content: Content) -> some View {
         content
-            .onPreferenceChange(EditingBannerHeightKey.self) { newHeight in
-                assignHeight(newHeight, to: $editingBannerHeight)
-            }
             .onAppear(perform: onAppear)
             .onDisappear(perform: onDisappear)
     }
 
-    private func assignHeight(_ newHeight: CGFloat, to binding: Binding<CGFloat>) {
-        let cleaned = max(0, newHeight)
-        if abs(cleaned - binding.wrappedValue) > 0.5 {
-            binding.wrappedValue = cleaned
-        }
-    }
 }
 
 struct ChatViewObservationModifier: ViewModifier {

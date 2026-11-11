@@ -123,16 +123,6 @@ public final class VoiceMotionController: @unchecked Sendable {
         lock.voiceMotionWithLock { audioSource = source }
     }
 
-    public func setAccentLinear(_ rgba: SIMD4<Float>) {
-        lock.voiceMotionWithLock {
-            currentAppearance = VoiceMotionAppearance(
-                accent: rgba,
-                motionScale: currentAppearance.motionScale,
-                glowStrength: currentAppearance.glowStrength
-            )
-        }
-    }
-
     public func setAccentSRGB(red: Float, green: Float, blue: Float, alpha: Float = 1) {
         lock.voiceMotionWithLock {
             currentAppearance = .sRGB(
@@ -144,30 +134,6 @@ public final class VoiceMotionController: @unchecked Sendable {
                 glowStrength: currentAppearance.glowStrength
             )
         }
-    }
-
-    public func setMotionScale(_ value: Float) {
-        lock.voiceMotionWithLock {
-            currentAppearance = VoiceMotionAppearance(
-                accent: currentAppearance.accent,
-                motionScale: value,
-                glowStrength: currentAppearance.glowStrength
-            )
-        }
-    }
-
-    public func setGlowStrength(_ value: Float) {
-        lock.voiceMotionWithLock {
-            currentAppearance = VoiceMotionAppearance(
-                accent: currentAppearance.accent,
-                motionScale: currentAppearance.motionScale,
-                glowStrength: value
-            )
-        }
-    }
-
-    public func snapshotWithoutAdvancing() -> VoiceMotionSnapshot {
-        lock.voiceMotionWithLock { makeSnapshot() }
     }
 
     internal func advance(deltaTime: TimeInterval) -> VoiceMotionSnapshot {

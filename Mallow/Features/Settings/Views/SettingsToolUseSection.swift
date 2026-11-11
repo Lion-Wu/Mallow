@@ -410,14 +410,6 @@ struct SettingsDeveloperToolUseSection: View {
         ChatToolRegistry.builtIn.registration(id: id)?.group.icon ?? "wrench.and.screwdriver"
     }
 
-    private func toolDetailRow(_ title: LocalizedStringKey, value: String) -> some View {
-        LabeledContent(title) {
-            Text(value)
-                .font(.system(.footnote, design: .monospaced))
-                .textSelection(.enabled)
-        }
-    }
-
     private func toolSectionTitle(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(.caption.weight(.semibold))

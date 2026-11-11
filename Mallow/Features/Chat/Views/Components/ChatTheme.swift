@@ -52,19 +52,11 @@ enum PlatformColor {
         #endif
     }
 
-    static var elevatedFill: Color {
-        #if os(macOS)
-        return Color(NSColor.windowBackgroundColor.withAlphaComponent(0.8))
-        #else
-        return Color(UIColor.secondarySystemBackground.withAlphaComponent(0.9))
-        #endif
-    }
 }
 
 // MARK: - Theme Helpers
 
 enum ChatTheme {
-    static let inputBG: Material = .thin
     static let bubbleRadius: CGFloat = 24
     static let bubbleShadow = Color.black.opacity(0.06)
     static let separator = Color.primary.opacity(0.06)
@@ -79,7 +71,6 @@ enum ChatTheme {
     static let systemBubbleFill = PlatformColor.bubbleSystemFill
     static let subtleStroke = Color.primary.opacity(0.08)
     static let accent = Color.accentColor
-    static let chromeBackground = PlatformColor.secondaryGroupedBackground
     static let chromeBorder = Color.primary.opacity(0.05)
 }
 
@@ -122,8 +113,6 @@ enum InputMetrics {
     static let composerRowSpacing: CGFloat = 4
     static let innerVertical: CGFloat = 7
 #endif
-    static let innerTop: CGFloat = innerVertical
-    static let innerBottom: CGFloat = innerVertical
     static let innerLeading: CGFloat = 4
     static let innerTrailing: CGFloat = 4
     #if os(macOS)

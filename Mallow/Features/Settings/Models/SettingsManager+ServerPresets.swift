@@ -8,30 +8,12 @@
 import Foundation
 
 extension SettingsManager {
-    func updateServerSettings(serverAddress: String, textLang: String) {
-        _ = commitSelectedVoiceServerSettings(
-            name: selectedVoiceServerPreset?.name ?? "",
-            serverAddress: serverAddress,
-            textLang: textLang
-        )
-    }
-
     func updateChatSettings(apiURL: String, selectedModel: String) {
         _ = commitSelectedChatServerSettings(
             name: selectedChatServerPreset?.name ?? "",
             apiURL: apiURL,
             selectedModel: selectedModel,
             apiKey: chatSettings.apiKey,
-            apiFormatPreference: chatModelCapabilities.selectedChatAPIFormatPreference()
-        )
-    }
-
-    func updateChatAPIKey(_ apiKey: String) {
-        _ = commitSelectedChatServerSettings(
-            name: selectedChatServerPreset?.name ?? "",
-            apiURL: chatSettings.apiURL,
-            selectedModel: chatSettings.selectedModel,
-            apiKey: apiKey,
             apiFormatPreference: chatModelCapabilities.selectedChatAPIFormatPreference()
         )
     }

@@ -2,10 +2,54 @@ import XCTest
 import SwiftData
 import SQLite3
 import Security
+import CoreData
 @testable import Mallow
 
 @MainActor
 final class StartupDataRecoveryTests: XCTestCase {
+    func testDevelopmentSchemaIsRejectedWithoutMigration() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("development.store")
+        let currentModel = try XCTUnwrap(NSManagedObjectModel.makeManagedObjectModel(for: [
+            ChatSession.self, ChatMessage.self, AppSettings.self, ChatServerPreset.self,
+            VoiceServerPreset.self, VoicePreset.self, SystemPromptPreset.self
+        ]))
+        let model = try XCTUnwrap(currentModel.copy() as? NSManagedObjectModel)
+        let developmentField = NSAttributeDescription()
+        developmentField.name = "developmentTokenCount"
+        developmentField.attributeType = .integer64AttributeType
+        developmentField.isOptional = true
+        let entity = try XCTUnwrap(model.entitiesByName["ChatMessage"])
+        entity.properties.append(developmentField)
+        let coordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
+        let store = try coordinator.addPersistentStore(type: .sqlite, at: url)
+        try coordinator.remove(store)
+        let original = try Data(contentsOf: url)
+
+        let operations: [() throws -> Void] = [
+            { _ = try StartupPersistentStore.open(at: url) },
+            { _ = try RecoveryStoreReader(url: url, allowSidecarCreation: true) }
+        ]
+        for operation in operations {
+            XCTAssertThrowsError(try operation()) { error in
+                XCTAssertEqual((error as NSError).domain, NSCocoaErrorDomain)
+                XCTAssertEqual((error as NSError).code, NSPersistentStoreIncompatibleVersionHashError)
+            }
+        }
+        XCTAssertEqual(try Data(contentsOf: url), original)
+    }
+
+    func testCurrentStoreReopensWithItsGenerationRecords() throws {
+        try withFixture { fixture in
+            let container = try StartupPersistentStore.open(at: fixture.source)
+            let messages = try ModelContext(container).fetch(FetchDescriptor<ChatMessage>())
+            XCTAssertEqual(messages.count, 3)
+            XCTAssertEqual(messages.first { !$0.isUser }?.generationRounds.first?.outputTokens, 12)
+        }
+    }
+
     func testHealthyStoreRoundTripsEveryEntityAndAcceptsNewWrites() throws {
         try withFixture { fixture in
             let attachment = XCTAttachment(contentsOfFile: fixture.source)
@@ -20,6 +64,7 @@ final class StartupDataRecoveryTests: XCTestCase {
                 XCTAssertEqual(messages.count, 3)
                 let answer = try XCTUnwrap(messages.first { !$0.isUser })
                 XCTAssertEqual(answer.assistantText, "Readable answer")
+                XCTAssertEqual(answer.generationRounds.first?.outputTokens, 12)
                 XCTAssertEqual(try XCTUnwrap(answer.imageAttachments.first).loadData(), Fixture.image)
                 XCTAssertEqual(answer.toolActivityPlacements.first?.activity.title, "Readable tool")
                 XCTAssertEqual(answer.parentMessage?.content, "First question")
@@ -160,11 +205,12 @@ final class StartupDataRecoveryTests: XCTestCase {
 
     func testCancelledPreviewDoesNotModifySourceAndCanBeRepeated() throws {
         try withFixture { fixture in
-            try fixture.sql("UPDATE ZCHATMESSAGE SET ZOUTPUTTOKENCOUNT='bad' WHERE ZISUSER=0")
+            try fixture.sql("UPDATE ZCHATMESSAGE SET ZSTREAMSTARTEDAT='bad' WHERE ZISUSER=0")
             let original = try Data(contentsOf: fixture.source)
             for _ in 0..<3 {
                 let plan = try fixture.prepare()
                 XCTAssertEqual(plan.recoveredCount, 10)
+                XCTAssertTrue(try category("ChatMessage", in: plan).hasPartialLoss)
                 plan.discard()
                 XCTAssertFalse(FileManager.default.fileExists(atPath: plan.directory.path))
                 XCTAssertEqual(try Data(contentsOf: fixture.source), original)
@@ -176,13 +222,7 @@ final class StartupDataRecoveryTests: XCTestCase {
         try withFixture { fixture in
             let bytes = Data(repeating: 0x41, count: 4096)
             try bytes.write(to: fixture.source)
-            do {
-                let plan = try fixture.prepare()
-                XCTAssertEqual(plan.recoveredCount, 0)
-                XCTAssertTrue(plan.categories.allSatisfy(\.hasUnknownLoss))
-            } catch {
-                XCTAssertEqual((error as NSError).domain, "RecoverySQLite")
-            }
+            XCTAssertThrowsError(try fixture.prepare())
             XCTAssertEqual(try Data(contentsOf: fixture.source), bytes)
         }
     }
@@ -244,12 +284,18 @@ final class StartupDataRecoveryTests: XCTestCase {
                 let answer = ChatMessage(
                     content: "Readable answer", assistantSegments: [ChatAssistantSegment(kind: .text, text: "Readable answer")],
                     imageAttachments: [ChatImageAttachment(mimeType: "image/png", data: Self.image)],
-                    isUser: false, modelIdentifier: "fixture-model", outputTokenCount: 12, tokenCount: 12,
+                    isUser: false, modelIdentifier: "fixture-model",
                     toolActivityPlacements: [ChatToolActivityPlacement(
                         activity: ChatToolActivity(id: "tool-1", toolName: "calendar", title: "Readable tool", phase: .succeeded),
                         scope: .body, offset: 0, assistantSegmentAnchor: ChatAssistantSegmentAnchor(segmentIndex: 0, characterOffset: 0)
                     )], session: session, parentMessage: question
                 )
+                answer.generationRounds = [ChatGenerationRound(
+                    id: UUID(), requestStyle: .openAIResponses, requestedModel: "fixture-model",
+                    requestURL: "https://chat.example.test/v1/responses", startedAt: Date(),
+                    previousResponseID: nil, hasFinalUsage: true,
+                    providerFields: ["usage": .object(["output_tokens": .number(12)])]
+                )]
                 context.insert(answer)
                 let followup = ChatMessage(content: "Second question", isUser: true, session: session, parentMessage: answer)
                 context.insert(followup)
@@ -266,6 +312,7 @@ final class StartupDataRecoveryTests: XCTestCase {
                 context.insert(ChatServerPreset(name: "Chat fixture", apiURL: "https://chat.example.test", selectedModel: "fixture-model"))
                 context.insert(VoiceServerPreset(name: "Voice server fixture", serverAddress: "https://voice.example.test"))
                 context.insert(VoicePreset(name: "Voice fixture", promptText: "Voice reference"))
+                try session.synchronizeTransientMessageStateForPersistence()
                 try ChatImageStore.persistPending(in: context)
                 try context.save()
             }

@@ -305,11 +305,6 @@ struct MessageDetailsView: View {
                         }.joined(separator: "\n"))
                     }
                 }
-                detailRow("METRIC_OUTPUT_TOKEN_COUNT", fieldKey: "tokenCount", source: tokenCountSourceBadge) { valueText(formatInt(resolvedTokenCount)) }
-                detailRow("METRIC_REASONING_OUTPUT_TOKENS", fieldKey: "reasoningOutputTokenCount", source: reasoningTokenSourceBadge) { valueText(formatInt(message.reasoningOutputTokenCount)) }
-                detailRow("METRIC_TOKENS_PER_SECOND", fieldKey: "tokensPerSecond", source: tokensPerSecondSourceBadge) { valueText(formatDouble(message.tokensPerSecondSource == "provider" ? message.tokensPerSecond : nil, decimals: 3)) }
-                detailRow("PROMPT_MESSAGE_COUNT", fieldKey: "promptMessageCount", source: message.promptMessageCount == nil ? nil : .local) { valueText(formatInt(message.promptMessageCount)) }
-                detailRow("PROMPT_CHARACTER_COUNT", fieldKey: "promptCharacterCount", source: message.promptCharacterCount == nil ? nil : .local) { valueText(formatInt(message.promptCharacterCount)) }
             }
         }
     }
@@ -318,11 +313,8 @@ struct MessageDetailsView: View {
     private var assistantTimingSection: some View {
         sectionBox("MESSAGE_TIMING", systemImage: "clock") {
             detailRow("METRIC_STREAM_STARTED_AT", fieldKey: "streamStartedAt", source: message.streamStartedAt == nil ? nil : .local) { valueDate(message.streamStartedAt) }
-            detailRow("METRIC_FIRST_TOKEN_AT", fieldKey: "streamFirstTokenAt", source: firstTokenAtSourceBadge) { valueDate(message.streamFirstTokenAt) }
             detailRow("METRIC_STREAM_COMPLETED_AT", fieldKey: "streamCompletedAt", source: message.streamCompletedAt == nil ? nil : .local) { valueDate(message.streamCompletedAt) }
-            detailRow("METRIC_TIME_TO_FIRST_TOKEN", fieldKey: "timeToFirstToken", source: timeToFirstTokenSourceBadge) { valueText(formatInterval(message.timeToFirstToken)) }
             detailRow("METRIC_STREAM_DURATION", fieldKey: "streamDuration", source: message.streamDuration == nil ? nil : .local) { valueText(formatInterval(message.streamDuration)) }
-            detailRow("METRIC_GENERATION_DURATION", fieldKey: "generationDuration", source: message.generationDuration == nil ? nil : .local) { valueText(formatInterval(message.generationDuration)) }
         }
     }
 
@@ -545,50 +537,20 @@ struct MessageDetailsView: View {
         switch raw {
         case "provider":
             return .provider
-        case "local", "estimated":
+        case "local":
             return .local
         default:
             return nil
         }
     }
 
-    private var tokenCountSourceBadge: MetricSourceBadge? {
-        guard resolvedTokenCount != nil else { return nil }
-        if message.outputTokenCount != nil { return .provider }
-        return metricSourceBadge(from: message.tokenCountSource)
-    }
-
-    private var resolvedTokenCount: Int? { message.tokenCount }
-
     private var resolvedCharacterCount: Int {
         message.characterCount
-    }
-
-    private var timeToFirstTokenSourceBadge: MetricSourceBadge? {
-        guard message.timeToFirstToken != nil else { return nil }
-        return metricSourceBadge(from: message.timeToFirstTokenSource)
-    }
-
-    private var tokensPerSecondSourceBadge: MetricSourceBadge? {
-        guard message.tokensPerSecond != nil, message.tokensPerSecondSource == "provider" else { return nil }
-        return metricSourceBadge(from: message.tokensPerSecondSource)
     }
 
     private var finishReasonSourceBadge: MetricSourceBadge? {
         guard message.finishReason != nil else { return nil }
         return metricSourceBadge(from: message.finishReasonSource)
-    }
-
-    private var reasoningTokenSourceBadge: MetricSourceBadge? {
-        message.reasoningOutputTokenCount == nil ? nil : .provider
-    }
-
-    private var firstTokenAtSourceBadge: MetricSourceBadge? {
-        guard message.streamFirstTokenAt != nil else { return nil }
-        if let explicit = metricSourceBadge(from: message.streamFirstTokenAtSource) { return explicit }
-        // Legacy timestamps were recorded locally or calculated from a provider duration;
-        // the provider did not supply the absolute timestamp itself.
-        return .local
     }
 
     private var horizontalValueIndicators: Bool {
@@ -690,19 +652,9 @@ struct MessageDetailsView: View {
         value ? String(localized: "COMMON_YES", defaultValue: "Yes") : String(localized: "COMMON_NO", defaultValue: "No")
     }
 
-    private func formatOptionalBool(_ value: Bool?) -> String? {
-        guard let value else { return nil }
-        return formatBool(value)
-    }
-
     private func formatInt(_ value: Int?) -> String? {
         guard let value else { return nil }
         return String(value)
-    }
-
-    private func formatToolLoopLimit(_ value: Int?) -> String? {
-        guard let value else { return nil }
-        return value > 0 ? String(value) : String(localized: "COMMON_UNLIMITED", defaultValue: "Unlimited")
     }
 
     private func formatUUID(_ value: UUID?) -> String? {
@@ -806,16 +758,6 @@ struct MessageDetailsView: View {
         return formatBoolValue(value)
     }
 
-    private static func formatThinkingOptionValue(_ value: String?) -> String? {
-        guard let raw = value?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !raw.isEmpty else {
-            return nil
-        }
-        guard let option = ModelThinkingOption.normalized(raw) else {
-            return raw
-        }
-        return "\(option.displayName) (\(option.rawValue))"
-    }
 }
 
 private struct MessageDetailsRequestContextRow: Identifiable {
@@ -867,12 +809,7 @@ private enum MessageDetailsChrome {
             thinkingOptionRawValue: ModelThinkingOption.high.rawValue,
             requestID: UUID(),
             streamStartedAt: now.addingTimeInterval(-12),
-            streamFirstTokenAt: now.addingTimeInterval(-11),
             streamCompletedAt: now.addingTimeInterval(-10),
-            timeToFirstToken: 1.0,
-            tokenCount: 42,
-            promptMessageCount: 6,
-            promptCharacterCount: 512,
             finishReason: "stop",
             errorDescription: nil,
             session: session

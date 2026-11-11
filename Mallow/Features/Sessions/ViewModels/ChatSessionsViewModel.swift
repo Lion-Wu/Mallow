@@ -162,10 +162,6 @@ final class ChatSessionsViewModel: ObservableObject {
         sidebarPresentation.sessions(candidateSessions, matchingNormalizedQuery: normalizedQuery)
     }
 
-    func sidebarSubtitle(for session: ChatSession) -> String {
-        sidebarPresentation.subtitle(for: session)
-    }
-
     func sidebarPreview(for session: ChatSession, matchingSearchQuery rawQuery: String) -> SidebarSessionPreview {
         sidebarPresentation.preview(for: session, matchingSearchQuery: rawQuery)
     }
@@ -294,11 +290,6 @@ final class ChatSessionsViewModel: ObservableObject {
         )
         viewModelCache[session.id] = vm
         bindActivity(for: vm, sessionID: session.id)
-    }
-
-    func addSession(_ session: ChatSession) {
-        trackNewSession(session)
-        persist(session: session, reason: .immediate)
     }
 
     private func trackNewSession(_ session: ChatSession) {
@@ -619,13 +610,5 @@ extension ChatSessionsViewModel: ChatSessionPersisting {
 
     func setImmediatePersistenceEnabled(_ enabled: Bool) {
         repository.setImmediatePersistenceEnabled(enabled)
-    }
-}
-
-extension ChatSessionsViewModel: ChatSessionActivityPublishing {
-    func publishLiveActivity(for session: ChatSession) {
-        guard shouldPersist(session) else { return }
-        guard session.id != draftSession.id || pendingOrderingUpdates[session.id] != nil else { return }
-        scheduleInMemoryOrderingUpdate(with: session, shouldPromoteDraft: false)
     }
 }

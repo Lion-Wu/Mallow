@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ChatComposerLayoutMetrics: Equatable {
     let textFieldHeight: CGFloat
-    let editingBannerHeight: CGFloat
     let pendingAttachmentCount: Int
     let queuedDraftCount: Int
     let hasQueuedDrafts: Bool
@@ -46,14 +45,6 @@ struct ChatComposerLayoutMetrics: Equatable {
         InputMetrics.defaultHeight + InputMetrics.composerOuterV * 2 + composerOuterVerticalPadding * 2
     }
 
-    var composerMainBarHeight: CGFloat {
-        floatingInputButtonHeight + composerOuterVerticalPadding * 2
-    }
-
-    var pendingAttachmentStripHeight: CGFloat {
-        pendingAttachmentCount > 0 ? 88 : 0
-    }
-
     var thinkingControlHeight: CGFloat {
         hasConfigurableThinking ? 34 : 0
     }
@@ -64,10 +55,6 @@ struct ChatComposerLayoutMetrics: Equatable {
 
     var queuedDraftHeight: CGFloat {
         hasQueuedDrafts ? CGFloat(queuedDraftCount) * queuedDraftRowHeight + 2 : 0
-    }
-
-    var estimatedFloatingInputPanelHeight: CGFloat {
-        composerMainBarHeight + composerSupportingContentEstimatedHeight
     }
 
     var composerBottomPadding: CGFloat {
@@ -154,39 +141,11 @@ struct ChatComposerLayoutMetrics: Equatable {
         17
     }
 
-    var editingBannerEstimatedHeight: CGFloat {
-        #if os(iOS) || os(tvOS)
-        return 40
-        #else
-        return 38
-        #endif
-    }
-
     var hasComposerSupportingContent: Bool {
         isEditingComposerDraft
             || hasQueuedDrafts
             || hasConfigurableThinking
             || pendingAttachmentCount > 0
-    }
-
-    var composerSupportingContentEstimatedHeight: CGFloat {
-        guard hasComposerSupportingContent else { return 0 }
-
-        var height: CGFloat = 0
-        if isEditingComposerDraft {
-            height += max(editingBannerHeight, editingBannerEstimatedHeight)
-        }
-        if hasQueuedDrafts {
-            height += (height > 0 ? 8 : 0) + queuedDraftHeight
-        }
-        if hasConfigurableThinking {
-            height += (height > 0 ? composerSupportSectionSpacing : 0) + thinkingControlHeight
-        }
-        if pendingAttachmentCount > 0 {
-            height += (height > 0 ? composerSupportSectionSpacing : 0) + pendingAttachmentStripHeight
-        }
-
-        return height + composerSupportTopPadding + composerSupportBottomPadding + 1
     }
 
     var messageListBottomInset: CGFloat {

@@ -56,8 +56,6 @@ final class ChatViewModel: ObservableObject {
         let openAIResponsesConversationItems: [JSONValue]
         let toolActivityPlacements: [ChatToolActivityPlacement]
         let characterCount: Int
-        let tokenCount: Int?
-        let tokenCountSource: String?
         let activeToolActivities: [ChatToolActivity]
         let messageToolActivities: [ChatToolActivity]
         let messageToolActivityPlacements: [ChatToolActivityPlacement]
@@ -158,7 +156,7 @@ final class ChatViewModel: ObservableObject {
         audioManager: GlobalAudioManager,
         chatService: ChatStreamingService? = nil,
         chatServiceFactory: ((ChatServiceConfiguring) -> ChatStreamingService)? = nil,
-        sessionPersistence: (any ChatSessionPersisting & ChatSessionActivityPublishing)? = nil
+        sessionPersistence: (any ChatSessionPersisting)? = nil
     ) {
         self.chatSession = chatSession
         self.settingsManager = settingsManager
@@ -227,8 +225,6 @@ final class ChatViewModel: ObservableObject {
 
     func removePendingImageAttachment(id: UUID) { pendingImageAttachments.removeAll { $0.id == id } }
 
-    func clearPendingImageAttachments() { pendingImageAttachments.removeAll() }
-
     func currentModelSupportsImageInput() -> Bool { runtimeConfigurationResolver.supportsImageInput(fallbackModelIdentifier: chatConfiguration.modelIdentifier) }
 
     func currentModelThinkingCapability() -> ModelThinkingCapability? { runtimeConfigurationResolver.thinkingCapability(fallbackModelIdentifier: chatConfiguration.modelIdentifier) }
@@ -238,14 +234,6 @@ final class ChatViewModel: ObservableObject {
     func setCurrentThinkingOption(_ option: ModelThinkingOption) {
         runtimeConfigurationResolver.setSelectedThinkingOption(
             option,
-            fallbackModelIdentifier: chatConfiguration.modelIdentifier
-        )
-        syncChatConfigurationFromSettingsIfNeeded()
-        objectWillChange.send()
-    }
-
-    func toggleCurrentThinking() {
-        runtimeConfigurationResolver.toggleSelectedThinking(
             fallbackModelIdentifier: chatConfiguration.modelIdentifier
         )
         syncChatConfigurationFromSettingsIfNeeded()
@@ -423,7 +411,6 @@ final class ChatViewModel: ObservableObject {
         chatSession.messages.append(err)
         markSessionMessageActivity(for: err)
         invalidateCachesAfterMessageMutation()
-        branchRestartCoordinator.clearPendingRestore()
         publishMessageStructureChange()
         persistSession(reason: .immediate)
 
@@ -442,8 +429,6 @@ final class ChatViewModel: ObservableObject {
         textRequestRuntime.completeSuccessfully(in: chatSession, finishedAt: finishedAt)
         clearProcessingToolActivitiesFromMessages()
         clearToolActivities()
-
-        branchRestartCoordinator.clearPendingRestore()
 
         persistSession(reason: .immediate)
 
@@ -525,8 +510,6 @@ final class ChatViewModel: ObservableObject {
             openAIResponsesConversationItems: message?.openAIResponsesConversationItems ?? [],
             toolActivityPlacements: message?.toolActivityPlacements ?? [],
             characterCount: message?.characterCount ?? 0,
-            tokenCount: message?.tokenCount,
-            tokenCountSource: message?.tokenCountSource,
             activeToolActivities: toolActivities,
             messageToolActivities: message.flatMap { messageToolActivities[$0.id] } ?? [],
             messageToolActivityPlacements: message.flatMap { messageToolActivityPlacements[$0.id] } ?? [],
@@ -563,16 +546,13 @@ final class ChatViewModel: ObservableObject {
             message.assistantSegments != checkpoint.assistantSegments ||
             message.openAIResponsesConversationItems != checkpoint.openAIResponsesConversationItems ||
             message.toolActivityPlacements != checkpoint.toolActivityPlacements ||
-            message.characterCount != checkpoint.characterCount ||
-            message.tokenCount != checkpoint.tokenCount ||
-            message.tokenCountSource != checkpoint.tokenCountSource
+            message.characterCount != checkpoint.characterCount
         guard didChange else { return }
 
         message.content = checkpoint.content
         message.assistantSegments = checkpoint.assistantSegments
         message.openAIResponsesConversationItems = checkpoint.openAIResponsesConversationItems
         message.toolActivityPlacements = checkpoint.toolActivityPlacements
-        message.tokenCountSource = checkpoint.tokenCountSource
         let fingerprint = ContentFingerprint.make(message.renderFingerprintSource)
         if streamingAssistantMessageID == message.id {
             streamingAssistantFingerprint = fingerprint
@@ -685,7 +665,6 @@ final class ChatViewModel: ObservableObject {
         if appendResult.didCreateMessage {
             markSessionMessageActivity(for: appendResult.message)
             invalidateCachesAfterMessageMutation()
-            branchRestartCoordinator.clearPendingRestore()
             publishMessageStructureChange()
             currentAssistantMessageID = appendResult.message.id
             streamingAssistantMessageID = appendResult.message.id
@@ -787,7 +766,6 @@ final class ChatViewModel: ObservableObject {
         pendingAssistantParentMessageID = nil
         markSessionMessageActivity(for: placeholder)
         invalidateCachesAfterMessageMutation()
-        branchRestartCoordinator.clearPendingRestore()
         publishMessageStructureChange()
         persistSession(reason: .immediate)
         return placeholder
@@ -812,8 +790,6 @@ final class ChatViewModel: ObservableObject {
             to: message
         )
     }
-
-
 
     private func shouldForceImmediatePersist(afterAppending addedChars: Int) -> Bool { textRequestRuntime.shouldForceImmediatePersist(afterAppending: addedChars) }
 
@@ -898,20 +874,8 @@ final class ChatViewModel: ObservableObject {
                 requestUsedPreviousResponseID: message.requestUsedPreviousResponseID,
                 requestPreviousResponseID: message.requestPreviousResponseID,
                 streamStartedAt: message.streamStartedAt,
-                streamFirstTokenAt: message.streamFirstTokenAt,
-                streamFirstTokenAtSource: message.streamFirstTokenAtSource,
                 streamCompletedAt: now,
-                timeToFirstToken: message.timeToFirstToken,
-                outputTokenCount: message.outputTokenCount,
-                reasoningOutputTokenCount: message.reasoningOutputTokenCount,
-                tokensPerSecond: message.tokensPerSecond,
-                tokenCount: message.tokenCount,
-                tokenCountSource: message.tokenCountSource,
-                timeToFirstTokenSource: message.timeToFirstTokenSource,
-                tokensPerSecondSource: message.tokensPerSecondSource,
                 finishReasonSource: ChatStreamMetricValueSource.local.rawValue,
-                promptMessageCount: message.promptMessageCount,
-                promptCharacterCount: message.promptCharacterCount,
                 finishReason: message.finishReason,
                 errorDescription: errorText,
                 session: chatSession,
@@ -973,7 +937,6 @@ final class ChatViewModel: ObservableObject {
         markSessionMessageActivity(for: userMsg)
         invalidateCachesAfterMessageMutation()
         publishMessageStructureChange()
-        branchRestartCoordinator.clearPendingRestore()
         persistSession(reason: .immediate)
 
         finalizeActiveAssistantMessage(reason: "superseded", finishedAt: Date())
@@ -1093,7 +1056,6 @@ final class ChatViewModel: ObservableObject {
         }
         chatSession.messages.append(err)
 
-        branchRestartCoordinator.clearPendingRestore()
         markSessionMessageActivity(for: err)
         invalidateCachesAfterMessageMutation()
         publishMessageStructureChange()
@@ -1142,7 +1104,6 @@ final class ChatViewModel: ObservableObject {
         if appendResult.didCreateMessage {
             markSessionMessageActivity(for: appendResult.message)
             invalidateCachesAfterMessageMutation()
-            branchRestartCoordinator.clearPendingRestore()
             publishMessageStructureChange()
             currentAssistantMessageID = appendResult.message.id
         }
@@ -1211,7 +1172,6 @@ final class ChatViewModel: ObservableObject {
         if appendResult.didCreateMessage {
             markSessionMessageActivity(for: appendResult.message)
             invalidateCachesAfterMessageMutation()
-            branchRestartCoordinator.clearPendingRestore()
             publishMessageStructureChange()
             currentAssistantMessageID = appendResult.message.id
         }

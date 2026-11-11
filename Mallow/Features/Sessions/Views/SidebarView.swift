@@ -677,20 +677,6 @@ struct SidebarView: View {
         }
     }
 
-    private func sessionInitials(_ session: ChatSession) -> String {
-        let trimmedTitle = session.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedTitle.isEmpty else { return "VC" }
-        let components = trimmedTitle.split(separator: " ")
-        if components.count >= 2 {
-            return components.prefix(2)
-                .compactMap { $0.first }
-                .map { String($0) }
-                .joined()
-                .uppercased()
-        }
-        return trimmedTitle.prefix(2).uppercased()
-    }
-
     private var macDraftRow: some View {
         HStack(spacing: 8) {
             Image(systemName: "plus.circle.fill")

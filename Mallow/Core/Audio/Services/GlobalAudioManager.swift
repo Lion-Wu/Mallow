@@ -120,11 +120,6 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
     }
 
     // Realtime output level (0...1) for speaking animations.
-    var outputLevel: Float = 0 {
-        didSet {
-            outputLevelSubject.send(outputLevel)
-        }
-    }
     var outputAudioLevels = VoiceAudioLevels.silent {
         didSet {
             outputMotionAudioSource.store(outputAudioLevels)
@@ -132,7 +127,6 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
     }
     let outputMotionAudioSource = VoiceAudioLevelStore()
     private let currentTimeSubject = CurrentValueSubject<TimeInterval, Never>(0)
-    private let outputLevelSubject = CurrentValueSubject<Float, Never>(0)
     private let isBufferingSubject = CurrentValueSubject<Bool, Never>(false)
     private let isRetryingSubject = CurrentValueSubject<Bool, Never>(false)
     private let retryAttemptSubject = CurrentValueSubject<Int, Never>(0)
@@ -142,10 +136,6 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
 
     var currentTimePublisher: AnyPublisher<TimeInterval, Never> {
         currentTimeSubject.eraseToAnyPublisher()
-    }
-
-    var outputLevelPublisher: AnyPublisher<Float, Never> {
-        outputLevelSubject.eraseToAnyPublisher()
     }
 
     var isBufferingPublisher: AnyPublisher<Bool, Never> {
@@ -322,11 +312,6 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
             (isRealtimeMode && !realtimeRequestQueue.isEmpty)
     }
 
-    func clearRealtimeRequestQueue() {
-        realtimeRequestQueue.removeAll()
-        refreshPlaybackLoadState()
-    }
-
     func enqueueRealtimeIndex(_ index: Int) {
         guard index >= 0, index < textSegments.count else { return }
         if !isRealtimeMode {
@@ -373,7 +358,6 @@ final class GlobalAudioManager: NSObject, ObservableObject, AVAudioPlayerDelegat
             isPlaybackFullyLoaded = true
             isShowingAudioPlayer = false
             outputAudioLevels = .silent
-            outputLevel = 0
             deactivateSystemPlaybackSession()
             return
         }

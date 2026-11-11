@@ -57,19 +57,8 @@ final class ChatMessage {
     var requestUsedPreviousResponseID: Bool?
     var requestPreviousResponseID: String?
     var streamStartedAt: Date?
-    var streamFirstTokenAt: Date?
-    var streamFirstTokenAtSource: String?
     var streamCompletedAt: Date?
-    var timeToFirstToken: TimeInterval?
-    var outputTokenCount: Int?
-    var reasoningOutputTokenCount: Int?
-    var tokensPerSecond: Double?
-    var tokenCountSource: String?
-    var timeToFirstTokenSource: String?
-    var tokensPerSecondSource: String?
     var finishReasonSource: String?
-    var promptMessageCount: Int?
-    var promptCharacterCount: Int?
     var finishReason: String?
     var errorDescription: String?
 
@@ -98,20 +87,8 @@ final class ChatMessage {
         requestUsedPreviousResponseID: Bool? = nil,
         requestPreviousResponseID: String? = nil,
         streamStartedAt: Date? = nil,
-        streamFirstTokenAt: Date? = nil,
-        streamFirstTokenAtSource: String? = nil,
         streamCompletedAt: Date? = nil,
-        timeToFirstToken: TimeInterval? = nil,
-        outputTokenCount: Int? = nil,
-        reasoningOutputTokenCount: Int? = nil,
-        tokensPerSecond: Double? = nil,
-        tokenCount: Int? = nil,
-        tokenCountSource: String? = nil,
-        timeToFirstTokenSource: String? = nil,
-        tokensPerSecondSource: String? = nil,
         finishReasonSource: String? = nil,
-        promptMessageCount: Int? = nil,
-        promptCharacterCount: Int? = nil,
         finishReason: String? = nil,
         errorDescription: String? = nil,
         toolActivityPlacements: [ChatToolActivityPlacement] = [],
@@ -138,20 +115,9 @@ final class ChatMessage {
         self.requestUsedPreviousResponseID = requestUsedPreviousResponseID
         self.requestPreviousResponseID = requestPreviousResponseID
         self.streamStartedAt = streamStartedAt
-        self.streamFirstTokenAt = streamFirstTokenAt
-        self.streamFirstTokenAtSource = streamFirstTokenAtSource
         self.streamCompletedAt = streamCompletedAt
-        self.timeToFirstToken = timeToFirstToken
-        self.outputTokenCount = outputTokenCount ?? (tokenCountSource == "provider" ? tokenCount : nil)
-        self.reasoningOutputTokenCount = reasoningOutputTokenCount
-        self.tokensPerSecond = tokensPerSecond
-        self.tokenCountSource = tokenCountSource
-        self.timeToFirstTokenSource = timeToFirstTokenSource
-        self.tokensPerSecondSource = tokensPerSecondSource
         self.finishReasonSource = finishReasonSource
 
-        self.promptMessageCount = promptMessageCount
-        self.promptCharacterCount = promptCharacterCount
         self.finishReason = finishReason
         self.errorDescription = errorDescription
 
@@ -215,11 +181,6 @@ extension ChatMessage {
         document.segments.isEmpty ? content.count : document.segments.reduce(0) { $0 + $1.text.count }
     }
 
-    var tokenCount: Int? {
-        guard generationRounds.isEmpty else { return nil }
-        return outputTokenCount
-    }
-
     var generationRounds: [ChatGenerationRound] {
         get { document.generationRounds }
         set { var value = document; value.generationRounds = newValue; document = value }
@@ -228,11 +189,6 @@ extension ChatMessage {
     var streamDuration: TimeInterval? {
         guard let start = streamStartedAt, let end = streamCompletedAt else { return nil }
         return end.timeIntervalSince(start)
-    }
-
-    var generationDuration: TimeInterval? {
-        guard let first = streamFirstTokenAt, let end = streamCompletedAt else { return nil }
-        return end.timeIntervalSince(first)
     }
 
     // Import/export projections; these are never stored separately.
@@ -545,7 +501,7 @@ struct ChatMessageDocument: Codable, Equatable, Sendable {
             throw DecodingError.dataCorruptedError(forKey: .version, in: container, debugDescription: "Unsupported message document version")
         }
         text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
-        isError = try container.decodeIfPresent(Bool.self, forKey: .isError) ?? false
+        isError = try container.decode(Bool.self, forKey: .isError)
         generationRounds = try container.decodeIfPresent([ChatGenerationRound].self, forKey: .generationRounds) ?? []
         let items = try container.decode([JSONValue].self, forKey: .protocolItems)
         protocolItems = items

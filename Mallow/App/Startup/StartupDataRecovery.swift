@@ -69,16 +69,20 @@ nonisolated enum StartupPersistentStore {
     static let version = Schema.Version(1, 0, 0)
     static var versionString: String { "\(version.major).\(version.minor).\(version.patch)" }
 
-    static let schema = Schema([
+    private static let modelTypes: [any PersistentModel.Type] = [
         ChatSession.self, ChatMessage.self,
         AppSettings.self, ChatServerPreset.self, VoiceServerPreset.self,
         VoicePreset.self, SystemPromptPreset.self
-    ], version: version)
+    ]
+    static let schema = Schema(modelTypes, version: version)
 
     static var defaultURL: URL { ModelConfiguration().url }
     private static let replacementKey = "MallowImportID"
 
     static func open(at url: URL) throws -> ModelContainer {
+        if FileManager.default.fileExists(atPath: url.path) {
+            try requireCurrentSchema(at: url)
+        }
         let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)])
         let context = ModelContext(container)
         context.autosaveEnabled = false
@@ -88,6 +92,16 @@ nonisolated enum StartupPersistentStore {
         }
         try ChatImageStore.removeUnreferencedFiles(at: url)
         return container
+    }
+
+    /// Version 1 accepts only its own storage model, without automatic migration.
+    static func requireCurrentSchema(at url: URL) throws {
+        let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(type: .sqlite, at: url)
+        guard let model = NSManagedObjectModel.makeManagedObjectModel(for: modelTypes),
+              let storedHashes = metadata[NSStoreModelVersionHashesKey] as? [String: Data],
+              storedHashes == model.entityVersionHashesByName else {
+            throw NSError(domain: NSCocoaErrorDomain, code: NSPersistentStoreIncompatibleVersionHashError)
+        }
     }
 
     static func replace(with plan: DataRecoveryPlan) throws {
@@ -162,7 +176,6 @@ nonisolated enum AppDataReset {
         let manager = FileManager.default
         let identifier = Bundle.main.bundleIdentifier ?? "Mallow"
         try KeychainStore.deleteAll(service: identifier)
-        UserDefaults.standard.removePersistentDomain(forName: identifier)
         // CFNetwork owns its backing files. Wait for its cookies, caches and
         // credentials to be cleared before reopening the application.
         await URLSession.shared.reset()
@@ -403,20 +416,9 @@ extension StartupDataRecovery {
         model.requestUsedPreviousResponseID = row.recover("requestUsedPreviousResponseID", defaultValue: model.requestUsedPreviousResponseID)
         model.requestPreviousResponseID = row.recover("requestPreviousResponseID", defaultValue: model.requestPreviousResponseID)
         model.streamStartedAt = row.recover("streamStartedAt", defaultValue: model.streamStartedAt)
-        model.streamFirstTokenAt = row.recover("streamFirstTokenAt", defaultValue: model.streamFirstTokenAt)
-        model.streamFirstTokenAtSource = row.recover("streamFirstTokenAtSource", defaultValue: model.streamFirstTokenAtSource)
         model.streamCompletedAt = row.recover("streamCompletedAt", defaultValue: model.streamCompletedAt)
-        model.timeToFirstToken = row.recover("timeToFirstToken", defaultValue: model.timeToFirstToken)
-        model.outputTokenCount = row.recover("outputTokenCount", defaultValue: model.outputTokenCount)
-        model.reasoningOutputTokenCount = row.recover("reasoningOutputTokenCount", defaultValue: model.reasoningOutputTokenCount)
-        model.tokensPerSecond = row.recover("tokensPerSecond", defaultValue: model.tokensPerSecond)
-        model.tokenCountSource = row.recover("tokenCountSource", defaultValue: model.tokenCountSource)
-        model.timeToFirstTokenSource = row.recover("timeToFirstTokenSource", defaultValue: model.timeToFirstTokenSource)
-        model.tokensPerSecondSource = row.recover("tokensPerSecondSource", defaultValue: model.tokensPerSecondSource)
         model.finishReasonSource = row.recover("finishReasonSource", defaultValue: model.finishReasonSource)
 
-        model.promptMessageCount = row.recover("promptMessageCount", defaultValue: model.promptMessageCount)
-        model.promptCharacterCount = row.recover("promptCharacterCount", defaultValue: model.promptCharacterCount)
         model.finishReason = row.recover("finishReason", defaultValue: model.finishReason)
         model.errorDescription = row.recover("errorDescription", defaultValue: model.errorDescription)
         // Keep readable payloads unchanged. Invalid structured display data is
@@ -522,6 +524,5 @@ extension StartupDataRecovery {
         }
         return model
     }
-
 
 }

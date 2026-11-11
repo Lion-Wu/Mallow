@@ -11,12 +11,12 @@ import Foundation
 @MainActor
 final class ChatSessionMutationController {
     private var branchState = ChatMessageBranchState()
-    private weak var sessionPersistence: (any ChatSessionPersisting & ChatSessionActivityPublishing)?
+    private weak var sessionPersistence: (any ChatSessionPersisting)?
     private let branchDidChange: PassthroughSubject<Void, Never>
     private let messageStructureDidChange: PassthroughSubject<Void, Never>
 
     init(
-        sessionPersistence: (any ChatSessionPersisting & ChatSessionActivityPublishing)?,
+        sessionPersistence: (any ChatSessionPersisting)?,
         branchDidChange: PassthroughSubject<Void, Never>,
         messageStructureDidChange: PassthroughSubject<Void, Never>
     ) {

@@ -114,7 +114,6 @@ extension GlobalAudioManager {
         audioDisplayDriver?.stop()
         audioDisplayDriver = nil
         outputAudioLevels = .silent
-        outputLevel = 0
     }
 
     private func handleAudioTick() {
@@ -134,7 +133,6 @@ extension GlobalAudioManager {
             levels = VoiceAudioLevels(rms: rms, low: rms, mid: rms, high: rms)
         }
         outputAudioLevels = levels
-        outputLevel = levels.rms
 
         let segStart = startTime(forSegment: currentPlayingIndex)
         let newTime = segStart + p.currentTime

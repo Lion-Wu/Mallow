@@ -8,7 +8,6 @@
 import Foundation
 
 struct LMStudioStreamEventState: Equatable {
-    var isLegacyThinkStream = false
     var sawAnyPrimaryAssistantToken = false
     var sawAnyReasoningToken = false
     var newFormatActive = false
@@ -214,7 +213,7 @@ struct LMStudioStreamEventReducer {
         state: inout LMStudioStreamEventState,
         actions: inout [LMStudioStreamAction]
     ) {
-        guard !state.isLegacyThinkStream, !state.sentThinkOpen else { return }
+        guard !state.sentThinkOpen else { return }
         actions.append(.delta(thinkOpenLine, marksPrimaryOutput: false))
         state.sentThinkOpen = true
     }
@@ -224,7 +223,6 @@ struct LMStudioStreamEventReducer {
         actions: inout [LMStudioStreamAction]
     ) {
         guard state.newFormatActive,
-              !state.isLegacyThinkStream,
               state.sentThinkOpen,
               !state.sentThinkClose else {
             return

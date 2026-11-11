@@ -38,21 +38,7 @@ internal struct VoiceMotionViewportLayout: Sendable, Equatable {
 internal enum VoiceMotionLayout {
     static let phaseSeed: Float = 0.61803398875
     static let presentationScale: Float = 2.4
-    static let errorOuterRadius: Float = 0.116
-    static let errorMessageClearance: CGFloat = 28
     static let morphCellCount = 5
-    static let speakingBarCount = 4
-    static let speakingLayoutCodeMax: UInt32 = (1 << (morphCellCount * 2)) - 1
-
-    static func errorMessageTopOffset(
-        viewportHeight: CGFloat,
-        controlDiameter: CGFloat
-    ) -> CGFloat {
-        viewportHeight / 2
-            + controlDiameter
-                * CGFloat(presentationScale * errorOuterRadius)
-            + errorMessageClearance
-    }
 
     static func viewportLayout(
         controlFrame: CGRect,
@@ -162,14 +148,6 @@ internal enum VoiceMotionLayout {
         return mapping
     }
 
-    static func adaptiveSpeakingBarIndex(
-        cellIndex: Int,
-        anchorPhase: Float
-    ) -> Int {
-        let index = ((cellIndex % morphCellCount) + morphCellCount) % morphCellCount
-        return adaptiveSpeakingBarMapping(anchorPhase: anchorPhase)[index]
-    }
-
     static func speakingLayoutCode(
         anchorPhase: Float,
         time: Float = 0,
@@ -187,22 +165,6 @@ internal enum VoiceMotionLayout {
             code |= UInt32(mapping[cellIndex]) << UInt32(cellIndex * 2)
         }
         return Float(code)
-    }
-
-    static func decodeSpeakingBarIndex(layoutCode: Float, cellIndex: Int) -> Int {
-        let safeCode: UInt32
-        if layoutCode.isFinite {
-            safeCode = UInt32(
-                min(
-                    Float(speakingLayoutCodeMax),
-                    max(0, layoutCode.rounded())
-                )
-            )
-        } else {
-            safeCode = 0
-        }
-        let index = ((cellIndex % morphCellCount) + morphCellCount) % morphCellCount
-        return Int((safeCode >> UInt32(index * 2)) & 0b11)
     }
 
     private static func comesBefore(_ left: AssignmentPoint, _ right: AssignmentPoint) -> Bool {

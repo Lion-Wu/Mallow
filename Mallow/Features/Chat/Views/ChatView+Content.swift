@@ -134,7 +134,6 @@ extension ChatView {
     var lifecycleManagedChatView: some View {
         layoutDecoratedChatView
             .modifier(ChatViewLifecycleModifier(
-                editingBannerHeight: $editingBannerHeight,
                 onAppear: handleChatViewAppear,
                 onDisappear: handleChatViewDisappear
             ))
@@ -149,10 +148,7 @@ extension ChatView {
                 notices: errorCenter.notices,
                 onDismissNotice: errorCenter.dismiss(_:),
                 composer: { floatingInputPanel },
-                scrollToBottomButton: { scrollToBottomButton },
-                shadowShelf: {
-                    ChatComposerShadowShelf()
-                }
+                scrollToBottomButton: { scrollToBottomButton }
             ))
     }
 

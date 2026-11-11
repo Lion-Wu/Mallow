@@ -17,35 +17,6 @@ enum SettingsVoiceServerRuntime {
         presets.first { $0.id == selectedID }
     }
 
-    @discardableResult
-    static func updateSettings(
-        serverAddress: String,
-        textLang: String,
-        serverSettings: inout ServerSettings,
-        presets: [VoiceServerPreset],
-        selectedID: UUID?,
-        hasContext: Bool,
-        persistServerSettings: (ServerSettings) -> Void,
-        save: (String) -> Void
-    ) -> Bool {
-        let nextSettings = ServerSettings(
-            serverAddress: serverAddress,
-            textLang: textLang
-        )
-        if nextSettings != serverSettings {
-            serverSettings = nextSettings
-            persistServerSettings(nextSettings)
-        }
-
-        guard hasContext else { return false }
-        return VoiceServerPresetStore.updateSelectedServerAddress(
-            serverAddress,
-            selectedID: selectedID,
-            in: presets,
-            save: save
-        )
-    }
-
     static func createPreset(
         name: String,
         serverSettings: ServerSettings,

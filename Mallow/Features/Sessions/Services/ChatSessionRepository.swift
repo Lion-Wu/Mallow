@@ -34,12 +34,6 @@ protocol ChatSessionPersisting: AnyObject {
     func flushPendingSaves()
 }
 
-/// Live session activity bridge used for sidebar ordering during streaming.
-@MainActor
-protocol ChatSessionActivityPublishing: AnyObject {
-    func publishLiveActivity(for session: ChatSession)
-}
-
 /// Abstraction over session persistence so view models remain testable and MVVM-friendly.
 @MainActor
 protocol ChatSessionRepository: ChatSessionPersisting {
@@ -49,15 +43,8 @@ protocol ChatSessionRepository: ChatSessionPersisting {
     func fetchSessions() throws -> [ChatSession]
     func flushForDataTransfer() throws
     func hydrateTransientMessageState(in session: ChatSession)
-    func createSession(title: String) -> ChatSession?
     func delete(_ session: ChatSession)
     func setImmediatePersistenceEnabled(_ enabled: Bool)
-}
-
-extension ChatSessionRepository {
-    func flushForDataTransfer() throws {
-        throw ChatSessionRepositoryReadError.contextUnavailable
-    }
 }
 
 /// SwiftData-backed implementation that centralises throttling and error handling.
@@ -118,14 +105,6 @@ final class SwiftDataChatSessionRepository: ChatSessionRepository {
 
     func hydrateTransientMessageState(in session: ChatSession) {
         session.hydrateTransientMessageState()
-    }
-
-    func createSession(title: String) -> ChatSession? {
-        guard let context = context else { return nil }
-        let session = ChatSession(title: title)
-        context.insert(session)
-        saveContext(label: "create session")
-        return session
     }
 
     func delete(_ session: ChatSession) {

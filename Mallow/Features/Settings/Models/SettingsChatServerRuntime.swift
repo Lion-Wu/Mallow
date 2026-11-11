@@ -17,64 +17,6 @@ enum SettingsChatServerRuntime {
         presets.first { $0.id == selectedID }
     }
 
-    @discardableResult
-    static func updateSettings(
-        apiURL: String,
-        selectedModel: String,
-        chatSettings: inout ChatSettings,
-        presets: [ChatServerPreset],
-        selectedID: UUID?,
-        hasContext: Bool,
-        persistChatSettings: (ChatSettings) -> Void,
-        save: (String) -> Void
-    ) -> Bool {
-        let nextSettings = ChatSettings(
-            apiURL: apiURL,
-            selectedModel: selectedModel,
-            apiKey: chatSettings.apiKey
-        )
-        if nextSettings != chatSettings {
-            chatSettings = nextSettings
-            persistChatSettings(nextSettings)
-        }
-
-        guard hasContext else { return false }
-        return ChatServerPresetStore.updateSelectedSettings(
-            apiURL: apiURL,
-            selectedModel: selectedModel,
-            selectedID: selectedID,
-            in: presets,
-            save: save
-        )
-    }
-
-    @discardableResult
-    static func updateAPIKey(
-        _ apiKey: String,
-        chatSettings: inout ChatSettings,
-        selectedID: UUID?,
-        presets: [ChatServerPreset],
-        hasContext: Bool,
-        apiKeyStore: ChatAPIKeyStore,
-        save: (String) -> Void
-    ) -> Bool {
-        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed != chatSettings.apiKey else { return false }
-        chatSettings = ChatSettings(
-            apiURL: chatSettings.apiURL,
-            selectedModel: chatSettings.selectedModel,
-            apiKey: trimmed
-        )
-        apiKeyStore.save(trimmed, for: selectedID)
-
-        guard hasContext else { return false }
-        return ChatServerPresetStore.touchAPIKey(
-            selectedID: selectedID,
-            in: presets,
-            save: save
-        )
-    }
-
     static func createPreset(
         name: String,
         chatSettings: ChatSettings,

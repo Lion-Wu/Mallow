@@ -89,24 +89,6 @@ struct APIAdvancedSettings: Codable, Equatable, Sendable {
         case anthropicEffortOverride
     }
 
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.init()
-        openAIResponsesMaxOutputTokens = try container.decodeIfPresent(Int.self, forKey: .openAIResponsesMaxOutputTokens) ?? openAIResponsesMaxOutputTokens
-        openAIResponsesSampling = try container.decodeIfPresent(APIAdvancedSamplingSettings.self, forKey: .openAIResponsesSampling) ?? openAIResponsesSampling
-        openAIChatMaxCompletionTokens = try container.decodeIfPresent(Int.self, forKey: .openAIChatMaxCompletionTokens) ?? openAIChatMaxCompletionTokens
-        openAIChatSampling = try container.decodeIfPresent(APIAdvancedSamplingSettings.self, forKey: .openAIChatSampling) ?? openAIChatSampling
-        lmStudioMaxTokens = try container.decodeIfPresent(Int.self, forKey: .lmStudioMaxTokens) ?? lmStudioMaxTokens
-        lmStudioSampling = try container.decodeIfPresent(APIAdvancedSamplingSettings.self, forKey: .lmStudioSampling) ?? lmStudioSampling
-        anthropicMaxTokens = try container.decodeIfPresent(Int.self, forKey: .anthropicMaxTokens) ?? anthropicMaxTokens
-        anthropicSampling = try container.decodeIfPresent(APIAdvancedSamplingSettings.self, forKey: .anthropicSampling) ?? anthropicSampling
-        anthropicMaxTokensEnabled = try container.decodeIfPresent(Bool.self, forKey: .anthropicMaxTokensEnabled) ?? anthropicMaxTokensEnabled
-        anthropicThinkingModeOverride = try container.decodeIfPresent(String.self, forKey: .anthropicThinkingModeOverride) ?? anthropicThinkingModeOverride
-        anthropicThinkingBudgetEnabled = try container.decodeIfPresent(Bool.self, forKey: .anthropicThinkingBudgetEnabled) ?? anthropicThinkingBudgetEnabled
-        anthropicThinkingBudget = try container.decodeIfPresent(Int.self, forKey: .anthropicThinkingBudget) ?? anthropicThinkingBudget
-        anthropicEffortOverride = try container.decodeIfPresent(String.self, forKey: .anthropicEffortOverride) ?? anthropicEffortOverride
-    }
-
 }
 
 struct APIAdvancedSamplingSettings: Codable, Equatable, Sendable {

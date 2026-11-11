@@ -85,7 +85,6 @@ struct ChatAssistantStreamTelemetryCoordinator {
     func applyGenerationRounds(to message: ChatMessage) {
         guard !generationRounds.isEmpty else { return }
         message.generationRounds = generationRounds
-        // Existing legacy measurements remain historical data; new requests never update them.
     }
 
     mutating func resetStreamingPersistenceState() {

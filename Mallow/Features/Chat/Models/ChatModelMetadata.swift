@@ -159,11 +159,7 @@ private struct LMStudioRESTLoadedInstance: Decodable {
 }
 
 struct ModelArchitectureMetadata: Codable, Equatable, Sendable {
-    let modality: String?
     let input_modalities: [String]?
-    let output_modalities: [String]?
-    let tokenizer: String?
-    let instruct_type: String?
 }
 
 struct ModelInfo: Codable {

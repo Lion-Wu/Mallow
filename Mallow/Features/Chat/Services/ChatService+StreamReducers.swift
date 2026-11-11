@@ -139,7 +139,6 @@ extension ChatService {
 
     func currentLMStudioStreamEventState() -> LMStudioStreamEventState {
         LMStudioStreamEventState(
-            isLegacyThinkStream: isLegacyThinkStream,
             sawAnyPrimaryAssistantToken: sawAnyPrimaryAssistantToken,
             sawAnyReasoningToken: lmStudioSawAnyReasoningToken,
             newFormatActive: newFormatActive,
@@ -150,7 +149,6 @@ extension ChatService {
     }
 
     func applyLMStudioStreamEventState(_ state: LMStudioStreamEventState) {
-        isLegacyThinkStream = state.isLegacyThinkStream
         sawAnyPrimaryAssistantToken = state.sawAnyPrimaryAssistantToken
         lmStudioSawAnyReasoningToken = state.sawAnyReasoningToken
         newFormatActive = state.newFormatActive

@@ -11,10 +11,6 @@ import Foundation
 final class ChatQueuedDraftAutostartController {
     private var task: Task<Void, Never>?
 
-    var isScheduled: Bool {
-        task != nil
-    }
-
     deinit {
         task?.cancel()
     }

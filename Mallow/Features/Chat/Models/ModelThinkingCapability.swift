@@ -149,22 +149,6 @@ struct ModelThinkingCapability: Codable, Equatable, Sendable {
         self.allowsDisabling = allowsDisabling
     }
 
-    var enabledOptions: [ModelThinkingOption] {
-        options.filter { !$0.isDisabled && $0 != .serverDefault }
-    }
-
-    var disabledOption: ModelThinkingOption? {
-        options.first(where: \.isDisabled)
-    }
-
-    var supportsToggle: Bool {
-        disabledOption != nil && !enabledOptions.isEmpty
-    }
-
-    var supportsEffortSelection: Bool {
-        options.filter(\.isEffortLevel).count > 1
-    }
-
     var isConfigurable: Bool {
         hasKnownOptions && options.contains { $0 != .serverDefault }
     }
@@ -180,29 +164,6 @@ struct ModelThinkingCapability: Codable, Equatable, Sendable {
         return option
     }
 
-    func toggledSelection(from option: ModelThinkingOption?) -> ModelThinkingOption? {
-        let current = normalizedSelection(option)
-        if current?.isDisabled == true || current == .serverDefault {
-            if let defaultOption, !defaultOption.isDisabled, options.contains(defaultOption) {
-                return defaultOption
-            }
-            return enabledOptions.first
-        }
-        return disabledOption ?? .serverDefault
-    }
-
-    func withRequestParameter(_ requestParameter: ModelThinkingRequestParameter?) -> ModelThinkingCapability {
-        ModelThinkingCapability(
-            options: options,
-            defaultOption: defaultOption,
-            requestParameter: requestParameter,
-            anthropicThinkingModes: anthropicThinkingModes,
-            anthropicEfforts: anthropicEfforts,
-            maxOutputTokens: maxOutputTokens,
-            hasKnownOptions: hasKnownOptions,
-            allowsDisabling: allowsDisabling
-        )
-    }
 }
 
 struct ModelThinkingCapabilityDescriptor: Codable, Equatable, Sendable {

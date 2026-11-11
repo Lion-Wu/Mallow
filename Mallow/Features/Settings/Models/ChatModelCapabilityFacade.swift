@@ -157,13 +157,6 @@ struct ChatModelCapabilityFacade {
         return true
     }
 
-    mutating func toggleSelectedThinking(for modelIdentifier: String? = nil) -> Bool {
-        let model = (modelIdentifier ?? chatSettings.selectedModel).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !model.isEmpty, let capability = thinkingCapability(for: model) else { return false }
-        let next = capability.toggledSelection(from: selectedThinkingOption(for: model))
-        return setSelectedThinkingOption(next, for: model)
-    }
-
     private func manualChatAPIFormatPreference(for apiBaseURL: String) -> ChatAPIFormatPreference? {
         guard let presetID = selectedChatServerPresetID,
               let preset = chatServerPresets.first(where: { $0.id == presetID }) else {

@@ -15,7 +15,6 @@ import SwiftUI
             isUser: false,
             isActive: false,
             createdAt: Date(),
-            tokenCount: 1,
             session: session
         )
         session.messages.append(message)

@@ -19,6 +19,7 @@ final class RecoveryStoreReader {
         }
         try query("PRAGMA query_only = ON") { _ in }
         try query("BEGIN") { _ in }
+        try StartupPersistentStore.requireCurrentSchema(at: url)
     }
 
     deinit {
@@ -202,17 +203,15 @@ final class RecoveryRow {
         return typed
     }
 
-    /// Recovery overlays readable fields onto an initialized model. An absent
-    /// column belongs to an older schema; an invalid stored value is a loss.
+    /// Recovery overlays readable fields from the current schema onto a model.
+    /// Missing or invalid fields are reported as data loss.
     func recover<T>(_ field: String, defaultValue: T) -> T {
-        guard values["Z" + field.uppercased()] != nil else { return defaultValue }
         do { return try value(field) }
         catch { hasLoss = true; lostFields.insert(field); return defaultValue }
     }
 
     func recover<T>(_ field: String, defaultValue: T?) -> T? {
-        guard let raw = values["Z" + field.uppercased()] else { return defaultValue }
-        if case .null = raw { return nil }
+        if case .null = values["Z" + field.uppercased()] { return nil }
         do { return try value(field, as: T.self) }
         catch { hasLoss = true; lostFields.insert(field); return defaultValue }
     }
@@ -270,12 +269,6 @@ final class RecoveryRow {
             catch { decodingLoss(field, error: error) }
         }
         return String(decoding: try JSONEncoder().encode(defaultValue), as: UTF8.self)
-    }
-
-    func validArray<T: Decodable>(_ data: Data?, of type: T.Type, field: String = "content") -> Data? {
-        guard let data else { return nil }
-        do { _ = try JSONDecoder().decode([T].self, from: data); return data }
-        catch { decodingLoss(field, error: error); return nil }
     }
 
     func readableItems<T: Codable>(_ data: Data?, of type: T.Type, field: String = "content") throws -> Data? {

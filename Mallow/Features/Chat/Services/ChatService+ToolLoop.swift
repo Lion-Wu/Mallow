@@ -313,9 +313,7 @@ extension ChatService {
         beginStreamCallbackAttempt(invalidatingCurrentAttempt: false)
         let shouldPreserveOpenAIThinking = newFormatActive &&
             sentThinkOpen &&
-            !sentThinkClose &&
-            !isLegacyThinkStream
-        isLegacyThinkStream = false
+            !sentThinkClose
         sawAnyAssistantToken = false
         sawAnyPrimaryAssistantToken = false
         lmStudioSawAnyReasoningToken = false

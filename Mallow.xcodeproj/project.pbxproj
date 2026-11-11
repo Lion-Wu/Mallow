@@ -37,7 +37,6 @@
 		B329D6622B39497A000A17C9 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B329D6612B39497A000A17C9 /* Preview Assets.xcassets */; };
 		B4A629592B59617A006125B5 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4A629582B59617A006125B5 /* ChatViewModel.swift */; };
 		B4E916D52B4BDBD900E49A6B /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4E916D42B4BDBD900E49A6B /* ChatService.swift */; };
-		B4E916DF2B4BF0E500E49A6B /* VoiceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4E916DE2B4BF0E500E49A6B /* VoiceViewModel.swift */; };
 		C4442FE0C1135115CFA62BDD /* AppChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4570041CD56B63DCA44B5C0 /* AppChrome.swift */; };
 		CA0905000000000000000001 /* NetworkRequestWaitMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0905000000000000000002 /* NetworkRequestWaitMonitor.swift */; };
 		CA0905000000000000000003 /* NetworkDataRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0905000000000000000004 /* NetworkDataRequest.swift */; };
@@ -95,7 +94,6 @@
 		FD7000000000000000000045 /* ChatResponseParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7000000000000000000044 /* ChatResponseParsingTests.swift */; };
 		FD700000000000000000004B /* ChatMessageBranchResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD700000000000000000004A /* ChatMessageBranchResolverTests.swift */; };
 		FD7228652E7EBE22005BF261 /* SpeechInputManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7228642E7EBE22005BF261 /* SpeechInputManager.swift */; };
-		FD7AF1B42CD896B900A5080B /* BlurView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7AF1B32CD896B900A5080B /* BlurView.swift */; };
 		FD9000000000000000000102 /* AppLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9000000000000000000001 /* AppLocalization.swift */; };
 		FD9000000000000000000104 /* AppMenuCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9000000000000000000003 /* AppMenuCommands.swift */; };
 		FD9000000000000000000106 /* VisionRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9000000000000000000005 /* VisionRootView.swift */; };
@@ -106,7 +104,6 @@
 		FD9000000000000000000110 /* SettingsValueTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD900000000000000000000F /* SettingsValueTypes.swift */; };
 		FD9000000000000000000112 /* ChatStreamingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9000000000000000000011 /* ChatStreamingModels.swift */; };
 		FD9000000000000000000114 /* ChatServiceConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9000000000000000000013 /* ChatServiceConfiguration.swift */; };
-		FD9000000000000000000116 /* MessageComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9000000000000000000015 /* MessageComposerView.swift */; };
 		FD9000000000000000000118 /* ChatEndpointResolving.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9000000000000000000017 /* ChatEndpointResolving.swift */; };
 		FD900000000000000000011A /* TTSConfigurationResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9000000000000000000019 /* TTSConfigurationResolver.swift */; };
 		FD900000000000000000011C /* QueuedDraftEditCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD900000000000000000001B /* QueuedDraftEditCoordinator.swift */; };
@@ -424,7 +421,6 @@
 		B329D6612B39497A000A17C9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		B4A629582B59617A006125B5 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatViewModel.swift; path = Mallow/Features/Chat/ViewModels/ChatViewModel.swift; sourceTree = SOURCE_ROOT; };
 		B4E916D42B4BDBD900E49A6B /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatService.swift; path = Mallow/Features/Chat/Services/ChatService.swift; sourceTree = SOURCE_ROOT; };
-		B4E916DE2B4BF0E500E49A6B /* VoiceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VoiceViewModel.swift; path = Mallow/Features/VoiceOverlay/ViewModels/VoiceViewModel.swift; sourceTree = SOURCE_ROOT; };
 		CA0905000000000000000002 /* NetworkRequestWaitMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NetworkRequestWaitMonitor.swift; path = Mallow/Core/Networking/NetworkRequestWaitMonitor.swift; sourceTree = SOURCE_ROOT; };
 		CA0905000000000000000004 /* NetworkDataRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = NetworkDataRequest.swift; path = Mallow/Core/Networking/NetworkDataRequest.swift; sourceTree = SOURCE_ROOT; };
 		CA0905000000000000000006 /* RequestStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RequestStatusView.swift; path = Mallow/Shared/UI/Feedback/RequestStatusView.swift; sourceTree = SOURCE_ROOT; };
@@ -482,7 +478,6 @@
 		FD7000000000000000000044 /* ChatResponseParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatResponseParsingTests.swift; path = MallowTests/ChatResponseParsingTests.swift; sourceTree = SOURCE_ROOT; };
 		FD700000000000000000004A /* ChatMessageBranchResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatMessageBranchResolverTests.swift; path = MallowTests/ChatMessageBranchResolverTests.swift; sourceTree = SOURCE_ROOT; };
 		FD7228642E7EBE22005BF261 /* SpeechInputManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SpeechInputManager.swift; path = Mallow/Core/Audio/Services/SpeechInputManager.swift; sourceTree = SOURCE_ROOT; };
-		FD7AF1B32CD896B900A5080B /* BlurView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BlurView.swift; path = Mallow/Shared/UI/Chrome/BlurView.swift; sourceTree = SOURCE_ROOT; };
 		FD9000000000000000000001 /* AppLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppLocalization.swift; path = Mallow/App/Composition/AppLocalization.swift; sourceTree = SOURCE_ROOT; };
 		FD9000000000000000000003 /* AppMenuCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppMenuCommands.swift; path = Mallow/App/Entrypoint/AppMenuCommands.swift; sourceTree = SOURCE_ROOT; };
 		FD9000000000000000000005 /* VisionRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VisionRootView.swift; path = Mallow/App/Shell/VisionRootView.swift; sourceTree = SOURCE_ROOT; };
@@ -493,7 +488,6 @@
 		FD900000000000000000000F /* SettingsValueTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsValueTypes.swift; path = Mallow/Features/Settings/Models/SettingsValueTypes.swift; sourceTree = SOURCE_ROOT; };
 		FD9000000000000000000011 /* ChatStreamingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatStreamingModels.swift; path = Mallow/Features/Chat/Services/ChatStreamingModels.swift; sourceTree = SOURCE_ROOT; };
 		FD9000000000000000000013 /* ChatServiceConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatServiceConfiguration.swift; path = Mallow/Features/Chat/Services/ChatServiceConfiguration.swift; sourceTree = SOURCE_ROOT; };
-		FD9000000000000000000015 /* MessageComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MessageComposerView.swift; path = Mallow/Features/Chat/Views/Components/MessageComposerView.swift; sourceTree = SOURCE_ROOT; };
 		FD9000000000000000000017 /* ChatEndpointResolving.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatEndpointResolving.swift; path = Mallow/Features/Chat/Services/ChatEndpointResolving.swift; sourceTree = SOURCE_ROOT; };
 		FD9000000000000000000019 /* TTSConfigurationResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TTSConfigurationResolver.swift; path = Mallow/Core/Audio/Support/TTSConfigurationResolver.swift; sourceTree = SOURCE_ROOT; };
 		FD900000000000000000001B /* QueuedDraftEditCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = QueuedDraftEditCoordinator.swift; path = Mallow/Features/Chat/ViewModels/QueuedDraftEditCoordinator.swift; sourceTree = SOURCE_ROOT; };
@@ -1292,7 +1286,6 @@
 				92A53B05B12C4E0689036C84 /* TextSelectionSheet.swift */,
 				FDAFF0002F90000000000001 /* ContentFingerprint.swift */,
 				FDAFF0022F90000000000001 /* MessageRenderCache.swift */,
-				FD9000000000000000000015 /* MessageComposerView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -1448,7 +1441,6 @@
 				FD90000000000000000000BF /* VoiceVisionCaptureSample.swift */,
 				FD90000000000000000000C0 /* VoiceVisionCaptureTuning.swift */,
 				FD90000000000000000000C1 /* VoiceVisionSampleSelector.swift */,
-				B4E916DE2B4BF0E500E49A6B /* VoiceViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -1489,7 +1481,6 @@
 			isa = PBXGroup;
 			children = (
 				D4570041CD56B63DCA44B5C0 /* AppChrome.swift */,
-				FD7AF1B32CD896B900A5080B /* BlurView.swift */,
 			);
 			path = Chrome;
 			sourceTree = "<group>";
@@ -1738,7 +1729,6 @@
 				FD0B94EC2F92000000DBFA1D /* SidebarSearchHeader.swift in Sources */,
 				FD0B94ED2F92000000DBFA1D /* SidebarSettingsFooter.swift in Sources */,
 				FDA8D93C2E7F12040012B42F /* AudioPlayback.swift in Sources */,
-				FD7AF1B42CD896B900A5080B /* BlurView.swift in Sources */,
 				FD40D5762CA876010064E732 /* GlobalAudioManager.swift in Sources */,
 				FDAC72000000000000000002 /* AppleSpeechSynthesisSession.swift in Sources */,
 				FDFE0A9D2F123D0000000001 /* GlobalAudioManager+PlaybackSession.swift in Sources */,
@@ -1828,7 +1818,6 @@
 				FDA8D92A2E7F0E320012B42F /* ThinkParts.swift in Sources */,
 				FDFE0A032F12340000000001 /* ErrorNoticeStack.swift in Sources */,
 				FDAFF0032F90000000000001 /* MessageRenderCache.swift in Sources */,
-				B4E916DF2B4BF0E500E49A6B /* VoiceViewModel.swift in Sources */,
 				FD40D5742CA875CC0064E732 /* ContentView.swift in Sources */,
 				FDF0B0022F8F000000000001 /* RealtimeVoiceWindowController.swift in Sources */,
 				FDA8D93A2E7F11F00012B42F /* AudioRequests.swift in Sources */,
@@ -1996,7 +1985,6 @@
 				FD9000000000000000000158 /* ChatViewLayout.swift in Sources */,
 				FD900000000000000000015A /* ChatComposerPanelBinder.swift in Sources */,
 				FD90000000000000000001AE /* ChatSendCoordinator.swift in Sources */,
-				FD9000000000000000000116 /* MessageComposerView.swift in Sources */,
 				FD900000000000000000011A /* TTSConfigurationResolver.swift in Sources */,
 				FD90000000000000000001D6 /* TTSSettingsSnapshot.swift in Sources */,
 				FDFE0A552F123D0000000001 /* AudioPlaybackSnapshot.swift in Sources */,

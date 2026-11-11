@@ -60,21 +60,9 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
     var requestUsedPreviousResponseID: Bool?
     var requestPreviousResponseID: String?
     var streamStartedAt: Date?
-    var streamFirstTokenAt: Date?
-    var streamFirstTokenAtSource: String?
     var streamCompletedAt: Date?
-    var timeToFirstToken: TimeInterval?
-    var outputTokenCount: Int?
-    var reasoningOutputTokenCount: Int?
-    var tokensPerSecond: Double?
-    var tokenCount: Int?
     var generationRounds: [ChatGenerationRound]
-    var tokenCountSource: String?
-    var timeToFirstTokenSource: String?
-    var tokensPerSecondSource: String?
     var finishReasonSource: String?
-    var promptMessageCount: Int?
-    var promptCharacterCount: Int?
     var finishReason: String?
     var errorDescription: String?
     var toolActivityPlacementsData: Data?
@@ -103,21 +91,9 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
         requestUsedPreviousResponseID = model.requestUsedPreviousResponseID
         requestPreviousResponseID = model.requestPreviousResponseID
         streamStartedAt = model.streamStartedAt
-        streamFirstTokenAt = model.streamFirstTokenAt
-        streamFirstTokenAtSource = model.streamFirstTokenAtSource
         streamCompletedAt = model.streamCompletedAt
-        timeToFirstToken = model.timeToFirstToken
-        outputTokenCount = model.outputTokenCount
-        reasoningOutputTokenCount = model.reasoningOutputTokenCount
-        tokensPerSecond = model.tokensPerSecond
         generationRounds = model.generationRounds
-        tokenCount = model.tokenCount
-        tokenCountSource = model.tokenCountSource
-        timeToFirstTokenSource = model.timeToFirstTokenSource
-        tokensPerSecondSource = model.tokensPerSecondSource
         finishReasonSource = model.finishReasonSource
-        promptMessageCount = model.promptMessageCount
-        promptCharacterCount = model.promptCharacterCount
         finishReason = model.finishReason
         errorDescription = model.errorDescription
         toolActivityPlacementsData = model.toolActivityPlacementsData
@@ -147,21 +123,10 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
         model.requestUsedPreviousResponseID = requestUsedPreviousResponseID
         model.requestPreviousResponseID = requestPreviousResponseID
         model.streamStartedAt = streamStartedAt
-        model.streamFirstTokenAt = streamFirstTokenAt
-        model.streamFirstTokenAtSource = streamFirstTokenAtSource
         model.streamCompletedAt = streamCompletedAt
-        model.timeToFirstToken = timeToFirstToken
-        model.outputTokenCount = outputTokenCount
-        model.reasoningOutputTokenCount = reasoningOutputTokenCount
-        model.tokensPerSecond = tokensPerSecond
         model.generationRounds = generationRounds
-        model.tokenCountSource = tokenCountSource
-        model.timeToFirstTokenSource = timeToFirstTokenSource
-        model.tokensPerSecondSource = tokensPerSecondSource
         model.finishReasonSource = finishReasonSource
 
-        model.promptMessageCount = promptMessageCount
-        model.promptCharacterCount = promptCharacterCount
         model.finishReason = finishReason
         model.errorDescription = errorDescription
         model.toolActivityPlacementsData = toolActivityPlacementsData
@@ -185,19 +150,8 @@ nonisolated struct ChatMessageBackup: Equatable, Sendable {
         result.requestUsedPreviousResponseID = requestUsedPreviousResponseID ?? existing.requestUsedPreviousResponseID
         result.requestPreviousResponseID = requestPreviousResponseID ?? existing.requestPreviousResponseID
         result.streamStartedAt = streamStartedAt ?? existing.streamStartedAt
-        result.streamFirstTokenAt = streamFirstTokenAt ?? existing.streamFirstTokenAt
-        result.streamFirstTokenAtSource = streamFirstTokenAtSource ?? existing.streamFirstTokenAtSource
         result.streamCompletedAt = streamCompletedAt ?? existing.streamCompletedAt
-        result.timeToFirstToken = timeToFirstToken ?? existing.timeToFirstToken
-        result.outputTokenCount = outputTokenCount ?? existing.outputTokenCount
-        result.reasoningOutputTokenCount = reasoningOutputTokenCount ?? existing.reasoningOutputTokenCount
-        result.tokensPerSecond = tokensPerSecond ?? existing.tokensPerSecond
-        result.tokenCountSource = tokenCountSource ?? existing.tokenCountSource
-        result.timeToFirstTokenSource = timeToFirstTokenSource ?? existing.timeToFirstTokenSource
-        result.tokensPerSecondSource = tokensPerSecondSource ?? existing.tokensPerSecondSource
         result.finishReasonSource = finishReasonSource ?? existing.finishReasonSource
-        result.promptMessageCount = promptMessageCount ?? existing.promptMessageCount
-        result.promptCharacterCount = promptCharacterCount ?? existing.promptCharacterCount
         result.finishReason = finishReason ?? existing.finishReason
         result.errorDescription = errorDescription ?? existing.errorDescription
         result.toolActivityPlacementsData = toolActivityPlacementsData ?? existing.toolActivityPlacementsData

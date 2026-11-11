@@ -15,10 +15,6 @@ extension SettingsViewModel {
         applyVoiceServerPresetBinding(presetBindingController.voiceServerBinding())
     }
 
-    func loadSelectedVoiceServerPresetFields() {
-        applyVoiceServerPresetBinding(presetBindingController.voiceServerBinding())
-    }
-
     func addVoiceServerPreset() {
         guard commitVoiceServerEdits() else { return }
         if let id = presetBindingController.createVoiceServerPreset() {
@@ -39,10 +35,6 @@ extension SettingsViewModel {
     // MARK: - Chat server preset helpers
 
     func reloadChatServerPresetListAndSelection() {
-        applyChatServerPresetBinding(presetBindingController.chatServerBinding())
-    }
-
-    func loadSelectedChatServerPresetFields() {
         applyChatServerPresetBinding(presetBindingController.chatServerBinding())
     }
 

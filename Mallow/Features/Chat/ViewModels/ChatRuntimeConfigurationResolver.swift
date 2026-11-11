@@ -57,12 +57,6 @@ struct ChatRuntimeConfigurationResolver {
         )
     }
 
-    func toggleSelectedThinking(fallbackModelIdentifier: String) {
-        settingsManager.chatModelCapabilities.toggleSelectedThinking(
-            for: effectiveModelIdentifier(fallback: fallbackModelIdentifier)
-        )
-    }
-
     func developerPrompt(isVoiceMode: Bool) -> String? {
         let preset = isVoiceMode ? settingsManager.selectedVoiceSystemPromptPreset : settingsManager.selectedNormalSystemPromptPreset
         let raw = isVoiceMode ? preset?.voicePrompt : preset?.normalPrompt

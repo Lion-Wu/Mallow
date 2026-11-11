@@ -139,38 +139,4 @@ enum ChatServerPresetStore {
         return true
     }
 
-    static func updateSelectedSettings(
-        apiURL: String,
-        selectedModel: String,
-        selectedID: UUID?,
-        in presets: [ChatServerPreset],
-        save: (String) -> Void
-    ) -> Bool {
-        guard let selectedID,
-              let preset = presets.first(where: { $0.id == selectedID }) else {
-            return false
-        }
-        guard preset.apiURL != apiURL || preset.selectedModel != selectedModel else {
-            return false
-        }
-        preset.apiURL = apiURL
-        preset.selectedModel = selectedModel
-        preset.updatedAt = Date()
-        save("update chat server preset")
-        return true
-    }
-
-    static func touchAPIKey(
-        selectedID: UUID?,
-        in presets: [ChatServerPreset],
-        save: (String) -> Void
-    ) -> Bool {
-        guard let selectedID,
-              let preset = presets.first(where: { $0.id == selectedID }) else {
-            return false
-        }
-        preset.updatedAt = Date()
-        save("touch chat server preset api key")
-        return true
-    }
 }
