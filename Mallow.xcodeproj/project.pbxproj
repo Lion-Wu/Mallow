@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AB1111000000000000000003 /* AppOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1111000000000000000004 /* AppOnboardingView.swift */; };
+		AB1111000000000000000001 /* AppOnboardingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1111000000000000000002 /* AppOnboardingCoordinator.swift */; };
 		9531A726E227629A33E3B380 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 219680AEAF301A24A236086F /* KeychainStore.swift */; };
 		A19000000000000000000001 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = A19000000000000000000002 /* AppIcon.icon */; platformFilters = (ios, macos, ); };
 		A9C4B2103F8A4D2200C0DE02 /* MacCameraCaptureSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C4B2103F8A4D2200C0DE01 /* MacCameraCaptureSheet.swift */; };
@@ -389,6 +391,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AB1111000000000000000004 /* AppOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppOnboardingView.swift; path = Mallow/App/Startup/AppOnboardingView.swift; sourceTree = SOURCE_ROOT; };
+		AB1111000000000000000002 /* AppOnboardingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppOnboardingCoordinator.swift; path = Mallow/App/Startup/AppOnboardingCoordinator.swift; sourceTree = SOURCE_ROOT; };
 		219680AEAF301A24A236086F /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = KeychainStore.swift; path = Mallow/Core/Security/KeychainStore.swift; sourceTree = SOURCE_ROOT; };
 		92A53B05B12C4E0689036C84 /* TextSelectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TextSelectionSheet.swift; path = Mallow/Features/Chat/Views/Components/TextSelectionSheet.swift; sourceTree = SOURCE_ROOT; };
 		A19000000000000000000002 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
@@ -944,6 +948,8 @@
 				AE0924000000000000000102 /* StartupDataRecovery.swift */,
 				AE0924000000000000000002 /* RecoveryStoreReader.swift */,
 				FD2DD7D42F26000100000001 /* StartupDataGate.swift */,
+				AB1111000000000000000004 /* AppOnboardingView.swift */,
+				AB1111000000000000000002 /* AppOnboardingCoordinator.swift */,
 			);
 			path = Startup;
 			sourceTree = "<group>";
@@ -1766,6 +1772,8 @@
 				FD90000000000000000001CE /* ChatSidebarPresentationController.swift in Sources */,
 				B329D65B2B394979000A17C9 /* MallowApp.swift in Sources */,
 				FD2DD7D52F26000100000001 /* StartupDataGate.swift in Sources */,
+				AB1111000000000000000003 /* AppOnboardingView.swift in Sources */,
+				AB1111000000000000000001 /* AppOnboardingCoordinator.swift in Sources */,
 				FDAFF0012F90000000000001 /* ContentFingerprint.swift in Sources */,
 				FDF714C52E7FC59000B62D71 /* RealtimeVoiceOverlayView.swift in Sources */,
 				FD90000000000000000001CC /* RealtimeVoiceControlCircle.swift in Sources */,

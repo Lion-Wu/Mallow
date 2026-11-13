@@ -152,6 +152,7 @@ nonisolated enum DataUnusedFileInspector {
                     store.lastPathComponent + ".images",
                     "." + store.deletingPathExtension().lastPathComponent + "_SUPPORT",
                     PersistentStoreOwnership.fileName, DataImportTransaction.fileName,
+                    AppOnboardingCoordinator.fileName,
                     "AddressBook", "SyncServices", "CrashReporter", "iCloud", ".DS_Store"])
     }
 

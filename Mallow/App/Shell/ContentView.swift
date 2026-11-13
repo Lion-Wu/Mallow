@@ -23,7 +23,6 @@ struct ChatSessionNavigationRoute: Hashable {
 }
 
 struct ContentView: View {
-    let isPersistentDataReady: Bool
     @EnvironmentObject var appEnvironment: AppEnvironment
     @EnvironmentObject var audioManager: GlobalAudioManager
     @EnvironmentObject var settingsManager: SettingsManager
@@ -36,10 +35,6 @@ struct ContentView: View {
     @State private var iosNavigationPath: [ChatSessionNavigationRoute] = []
     @State private var isIOSSettingsPresented = false
     #endif
-
-    init(isPersistentDataReady: Bool = true) {
-        self.isPersistentDataReady = isPersistentDataReady
-    }
 
     var body: some View {
         Group {
@@ -103,13 +98,9 @@ private extension ContentView {
                     onOpenSettings: { openSettingsWindow() }
                 )
             } detail: {
-                if isPersistentDataReady {
-                    let activeSession = chatSessionsViewModel.selectedSession ?? chatSessionsViewModel.draftSession
-                    ChatView(viewModel: chatSessionsViewModel.viewModel(for: activeSession))
-                        .id(activeSession.id)
-                } else {
-                    StartupChatLoadingView()
-                }
+                let activeSession = chatSessionsViewModel.selectedSession ?? chatSessionsViewModel.draftSession
+                ChatView(viewModel: chatSessionsViewModel.viewModel(for: activeSession))
+                    .id(activeSession.id)
             }
             .toolbar {
                 ToolbarItem {
@@ -141,8 +132,7 @@ private extension ContentView {
         NavigationStack(path: $iosNavigationPath) {
             SidebarView(
                 onConversationTap: { conversation in
-                    guard isPersistentDataReady,
-                          chatSessionsViewModel.isPersistentStoreAttached else { return }
+                    guard chatSessionsViewModel.isPersistentStoreAttached else { return }
                     chatSessionsViewModel.selectedSession = conversation
                     let route = ChatSessionNavigationRoute(sessionID: conversation.id)
                     if iosNavigationPath.last != route {
@@ -150,13 +140,11 @@ private extension ContentView {
                     }
                 },
                 onOpenSettings: {
-                    if isPersistentDataReady {
-                        isIOSSettingsPresented = true
-                    }
+                    isIOSSettingsPresented = true
                 }
             )
             .navigationDestination(for: ChatSessionNavigationRoute.self) { route in
-                if isPersistentDataReady && chatSessionsViewModel.isPersistentStoreAttached {
+                if chatSessionsViewModel.isPersistentStoreAttached {
                     let session = iosSession(with: route.sessionID)
                     ChatView(viewModel: chatSessionsViewModel.viewModel(for: session))
                         .id(session.id)
@@ -176,7 +164,7 @@ private extension ContentView {
                             selectIOSSession(with: route.sessionID, matchingSearchQuery: route.searchQuery)
                         }
                 } else {
-                    StartupChatLoadingView()
+                    StartupLoadingView(title: "CHAT_LOADING")
                 }
             }
         }
@@ -203,8 +191,7 @@ private extension ContentView {
     }
 
     private func startNewIOSSession() {
-        guard isPersistentDataReady,
-              chatSessionsViewModel.canStartNewSession else { return }
+        guard chatSessionsViewModel.canStartNewSession else { return }
         chatSessionsViewModel.startNewSession()
         let draftID = chatSessionsViewModel.draftSession.id
         let route = ChatSessionNavigationRoute(sessionID: draftID)
@@ -219,17 +206,13 @@ private extension ContentView {
 #if os(visionOS)
     @ViewBuilder
     var visionContent: some View {
-        if isPersistentDataReady {
-            VisionRootView()
-                .environmentObject(appEnvironment)
-                .environmentObject(audioManager)
-                .environmentObject(settingsManager)
-                .environmentObject(chatSessionsViewModel)
-                .environmentObject(errorCenter)
-                .environmentObject(voiceOverlayViewModel)
-        } else {
-            StartupChatLoadingView()
-        }
+        VisionRootView()
+            .environmentObject(appEnvironment)
+            .environmentObject(audioManager)
+            .environmentObject(settingsManager)
+            .environmentObject(chatSessionsViewModel)
+            .environmentObject(errorCenter)
+            .environmentObject(voiceOverlayViewModel)
     }
 #endif
 

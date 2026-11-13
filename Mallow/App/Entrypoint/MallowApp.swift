@@ -14,12 +14,17 @@ struct MallowApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var appEnvironment: AppEnvironment
     @StateObject private var startupCoordinator: StartupDataCoordinator
+    @StateObject private var onboardingCoordinator: AppOnboardingCoordinator
 
     init() {
         _ = DataStorageInspector.launchDate
         let appEnvironment = AppEnvironment()
-        let startupCoordinator = StartupDataCoordinator { [weak appEnvironment] container in
-            appEnvironment?.start(with: container)
+        let onboardingCoordinator = AppOnboardingCoordinator()
+        let startupCoordinator = StartupDataCoordinator { [weak appEnvironment, weak onboardingCoordinator] container in
+            onboardingCoordinator?.reload()
+            if onboardingCoordinator?.hasAccepted == true {
+                appEnvironment?.start(with: container)
+            }
         }
         appEnvironment.settingsManager.onPersistentStoreReadFailure = { [weak startupCoordinator, weak appEnvironment] error in
             appEnvironment?.quiescePersistentStore()
@@ -29,7 +34,8 @@ struct MallowApp: App {
             appEnvironment?.quiescePersistentStore()
             startupCoordinator?.reportPersistentStoreReadFailure(error)
         }
-        startupCoordinator.onWillClearAllAppData = { [weak appEnvironment] in
+        startupCoordinator.onWillClearAllAppData = { [weak appEnvironment, weak onboardingCoordinator] in
+            onboardingCoordinator?.requireConsent()
             appEnvironment?.prepareForClearingAllAppData()
         }
         startupCoordinator.onWillResetPersistentStore = { [weak appEnvironment] in
@@ -37,6 +43,7 @@ struct MallowApp: App {
         }
         _appEnvironment = StateObject(wrappedValue: appEnvironment)
         _startupCoordinator = StateObject(wrappedValue: startupCoordinator)
+        _onboardingCoordinator = StateObject(wrappedValue: onboardingCoordinator)
     }
 
     var body: some Scene {
@@ -44,11 +51,15 @@ struct MallowApp: App {
             StartupDataGateView(
                 coordinator: startupCoordinator,
                 loadingContent: {
-                    mainContent(isPersistentDataReady: false)
+                    StartupLoadingView(title: "COMMON_LOADING")
                 },
                 readyContent: { container in
-                    mainContent(isPersistentDataReady: true)
-                        .modelContainer(container)
+                    if onboardingCoordinator.hasAccepted {
+                        mainContent
+                            .modelContainer(container)
+                    } else {
+                        onboardingContent(container: container)
+                    }
                 }
             )
         }
@@ -73,25 +84,35 @@ struct MallowApp: App {
             StartupDataGateView(
                 coordinator: startupCoordinator,
                 loadingContent: {
-                    StartupSettingsLoadingView()
+                    StartupLoadingView(title: "SETTINGS_LOADING")
                 },
                 readyContent: { container in
-                    SettingsView(settingsManager: appEnvironment.settingsManager)
-                        .environmentObject(appEnvironment)
-                        .environmentObject(startupCoordinator)
-                        .environmentObject(appEnvironment.errorCenter)
-                        .modelContainer(container)
+                    if onboardingCoordinator.hasAccepted {
+                        SettingsView(settingsManager: appEnvironment.settingsManager)
+                            .environmentObject(appEnvironment)
+                            .environmentObject(startupCoordinator)
+                            .environmentObject(appEnvironment.errorCenter)
+                            .modelContainer(container)
+                    } else {
+                        onboardingContent(container: container)
+                    }
                 }
             )
         }
         .commands {
-            AppMenuCommands(appEnvironment.chatSessionsViewModel)
+            AppMenuCommands(appEnvironment.chatSessionsViewModel, isAppAccessAllowed: onboardingCoordinator.hasAccepted)
         }
         #endif
     }
 
-    private func mainContent(isPersistentDataReady: Bool) -> some View {
-        ContentView(isPersistentDataReady: isPersistentDataReady)
+    private func onboardingContent(container: ModelContainer) -> some View {
+        AppOnboardingView(coordinator: onboardingCoordinator) {
+            appEnvironment.start(with: container)
+        }
+    }
+
+    private var mainContent: some View {
+        ContentView()
             .environmentObject(appEnvironment)
             .environmentObject(startupCoordinator)
             .environmentObject(appEnvironment.audioManager)

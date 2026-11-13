@@ -112,11 +112,22 @@ final class ServerReachabilityMonitor: ObservableObject {
         if active {
             startPathMonitorIfNeeded()
         } else {
-            stopMonitoring()
+            pauseMonitoring()
         }
     }
 
     func stopMonitoring() {
+        pauseMonitoring()
+        snapshotProvider = nil
+        snapshot = nil
+        lastPath = nil
+        pendingServices.removeAll()
+        observationDates.removeAll()
+        isChatReachable = nil
+        isTTSReachable = nil
+    }
+
+    private func pauseMonitoring() {
         pathMonitorID = nil
         pathMonitor?.cancel()
         pathMonitor = nil
@@ -166,7 +177,7 @@ final class ServerReachabilityMonitor: ObservableObject {
         }
     }
 
-    func updateSnapshot(_ newSnapshot: ServerReachabilitySnapshot) {
+    private func updateSnapshot(_ newSnapshot: ServerReachabilitySnapshot) {
         if snapshot?.chatBaseURL != newSnapshot.chatBaseURL {
             invalidate(.chat)
         }
@@ -188,7 +199,7 @@ final class ServerReachabilityMonitor: ObservableObject {
         services: Set<Service> = [.chat, .tts],
         force: Bool = false
     ) async {
-        guard !Task.isCancelled else { return }
+        guard snapshotProvider != nil, !Task.isCancelled else { return }
         updateSnapshot(snapshot)
         // Keep the intent until a probe takes ownership, including across scene pauses.
         pendingServices.formUnion(services.filter { force || observationDates[$0] == nil })

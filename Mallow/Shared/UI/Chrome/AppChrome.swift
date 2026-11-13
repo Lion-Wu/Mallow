@@ -149,6 +149,8 @@ private struct AppGlassButtonStyleModifier: ViewModifier {
             } else {
                 content.buttonStyle(.glass)
             }
+        } else if prominent {
+            content.buttonStyle(.borderedProminent)
         } else {
             content
         }

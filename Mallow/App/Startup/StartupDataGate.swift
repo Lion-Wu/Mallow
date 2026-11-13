@@ -125,7 +125,7 @@ final class StartupDataCoordinator: ObservableObject {
         isExporting = false
     }
 
-    func exitApplication() {
+    static func exitApplication() {
         #if os(macOS)
         NSApp.terminate(nil)
         #else
@@ -363,7 +363,7 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
                         Text("DATA_UNAVAILABLE").font(.title3.weight(.semibold))
                         Text(message).foregroundStyle(.secondary).multilineTextAlignment(.center)
                         HStack {
-                            Button("COMMON_ACTION_EXIT") { coordinator.exitApplication() }.buttonStyle(.bordered)
+                            Button("COMMON_ACTION_EXIT") { StartupDataCoordinator.exitApplication() }.buttonStyle(.bordered)
                             Button("COMMON_ACTION_TRY_AGAIN") { coordinator.retryStoreAccess() }.buttonStyle(.borderedProminent)
                         }
                     }
@@ -377,7 +377,7 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
                     isRecoveryActive: coordinator.isRecoveryActive,
                     isExporting: coordinator.isExporting,
                     hasPendingReset: AppDataReset.isPending,
-                    onExit: { coordinator.exitApplication() },
+                    onExit: { StartupDataCoordinator.exitApplication() },
                     onReset: { coordinator.resetDataAndRetry() },
                     onRecover: {
                         isShowingRecovery = true
@@ -474,23 +474,13 @@ struct StartupDataGateView<LoadingContent: View, ReadyContent: View>: View {
     #endif
 }
 
-/// Loading content shown inside the normal chat shell while the single
-/// persistent container opens in the background.
-struct StartupChatLoadingView: View {
-    var body: some View {
-        ZStack {
-            AppBackgroundView()
-            ProgressView("CHAT_LOADING")
-                .foregroundStyle(.secondary)
-        }
-    }
-}
+struct StartupLoadingView: View {
+    let title: LocalizedStringKey
 
-struct StartupSettingsLoadingView: View {
     var body: some View {
         ZStack {
             AppBackgroundView()
-            ProgressView("SETTINGS_LOADING")
+            ProgressView(title)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

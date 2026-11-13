@@ -12,9 +12,11 @@ import SwiftUI
 struct AppMenuCommands: Commands {
     @Environment(\.openWindow) private var openWindow
     @ObservedObject var chatSessionsViewModel: ChatSessionsViewModel
+    let isAppAccessAllowed: Bool
 
-    init(_ vm: ChatSessionsViewModel) {
+    init(_ vm: ChatSessionsViewModel, isAppAccessAllowed: Bool) {
         self._chatSessionsViewModel = ObservedObject(wrappedValue: vm)
+        self.isAppAccessAllowed = isAppAccessAllowed
     }
 
     var body: some Commands {
@@ -25,11 +27,11 @@ struct AppMenuCommands: Commands {
         }
         CommandGroup(replacing: .newItem) {
             Button(LocalizedStringResource("CHAT_TITLE_NEW", defaultValue: "New Chat")) {
-                guard chatSessionsViewModel.canStartNewSession else { return }
+                guard isAppAccessAllowed, chatSessionsViewModel.canStartNewSession else { return }
                 chatSessionsViewModel.startNewSession()
             }
             .keyboardShortcut("n", modifiers: [.command])
-            .disabled(!chatSessionsViewModel.canStartNewSession)
+            .disabled(!isAppAccessAllowed || !chatSessionsViewModel.canStartNewSession)
         }
     }
 }
