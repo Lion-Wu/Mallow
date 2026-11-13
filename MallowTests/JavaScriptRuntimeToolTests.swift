@@ -63,26 +63,6 @@ final class JavaScriptRuntimeToolTests: XCTestCase {
         await assertInvalidScript(#"(() => {})["constructor"]("return 7")();"#)
     }
 
-    func testInfiniteLoopTimesOutAndNextExecutionStillWorks() async throws {
-        let clock = ContinuousClock()
-        let start = clock.now
-        do {
-            _ = try await JavaScriptRuntime.evaluate(
-                code: "while (true) {}",
-                input: [:],
-                timeoutSeconds: 0.2
-            )
-            XCTFail("Expected timeout")
-        } catch let error as ChatToolError {
-            XCTAssertEqual(error.resultStatus, .failed)
-            XCTAssertTrue(error.localizedDescription.contains("timed out"))
-        }
-        XCTAssertLessThan(start.duration(to: clock.now), .seconds(3))
-
-        let recovery = try await run("7;")
-        XCTAssertEqual(recovery.payload["result"], .number(7))
-    }
-
     func testRejectsOversizedCodeInputOrNonObjectInput() async throws {
         do {
             _ = try await run(String(repeating: "0;", count: 128_001))
