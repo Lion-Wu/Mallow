@@ -26,24 +26,38 @@ extension CodeText: View {
             .onDisappear {
                 highlightTask?.cancel()
             }
-            .onChange(of: mode) { newMode in
+            .onHighlightChange(of: mode) { newMode in
                 highlightTask?.cancel()
                 highlightTask = Task {
                     await highlightText(mode: newMode)
                 }
             }
-            .onChange(of: colors) { newColors in
+            .onHighlightChange(of: colors) { newColors in
                 highlightTask?.cancel()
                 highlightTask = Task {
                     await highlightText(colors: newColors)
                 }
             }
-            .onChange(of: colorScheme) { newColorScheme in
+            .onHighlightChange(of: colorScheme) { newColorScheme in
                 highlightTask?.cancel()
                 highlightTask = Task {
                     await highlightText(colorScheme: newColorScheme)
                 }
             }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func onHighlightChange<Value: Equatable>(
+        of value: Value,
+        perform action: @escaping (Value) -> Void
+    ) -> some View {
+        if #available(iOS 17, macOS 14, tvOS 17, watchOS 10, visionOS 1, *) {
+            onChange(of: value) { _, newValue in action(newValue) }
+        } else {
+            onChange(of: value, perform: action)
+        }
     }
 }
 
